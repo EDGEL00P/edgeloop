@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = 'force-dynamic';
+
 
 import { Suspense } from 'react';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,8 +11,8 @@ import { FloatingBetSlip } from '@/components/FloatingBetSlip';
 import { useSettings } from '@/lib/store';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
-import Landing from '@/client/src/pages/Landing';
-import HomeContent from '@/client/src/pages/Home';
+import Landing from '@/page-components/Landing';
+import HomeContent from '@/page-components/Home';
 
 function LoadingScreen() {
   return (

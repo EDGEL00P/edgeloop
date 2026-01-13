@@ -1,7 +1,14 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import DataComponent from '@/client/src/pages/Data';
+
+import DataComponent from '@/page-components/data-page';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export default function DataPage() {
-  return <DataComponent />;
+  return (
+    <ClientOnly>
+      <DataComponent />
+    </ClientOnly>
+  );
 }

@@ -1,6 +1,8 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import SettingsComponent from '@/client/src/pages/Settings';
+
+import SettingsComponent from '@/page-components/Settings';
 
 export default function SettingsPage() {
   return <SettingsComponent />;

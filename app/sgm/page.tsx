@@ -1,6 +1,8 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import SGMBuilderComponent from '@/client/src/pages/SGMBuilder';
+
+import SGMBuilderComponent from '@/page-components/SGMBuilder';
 
 export default function SGMPage() {
   return <SGMBuilderComponent />;

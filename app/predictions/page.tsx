@@ -1,6 +1,8 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import PredictionsComponent from '@/client/src/pages/Predictions';
+
+import PredictionsComponent from '@/page-components/Predictions';
 
 export default function PredictionsPage() {
   return <PredictionsComponent />;

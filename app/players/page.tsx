@@ -1,6 +1,8 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import PlayersComponent from '@/client/src/pages/Players';
+
+import PlayersComponent from '@/page-components/Players';
 
 export default function PlayersPage() {
   return <PlayersComponent />;

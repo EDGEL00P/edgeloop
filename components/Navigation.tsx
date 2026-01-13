@@ -1,4 +1,7 @@
-import { Link, useLocation } from 'wouter';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar,
@@ -35,7 +38,7 @@ const secondaryNavItems = [
 
 
 export function Navigation() {
-  const [location] = useLocation();
+  const location = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { reduceMotion } = useSettings();
 
