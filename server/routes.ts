@@ -271,7 +271,7 @@ export async function registerRoutes(
       const isDivisional = homeTeam && awayTeam ? 
         (homeTeam.division === awayTeam.division && homeTeam.conference === awayTeam.conference) : false;
       
-      const weather = await getWeatherForVenue(game.venue || undefined);
+      const weather = await getWeatherForVenue(game.venue || null);
       const odds = await getOddsForGame(homeTeamName, awayTeamName);
       
       const gameData: GameData = {

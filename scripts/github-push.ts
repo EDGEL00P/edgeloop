@@ -175,7 +175,7 @@ async function pushToGitHub() {
   const { data: commit } = await octokit.git.createCommit({
     owner,
     repo,
-    message: "Push from Replit: Edge Loop NFL Platform",
+    message: "Next.js migration complete - Railway/Vercel deployment ready",
     tree: newTree.sha,
     parents: [latestSha]
   });
