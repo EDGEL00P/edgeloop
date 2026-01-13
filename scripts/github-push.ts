@@ -175,7 +175,7 @@ async function pushToGitHub() {
   const { data: commit } = await octokit.git.createCommit({
     owner,
     repo,
-    message: "Next.js migration complete - Railway/Vercel deployment ready",
+    message: "Updated Edge Loop project files",
     tree: newTree.sha,
     parents: [latestSha]
   });

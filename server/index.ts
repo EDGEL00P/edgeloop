@@ -9,6 +9,9 @@ const httpServer = createServer(app);
 function verifyApiSecrets() {
   const secrets = [
     { name: 'BALLDONTLIE_API_KEY', required: true },
+    { name: 'SPORTRADAR_API_KEY', required: false },
+    { name: 'RAPIDAPI_KEY', required: false },
+    { name: 'SPORTSDB_KEY', required: false },
     { name: 'WEATHER_API_KEY', required: false },
     { name: 'ODDS_API_KEY', required: false },
     { name: 'EXA_API_KEY', required: false },
