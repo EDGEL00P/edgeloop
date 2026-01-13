@@ -1,0 +1,347 @@
+import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
+import { circuitBreakerManager, CircuitBreaker, CircuitState } from "../infrastructure/circuit-breaker";
+import { rateLimiterManager, TokenBucketRateLimiter } from "../infrastructure/rate-limiter";
+import { cache, CacheTTL } from "../infrastructure/cache";
+import { logger } from "../infrastructure/logger";
+
+export type TaskType = "quick" | "analysis" | "complex" | "creative";
+
+export type ProviderName = "openai" | "gemini" | "anthropic" | "openrouter";
+
+interface ProviderConfig {
+  name: ProviderName;
+  model: string;
+  circuitBreaker: CircuitBreaker;
+  rateLimiter: TokenBucketRateLimiter;
+  isHealthy: () => boolean;
+  complete: (prompt: string) => Promise<string>;
+}
+
+const ROUTING_MATRIX: Record<TaskType, ProviderName[]> = {
+  quick: ["gemini", "openai", "openrouter", "anthropic"],
+  analysis: ["openai", "anthropic", "gemini", "openrouter"],
+  complex: ["anthropic", "openai", "gemini", "openrouter"],
+  creative: ["openrouter", "anthropic", "openai", "gemini"],
+};
+
+const MODELS: Record<ProviderName, string> = {
+  gemini: "gemini-2.5-flash",
+  openai: "gpt-4.1",
+  anthropic: "claude-sonnet-4-20250514",
+  openrouter: "meta-llama/llama-3.3-70b-instruct",
+};
+
+const openaiClient = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
+
+const geminiClient = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
+
+const anthropicClient = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+});
+
+const openrouterClient = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
+});
+
+const circuitBreakers = {
+  openai: circuitBreakerManager.create("aiRouter_openai", {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 30000,
+  }),
+  gemini: circuitBreakerManager.create("aiRouter_gemini", {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 30000,
+  }),
+  anthropic: circuitBreakerManager.create("aiRouter_anthropic", {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 30000,
+  }),
+  openrouter: circuitBreakerManager.create("aiRouter_openrouter", {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 30000,
+  }),
+};
+
+const rateLimiters = {
+  openai: rateLimiterManager.create("aiRouter_openai", { requestsPerMinute: 20, burstAllowance: 5 }),
+  gemini: rateLimiterManager.create("aiRouter_gemini", { requestsPerMinute: 30, burstAllowance: 10 }),
+  anthropic: rateLimiterManager.create("aiRouter_anthropic", { requestsPerMinute: 15, burstAllowance: 5 }),
+  openrouter: rateLimiterManager.create("aiRouter_openrouter", { requestsPerMinute: 20, burstAllowance: 5 }),
+};
+
+async function completeWithOpenAI(prompt: string): Promise<string> {
+  const response = await openaiClient.chat.completions.create({
+    model: MODELS.openai,
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 2048,
+  });
+  return response.choices[0]?.message?.content || "";
+}
+
+async function completeWithGemini(prompt: string): Promise<string> {
+  const response = await geminiClient.models.generateContent({
+    model: MODELS.gemini,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+  });
+  return response.text || "";
+}
+
+async function completeWithAnthropic(prompt: string): Promise<string> {
+  const response = await anthropicClient.chat.completions.create({
+    model: MODELS.anthropic,
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 2048,
+  });
+  return response.choices[0]?.message?.content || "";
+}
+
+async function completeWithOpenRouter(prompt: string): Promise<string> {
+  const response = await openrouterClient.chat.completions.create({
+    model: MODELS.openrouter,
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 2048,
+  });
+  return response.choices[0]?.message?.content || "";
+}
+
+function isProviderHealthy(provider: ProviderName): boolean {
+  const cb = circuitBreakers[provider];
+  return cb.getState() !== CircuitState.OPEN;
+}
+
+const providers: Record<ProviderName, ProviderConfig> = {
+  openai: {
+    name: "openai",
+    model: MODELS.openai,
+    circuitBreaker: circuitBreakers.openai,
+    rateLimiter: rateLimiters.openai,
+    isHealthy: () => isProviderHealthy("openai"),
+    complete: completeWithOpenAI,
+  },
+  gemini: {
+    name: "gemini",
+    model: MODELS.gemini,
+    circuitBreaker: circuitBreakers.gemini,
+    rateLimiter: rateLimiters.gemini,
+    isHealthy: () => isProviderHealthy("gemini"),
+    complete: completeWithGemini,
+  },
+  anthropic: {
+    name: "anthropic",
+    model: MODELS.anthropic,
+    circuitBreaker: circuitBreakers.anthropic,
+    rateLimiter: rateLimiters.anthropic,
+    isHealthy: () => isProviderHealthy("anthropic"),
+    complete: completeWithAnthropic,
+  },
+  openrouter: {
+    name: "openrouter",
+    model: MODELS.openrouter,
+    circuitBreaker: circuitBreakers.openrouter,
+    rateLimiter: rateLimiters.openrouter,
+    isHealthy: () => isProviderHealthy("openrouter"),
+    complete: completeWithOpenRouter,
+  },
+};
+
+function generateCacheKey(prompt: string, taskType: TaskType): string {
+  const promptHash = prompt
+    .split("")
+    .reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)
+    .toString(16);
+  return `aiRouter:${taskType}:${promptHash}`;
+}
+
+async function executeWithProvider(
+  provider: ProviderConfig,
+  prompt: string
+): Promise<string> {
+  const canProceed = await provider.rateLimiter.acquire();
+  if (!canProceed) {
+    throw new Error(`Rate limit exceeded for ${provider.name}`);
+  }
+
+  return provider.circuitBreaker.execute(() => provider.complete(prompt));
+}
+
+export async function complete(
+  prompt: string,
+  taskType: TaskType
+): Promise<string> {
+  const cacheKey = generateCacheKey(prompt, taskType);
+  
+  const cached = await cache.get<string>(cacheKey);
+  if (cached !== null) {
+    logger.info({ type: "ai_router_cache_hit", taskType, key: cacheKey });
+    return cached;
+  }
+
+  const providerOrder = ROUTING_MATRIX[taskType];
+  const errors: Array<{ provider: ProviderName; error: string }> = [];
+
+  for (const providerName of providerOrder) {
+    const provider = providers[providerName];
+
+    if (!provider.isHealthy()) {
+      logger.warn({ 
+        type: "ai_router_provider_unhealthy", 
+        provider: providerName, 
+        taskType 
+      });
+      errors.push({ provider: providerName, error: "Circuit breaker open" });
+      continue;
+    }
+
+    // Check if rate limiter would block - try next provider first
+    if (provider.rateLimiter.getAvailableTokens() <= 0) {
+      logger.warn({
+        type: "ai_router_provider_rate_limited",
+        provider: providerName,
+        taskType,
+      });
+      errors.push({ provider: providerName, error: "Rate limit reached" });
+      continue;
+    }
+
+    try {
+      logger.info({ 
+        type: "ai_router_attempt", 
+        provider: providerName, 
+        model: provider.model,
+        taskType 
+      });
+
+      const result = await executeWithProvider(provider, prompt);
+
+      await cache.set(cacheKey, result, CacheTTL.MEDIUM);
+      
+      logger.info({ 
+        type: "ai_router_success", 
+        provider: providerName, 
+        taskType,
+        resultLength: result.length 
+      });
+
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      errors.push({ provider: providerName, error: errorMessage });
+      
+      logger.error({ 
+        type: "ai_router_provider_error", 
+        provider: providerName, 
+        taskType,
+        error: errorMessage 
+      });
+    }
+  }
+
+  const errorSummary = errors
+    .map((e) => `${e.provider}: ${e.error}`)
+    .join("; ");
+  throw new Error(`All providers failed for task type '${taskType}'. Errors: ${errorSummary}`);
+}
+
+export async function healthCheck(): Promise<Record<ProviderName, {
+  healthy: boolean;
+  circuitState: CircuitState;
+  availableTokens: number;
+}>> {
+  const results: Record<string, any> = {};
+
+  for (const [name, provider] of Object.entries(providers)) {
+    results[name] = {
+      healthy: provider.isHealthy(),
+      circuitState: provider.circuitBreaker.getState(),
+      availableTokens: provider.rateLimiter.getAvailableTokens(),
+    };
+  }
+
+  return results as Record<ProviderName, {
+    healthy: boolean;
+    circuitState: CircuitState;
+    availableTokens: number;
+  }>;
+}
+
+export async function pingProvider(providerName: ProviderName): Promise<{
+  success: boolean;
+  latencyMs: number;
+  error?: string;
+}> {
+  const provider = providers[providerName];
+  const startTime = Date.now();
+  
+  try {
+    await provider.complete("Say 'OK' in one word.");
+    return {
+      success: true,
+      latencyMs: Date.now() - startTime,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      latencyMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export function getProviderStats(): Record<ProviderName, {
+  circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
+  rateLimiter: { available: number; waitTime: number };
+}> {
+  const stats: Record<string, any> = {};
+
+  for (const [name, provider] of Object.entries(providers)) {
+    stats[name] = {
+      circuitBreaker: provider.circuitBreaker.getStats(),
+      rateLimiter: {
+        available: provider.rateLimiter.getAvailableTokens(),
+        waitTime: provider.rateLimiter.getWaitTime(),
+      },
+    };
+  }
+
+  return stats as Record<ProviderName, {
+    circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
+    rateLimiter: { available: number; waitTime: number };
+  }>;
+}
+
+export function getRoutingMatrix(): Record<TaskType, ProviderName[]> {
+  return { ...ROUTING_MATRIX };
+}
+
+export function getAvailableProviders(): ProviderName[] {
+  return Object.entries(providers)
+    .filter(([_, provider]) => provider.isHealthy())
+    .map(([name]) => name as ProviderName);
+}
+
+export const aiRouter = {
+  complete,
+  healthCheck,
+  pingProvider,
+  getProviderStats,
+  getRoutingMatrix,
+  getAvailableProviders,
+};
+
+export default aiRouter;
