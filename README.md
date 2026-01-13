@@ -1,3 +1,3 @@
-# Edge Loop - NFL Betting Intelligence
+# Edge Loop - NFL  Intelligence
 
 Professional sports analytics platform.
