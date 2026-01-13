@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { useSettings } from '@/lib/store';
 import { Switch } from '@/_components/ui/switch';

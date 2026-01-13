@@ -40,6 +40,18 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "client",
+    "server",
+    "script",
+    "scripts",
+    "app/server-utils/seed.ts",
+    "app/server-utils/importHistoricalData.ts",
+    "app/server-utils/vite.ts",
+    "app/server-utils/static.ts",
+    "server/seed.ts",
+    "server/importHistoricalData.ts",
+    "server/vite.ts",
+    "server/static.ts"
   ]
 }
