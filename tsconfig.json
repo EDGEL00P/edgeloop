@@ -1,14 +1,31 @@
 {
-  "include": ["app/**/*", "lib/**/*", "components/**/*", "shared/**/*", ".next/types/**/*.ts", "next.config.js"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "include": [
+    "app/**/*",
+    "lib/**/*",
+    "components/**/*",
+    "shared/**/*",
+    ".next/types/**/*.ts",
+    "next.config.js",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts"
+  ],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "target": "ES2020",
     "module": "ESNext",
     "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "jsx": "preserve",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": false,
@@ -17,15 +34,22 @@
     "isolatedModules": true,
     "noEmit": true,
     "baseUrl": ".",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@/*": ["./*"],
-      "@shared/*": ["./shared/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ]
     },
     "plugins": [
       {
         "name": "next"
       }
-    ]
+    ],
+    "allowJs": true
   }
 }

@@ -9,8 +9,8 @@ import { FloatingBetSlip } from '@/components/FloatingBetSlip';
 import { useSettings } from '@/lib/store';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
-import Landing from './landing/page';
-import HomeContent from './home/page';
+import Landing from '@/client/src/pages/Landing';
+import HomeContent from '@/client/src/pages/Home';
 
 function LoadingScreen() {
   return (

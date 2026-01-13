@@ -14,16 +14,8 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  // Enable webpack 5
-  webpack: (config) => {
-    config.resolve.fallback = { 
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-    };
-    return config;
-  },
+  // Empty turbopack config to acknowledge we're using Turbopack
+  turbopack: {},
 };
 
-module.exports = nextConfig;
+export default nextConfig;
