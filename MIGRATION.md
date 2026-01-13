@@ -84,7 +84,7 @@ NEW Structure:
 
 ### 6. Styling
 - Kept Tailwind CSS v4 configuration
-- Updated PostCSS config to use `@tailwindcss/postcss` plugin
+- **Important**: Updated PostCSS config to use `@tailwindcss/postcss` plugin instead of the deprecated `tailwindcss` plugin. This is required for Tailwind CSS v4.
 - Copied `globals.css` from `client/src/index.css`
 - Maintained all existing Tailwind custom themes and colors
 

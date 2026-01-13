@@ -14,7 +14,8 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  // Empty turbopack config to acknowledge we're using Turbopack
+  // Empty turbopack config acknowledges we're using Turbopack (Next.js 16 default)
+  // Add custom Turbopack configuration here if needed
   turbopack: {},
 };
 
