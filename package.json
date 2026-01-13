@@ -95,7 +95,6 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.14",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "4.17.21",
     "@types/express-session": "^1.18.2",
@@ -105,13 +104,13 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/ws": "^8.5.13",
-    "autoprefixer": "^10.4.21",
+    "autoprefixer": "^10.4.23",
     "drizzle-kit": "^0.31.4",
     "esbuild": "^0.25.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^3.4.19",
     "tsx": "^4.20.5",
     "typescript": "5.6.3"
   },

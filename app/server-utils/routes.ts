@@ -42,7 +42,7 @@ const BALLDONTLIE_NFL_API_URL = "https://api.balldontlie.io/nfl/v1";
 
 const CACHE_DURATION_MS = 60 * 60 * 1000;
 
-function generateMockPlayerProps(gameId: string) {
+export function generateMockPlayerProps(gameId: string) {
   const players = [
     { id: 1, name: "Patrick Mahomes", team: "KC", position: "QB" },
     { id: 2, name: "Travis Kelce", team: "KC", position: "TE" },

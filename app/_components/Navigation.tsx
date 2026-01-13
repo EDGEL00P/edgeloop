@@ -104,7 +104,7 @@ export function Navigation() {
                 <motion.div
                   className={cn(
                     "p-2 rounded-lg cursor-pointer transition-all duration-300",
-                    location === '/settings'
+                    pathname === '/settings'
                       ? "bg-[#CD1141]/20 text-[#CD1141] glow-red-subtle"
                       : "text-[#A0A0A0] hover:text-white hover:bg-white/5"
                   )}

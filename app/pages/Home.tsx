@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'next/navigation';
+import Link from 'next/link';
 import { useNflGames, useNflTeams, useQuickAnalysis, useMatchupAnalysis, useNflOdds, type GameOdds } from '@/lib/api';
 import { Card } from '@/_components/ui/card';
 import { Badge } from '@/_components/ui/badge';

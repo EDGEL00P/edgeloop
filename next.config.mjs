@@ -8,7 +8,12 @@ const nextConfig = {
     },
   },
   images: {
-    domains: ['replit.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'replit.com',
+      },
+    ],
   },
 };
 
