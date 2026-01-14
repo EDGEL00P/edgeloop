@@ -3,6 +3,9 @@ import { eq, and, or } from "drizzle-orm";
 import { circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { apiLimiters } from "../infrastructure/rate-limiter";
 import { logger } from "../infrastructure/logger";
+import { withHealth } from "../health/withHealth";
+import { SportradarService } from "./sportradarService";
+import { RapidApiNflService } from "./rapidApiNflService";
 
 interface DataSource {
   name: string;
@@ -81,11 +84,13 @@ async function fetchFromBallDontLie(endpoint: string): Promise<any> {
   if (!acquired) throw new Error("Rate limit exceeded");
 
   return ballDontLieBreaker.execute(async () => {
-    const response = await fetch(`https://api.balldontlie.io/nfl/v1${endpoint}`, {
+    return withHealth("balldontlie", async () => {
+      const response = await fetch(`https://api.balldontlie.io/nfl/v1${endpoint}`, {
       headers: { Authorization: apiKey },
     });
     if (!response.ok) throw new Error(`BDL API error: ${response.status}`);
-    return response.json();
+      return response.json();
+    });
   });
 }
 
@@ -94,14 +99,16 @@ async function fetchFromESPN(endpoint: string): Promise<any> {
   if (!acquired) throw new Error("ESPN rate limit exceeded");
 
   return espnBreaker.execute(async () => {
-    const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl${endpoint}`, {
+    return withHealth("espn", async () => {
+      const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl${endpoint}`, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; SingularityBot/1.0)",
         Accept: "application/json",
       },
     });
     if (!response.ok) throw new Error(`ESPN API error: ${response.status}`);
-    return response.json();
+      return response.json();
+    });
   });
 }
 
@@ -111,6 +118,24 @@ export async function getTeams(): Promise<any> {
     cacheKey: CacheKeys.teams(),
     cacheTTL: CacheTTL.DAY,
     sources: [
+      {
+        name: "sportradar",
+        priority: 0,
+        isAvailable: () => !!process.env.SPORTRADAR_API_KEY,
+        fetch: async () => {
+          const data = await SportradarService.getTeams();
+          return {
+            data: data.teams?.map((t: any) => ({
+              id: t.id,
+              abbreviation: t.alias,
+              name: t.name,
+              fullName: t.market ? `${t.market} ${t.name}` : t.name,
+              location: t.market,
+            })) || [],
+            raw: data,
+          };
+        },
+      },
       {
         name: "balldontlie",
         priority: 1,
@@ -145,6 +170,26 @@ export async function getGames(season: number, week: number): Promise<any> {
     cacheTTL: CacheTTL.MEDIUM,
     sources: [
       {
+        name: "sportradar",
+        priority: 0,
+        isAvailable: () => !!process.env.SPORTRADAR_API_KEY,
+        fetch: async () => {
+          const data = await SportradarService.getWeekSchedule(season, "REG", week);
+          const games = data.week?.games || data.games || [];
+          return {
+            data: games.map((g: any) => ({
+              id: g.id,
+              date: g.scheduled,
+              status: g.status,
+              home_team: { team: { id: g.home?.id, abbreviation: g.home?.alias, displayName: `${g.home?.market ?? ""} ${g.home?.name ?? ""}`.trim() }, score: g.scoring?.home_points ?? g.home_points ?? null, homeAway: "home" },
+              away_team: { team: { id: g.away?.id, abbreviation: g.away?.alias, displayName: `${g.away?.market ?? ""} ${g.away?.name ?? ""}`.trim() }, score: g.scoring?.away_points ?? g.away_points ?? null, homeAway: "away" },
+              venue: g.venue?.name,
+            })),
+            raw: data,
+          };
+        },
+      },
+      {
         name: "balldontlie",
         priority: 1,
         isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
@@ -166,6 +211,15 @@ export async function getGames(season: number, week: number): Promise<any> {
               venue: e.competitions?.[0]?.venue?.fullName,
             })) || [],
           };
+        },
+      },
+      {
+        name: "rapidapi",
+        priority: 3,
+        isAvailable: () => !!process.env.RAPIDAPI_KEY,
+        fetch: async () => {
+          const data = await RapidApiNflService.getGames(season, week);
+          return { data: data.response || data.games || data || [] };
         },
       },
     ],

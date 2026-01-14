@@ -37,6 +37,8 @@ import { metrics } from "./infrastructure/metrics";
 import { circuitBreakerManager } from "./infrastructure/circuit-breaker";
 import { rateLimiterManager } from "./infrastructure/rate-limiter";
 import { CacheService } from "./infrastructure/cache";
+import { healthSnapshot } from "./health/selectSource";
+import { crossrefGames } from "./crossref/crossrefGames";
 
 const BALLDONTLIE_NFL_API_URL = "https://api.balldontlie.io/nfl/v1";
 
@@ -143,6 +145,24 @@ export async function registerRoutes(
   // Setup Replit Auth (MUST be before other routes)
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // System health snapshot (source scoring + last success/error/latency)
+  app.get("/api/system/health", (req, res) => {
+    res.json({ ok: true, sources: healthSnapshot(), ts: Date.now() });
+  });
+
+  // Cross-reference games across sources for a given season/week
+  app.get("/api/system/crossref/games/:season/:week", async (req, res) => {
+    try {
+      const season = Number(req.params.season);
+      const week = Number(req.params.week);
+      const out = await crossrefGames(season, week);
+      res.json({ ok: true, ...out });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: (e as Error).message });
+    }
+  });
+
 
   app.get("/api/player-props/:gameId", async (req, res) => {
     try {
