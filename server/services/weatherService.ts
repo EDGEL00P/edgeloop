@@ -1,4 +1,5 @@
 const OPENWEATHERMAP_API_URL = "https://api.openweathermap.org/data/2.5/weather";
+import { eq, and, or } from "drizzle-orm";
 
 export interface WeatherData {
   temperature: number;

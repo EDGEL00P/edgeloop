@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { eq, and, or } from "drizzle-orm";
 import * as ss from "simple-statistics";
 import * as math from "mathjs";
 import _ from "lodash";

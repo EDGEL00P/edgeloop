@@ -1,3 +1,6 @@
+import { eq, and, or } from "drizzle-orm";
+import { historicalGames, weeklyMetrics, nflTeams, nflPlayers } from "@shared/schema";
+
 interface CacheEntry<T> {
   value: T;
   expiresAt: number;

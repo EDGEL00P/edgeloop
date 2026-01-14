@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { eq, and, or } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
 import { circuitBreakerManager, CircuitBreaker, CircuitState } from "../infrastructure/circuit-breaker";
 import { rateLimiterManager, TokenBucketRateLimiter } from "../infrastructure/rate-limiter";

@@ -17,32 +17,25 @@
     "**/*.test.ts"
   ],
   "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
-    "noEmit": true,
-    "target": "ES2017",
-    "module": "ESNext",
-    "strict": true,
+    "target": "es2020",
+    "module": "esnext",
     "lib": [
-      "ES2017",
-      "DOM",
-      "DOM.Iterable"
+      "dom",
+      "dom.iterable",
+      "esnext"
     ],
-    "jsx": "preserve",
-    "esModuleInterop": true,
+    "allowJs": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "allowJs": true,
-    "forceConsistentCasingInFileNames": true,
+    "jsx": "preserve",
+    "incremental": true,
     "baseUrl": ".",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": [
         "./client/src/*"

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { eq, and, or } from "drizzle-orm";
 import { apiLimiters } from "../infrastructure/rate-limiter";
 import { CircuitBreaker, circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { cache, CacheTTL, CacheService } from "../infrastructure/cache";

@@ -4,7 +4,7 @@ import { eq, and } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import type {
   User,
-  InsertUser,
+  UpsertUser,
   NflTeam,
   InsertNflTeam,
   NflPlayer,
@@ -25,8 +25,8 @@ import type {
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: UpsertUser): Promise<User>;
 
   getAllNflTeams(): Promise<NflTeam[]>;
   getNflTeam(id: number): Promise<NflTeam | undefined>;
@@ -70,12 +70,12 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.username, username));
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(schema.users).where(eq(schema.users.email, email));
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: UpsertUser): Promise<User> {
     const result = await db.insert(schema.users).values(insertUser).returning();
     return result[0];
   }

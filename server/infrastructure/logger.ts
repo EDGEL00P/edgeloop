@@ -1,4 +1,5 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
+import { eq, and, or } from "drizzle-orm";
 
 interface LogEntry {
   level: LogLevel;
