@@ -183,11 +183,14 @@ function validateFile(filePath: string, analysis: FileAnalysis): ValidationResul
 
 function runTypeCheck(filePath: string): Promise<{ success: boolean; output: string; errors: string }> {
   return new Promise((resolve) => {
-    exec(`npx tsc --noEmit "${filePath}"`, (error, stdout) => {
+    exec(`npx tsc --noEmit "${filePath}"`, (error, stdout, stderr) => {
+      // TypeScript compiler outputs diagnostics to stdout, not stderr
+      // When tsc finds errors, it exits with non-zero code and outputs to stdout
+      const errors = error ? (stdout || stderr || '') : '';
       resolve({
         success: error === null || error === undefined,
         output: stdout || '',
-        errors: stderr || ''
+        errors: errors
       });
     });
   });
@@ -240,9 +243,13 @@ async function main() {
     for (const filePath of BETTING_FILES) {
       console.log(`\nChecking: ${filePath}`);
       const checkResult = await runTypeCheck(filePath);
-      if (!checkResult.success && checkResult.errors.length > 0) {
-        console.log(`❌ Type Errors in ${filePath}:`);
-        console.log(checkResult.errors);
+      if (!checkResult.success) {
+        // TypeScript errors are in stdout, which we now capture in errors field
+        const errorOutput = checkResult.errors || checkResult.output;
+        if (errorOutput) {
+          console.log(`❌ Type Errors in ${filePath}:`);
+          console.log(errorOutput);
+        }
       }
     }
   }

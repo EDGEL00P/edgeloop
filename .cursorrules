@@ -1,0 +1,46 @@
+# Cursor Rules for Edgeloop Project
+
+## Project Structure
+- TypeScript/Next.js frontend in `client/src`
+- Express backend in `server/`
+- Shared types/schemas in `shared/`
+- Python ML engine in `python_engine/`
+- Next.js pages in `pages/`
+
+## Code Style
+- Use TypeScript strict mode
+- Prefer functional components with hooks
+- Use Drizzle ORM for database queries
+- Follow existing patterns for API routes
+- Use Tailwind CSS for styling
+- Prefer async/await over promises
+
+## Import Paths
+- Use `@/` for client/src imports
+- Use `@shared/` for shared imports
+- Use `@server/` for server imports
+- Use relative paths within same directory
+
+## Naming Conventions
+- Components: PascalCase (e.g., `BettingPortal.tsx`)
+- Utilities: camelCase (e.g., `oddsUtils.ts`)
+- Types/Interfaces: PascalCase (e.g., `BettingAnalysis`)
+- Constants: UPPER_SNAKE_CASE (e.g., `CACHE_TTL`)
+
+## Best Practices
+- Always handle errors with try/catch
+- Use proper TypeScript types, avoid `any`
+- Add JSDoc comments for complex functions
+- Keep functions focused and single-purpose
+- Use database transactions for multi-step operations
+- Cache expensive operations using CacheService
+
+## Testing
+- Write tests for critical business logic
+- Use Vitest for unit tests
+- Test files should be in `__tests__/` directory
+
+## Git
+- Use conventional commits (feat:, fix:, docs:, etc.)
+- Keep commits focused and atomic
+- Write clear commit messages
