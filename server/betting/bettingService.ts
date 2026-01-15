@@ -51,8 +51,8 @@ export class BettingService {
     season: number,
     week: number,
     marketOdds: MarketOdds,
-    weather?: any,
-    injuries?: any[]
+    weather?: { temperature?: number; windSpeed?: number; precipitation?: string },
+    injuries?: { playerId: number; playerName: string; status: string }[]
   ): Promise<BettingAnalysis> {
     try {
       const prediction = await bettingModelPredictor.predictGame(
@@ -143,8 +143,8 @@ export class BettingService {
     gameId: number,
     prediction: ModelPrediction,
     marketOdds: MarketOdds,
-    weather?: any,
-    injuries?: any[]
+    weather?: { temperature?: number; windSpeed?: number; precipitation?: string },
+    injuries?: { playerId: number; playerName: string; status: string }[]
   ): Promise<SingularityExploit[]> {
     const exploits: SingularityExploit[] = [];
 
@@ -259,8 +259,8 @@ export class BettingService {
     recommendedBets: BettingEdge[],
     exploits: SingularityExploit[],
     prediction: ModelPrediction,
-    riskAssessment: any
-  ): any {
+    riskAssessment: { modelAgreement: number }
+  ): { action: string; confidence: number; reason: string } {
     if (exploits.length > 0 && exploits[0].confidence > 0.7) {
       const bestExploit = exploits.sort((a, b) => b.confidence - a.confidence)[0];
 

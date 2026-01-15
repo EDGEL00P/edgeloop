@@ -108,3 +108,42 @@ export interface EspnEvent {
 export interface EspnScoreboardResponse {
   events?: EspnEvent[];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BallDontLie API Response Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** BallDontLie team object */
+export interface BdlTeam {
+  id?: number;
+  abbreviation?: string;
+  abbrev?: string;
+  alias?: string;
+  full_name?: string;
+  name?: string;
+}
+
+/** BallDontLie game object */
+export interface BdlGame {
+  id?: number | string;
+  date?: string;
+  scheduled?: string;
+  start_time?: string;
+  status?: string;
+  game_status?: string;
+  home_team?: BdlTeam;
+  homeTeam?: BdlTeam;
+  visitor_team?: BdlTeam;
+  away_team?: BdlTeam;
+  awayTeam?: BdlTeam;
+  home_team_score?: number;
+  home_score?: number;
+  visitor_team_score?: number;
+  away_score?: number;
+}
+
+/** BallDontLie API response wrapper */
+export interface BdlGamesResponse {
+  data?: BdlGame[];
+  games?: BdlGame[];
+}

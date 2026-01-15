@@ -232,7 +232,7 @@ export class FeatureEngineer {
     }
   }
 
-  private calculateOffensiveMetrics(metrics: any[]) {
+  private calculateOffensiveMetrics(metrics: { epaPerPlay?: number; successRate?: number }[]) {
     if (metrics.length === 0) {
       return {
         epaPerPlay: 0,

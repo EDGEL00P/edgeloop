@@ -1,25 +1,46 @@
-import { NormalizedGame } from "./types";
+import {
+  NormalizedGame,
+  SportradarScheduleResponse,
+  SportradarGame,
+} from "./types";
 
-export function normalizeSRSchedule(raw: any, season: number, week: number): NormalizedGame[] {
+/**
+ * Normalize Sportradar schedule response to unified game format
+ * @param raw - Raw Sportradar API response
+ * @param season - NFL season year
+ * @param week - Week number
+ * @returns Array of normalized games
+ */
+export function normalizeSRSchedule(
+  raw: SportradarScheduleResponse | null | undefined,
+  season: number,
+  week: number
+): NormalizedGame[] {
   const games = raw?.week?.games ?? raw?.games ?? [];
-  return (Array.isArray(games) ? games : []).map((g: any) => {
-    const homeAbbr = g.home?.alias;
-    const awayAbbr = g.away?.alias;
+  
+  return (Array.isArray(games) ? games : []).map((game: SportradarGame) => {
+    const homeAbbr = game.home?.alias;
+    const awayAbbr = game.away?.alias;
     const key = `${season}-${week}-${awayAbbr ?? "UNK"}@${homeAbbr ?? "UNK"}`;
+    
     return {
       key,
-      sourceGameId: String(g.id ?? ""),
+      sourceGameId: String(game.id ?? ""),
       source: "sportradar",
       season,
       week,
-      scheduled: g.scheduled,
+      scheduled: game.scheduled,
       homeAbbr,
       awayAbbr,
-      homeName: g.home?.market ? `${g.home.market} ${g.home.name}` : g.home?.name,
-      awayName: g.away?.market ? `${g.away.market} ${g.away.name}` : g.away?.name,
-      homeScore: g.scoring?.home_points ?? g.home_points ?? null,
-      awayScore: g.scoring?.away_points ?? g.away_points ?? null,
-      status: g.status,
+      homeName: game.home?.market
+        ? `${game.home.market} ${game.home.name}`
+        : game.home?.name,
+      awayName: game.away?.market
+        ? `${game.away.market} ${game.away.name}`
+        : game.away?.name,
+      homeScore: game.scoring?.home_points ?? game.home_points ?? null,
+      awayScore: game.scoring?.away_points ?? game.away_points ?? null,
+      status: game.status,
     };
   });
 }

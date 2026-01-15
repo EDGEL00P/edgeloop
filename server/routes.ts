@@ -219,7 +219,7 @@ export async function registerRoutes(
       const mockProps = generateMockPlayerProps(gameId);
       res.json(mockProps);
     } catch (error) {
-      console.error("Failed to fetch player props:", error);
+      logger.error({ type: "player_props_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch player props",
         message: (error as Error).message 
@@ -232,7 +232,7 @@ export async function registerRoutes(
       const news = await getNflNews();
       res.json(news);
     } catch (error) {
-      console.error("Failed to fetch NFL news:", error);
+      logger.error({ type: "nfl_news_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch NFL news",
         message: (error as Error).message 
@@ -247,7 +247,7 @@ export async function registerRoutes(
       const weather = await getWeatherForVenue(decodedVenue);
       res.json(weather);
     } catch (error) {
-      console.error("Failed to fetch weather:", error);
+      logger.error({ type: "weather_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch weather data",
         message: (error as Error).message 
@@ -269,7 +269,7 @@ export async function registerRoutes(
         gameId: game.id 
       });
     } catch (error) {
-      console.error("Failed to fetch game weather:", error);
+      logger.error({ type: "game_weather_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch weather data",
         message: (error as Error).message 
@@ -283,7 +283,7 @@ export async function registerRoutes(
       const odds = await getNflOdds(forceRefresh);
       res.json(odds);
     } catch (error) {
-      console.error("Failed to fetch NFL odds:", error);
+      logger.error({ type: "nfl_odds_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch odds data",
         message: (error as Error).message 
@@ -303,7 +303,7 @@ export async function registerRoutes(
       }
       res.json(odds);
     } catch (error) {
-      console.error("Failed to fetch game odds:", error);
+      logger.error({ type: "game_odds_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch odds data",
         message: (error as Error).message 
@@ -376,7 +376,7 @@ export async function registerRoutes(
         analyzedAt: new Date().toISOString(),
       });
     } catch (error) {
-      console.error("Failed to analyze exploits:", error);
+      logger.error({ type: "exploit_analysis_error", error: String(error) });
       res.status(500).json({
         error: "Failed to analyze exploits",
         message: (error as Error).message,
@@ -405,7 +405,7 @@ export async function registerRoutes(
         allPicks: picks,
       });
     } catch (error) {
-      console.error("Failed to generate auto picks:", error);
+      logger.error({ type: "auto_picks_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to generate auto picks",
         message: (error as Error).message 
@@ -422,7 +422,7 @@ export async function registerRoutes(
       }
       res.json(stats);
     } catch (error) {
-      console.error("Failed to fetch ESPN team stats:", error);
+      logger.error({ type: "espn_stats_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch team stats",
         message: (error as Error).message 
@@ -436,7 +436,7 @@ export async function registerRoutes(
       const injuries = await getTeamInjuries(teamId);
       res.json(injuries);
     } catch (error) {
-      console.error("Failed to fetch ESPN injuries:", error);
+      logger.error({ type: "espn_injuries_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch team injuries",
         message: (error as Error).message 
@@ -450,7 +450,7 @@ export async function registerRoutes(
       const depthChart = await getTeamDepthChart(teamId);
       res.json(depthChart);
     } catch (error) {
-      console.error("Failed to fetch ESPN depth chart:", error);
+      logger.error({ type: "espn_depth_chart_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch depth chart",
         message: (error as Error).message 
@@ -467,7 +467,7 @@ export async function registerRoutes(
       }
       res.json(matchup);
     } catch (error) {
-      console.error("Failed to fetch ESPN matchup:", error);
+      logger.error({ type: "espn_matchup_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch matchup data",
         message: (error as Error).message 
@@ -484,7 +484,7 @@ export async function registerRoutes(
         ...result
       });
     } catch (error) {
-      console.error("Failed to refresh ESPN data:", error);
+      logger.error({ type: "espn_refresh_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to refresh ESPN data",
         message: (error as Error).message 
@@ -502,7 +502,7 @@ export async function registerRoutes(
       }
       res.json(media);
     } catch (error) {
-      console.error("Failed to fetch game media:", error);
+      logger.error({ type: "game_media_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch media links",
         message: (error as Error).message 
@@ -515,7 +515,7 @@ export async function registerRoutes(
       const podcasts = getAllPodcasts();
       res.json(podcasts);
     } catch (error) {
-      console.error("Failed to fetch podcasts:", error);
+      logger.error({ type: "podcasts_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch podcasts",
         message: (error as Error).message 
@@ -528,7 +528,7 @@ export async function registerRoutes(
       const networks = getAllTvNetworks();
       res.json(networks);
     } catch (error) {
-      console.error("Failed to fetch TV networks:", error);
+      logger.error({ type: "tv_networks_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch TV networks",
         message: (error as Error).message 
@@ -545,7 +545,7 @@ export async function registerRoutes(
       }
       res.json(radio);
     } catch (error) {
-      console.error("Failed to fetch team radio:", error);
+      logger.error({ type: "team_radio_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch team radio",
         message: (error as Error).message 
@@ -776,7 +776,7 @@ export async function registerRoutes(
       let players = await storage.getAllNflPlayers();
       
       if (players.length === 0 || refresh === 'true') {
-        console.log("Fetching players from BallDontLie API...");
+        logger.info({ type: "players_fetch", message: "Fetching players from BallDontLie API" });
         let endpoint = "/players?per_page=100";
         if (team_id) endpoint += `&team_ids[]=${team_id}`;
         if (cursor) endpoint += `&cursor=${cursor}`;
@@ -804,7 +804,7 @@ export async function registerRoutes(
         } else {
           players = await storage.getAllNflPlayers();
         }
-        console.log(`Cached ${players.length} players from BallDontLie API`);
+        logger.info({ type: "players_cached", count: players.length });
         
         return res.json({
           data: players,
@@ -814,7 +814,7 @@ export async function registerRoutes(
       
       res.json({ data: players, meta: { next_cursor: null } });
     } catch (error) {
-      console.error("Failed to fetch players:", error);
+      logger.error({ type: "players_fetch_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch players from BallDontLie API",
         message: (error as Error).message 
@@ -824,7 +824,7 @@ export async function registerRoutes(
 
   app.post("/api/nfl/players/refresh", async (req, res) => {
     try {
-      console.log("Force refreshing players from BallDontLie API...");
+      logger.info({ type: "players_refresh", message: "Force refreshing players" });
       const { team_id } = req.query;
       let endpoint = "/players?per_page=100";
       if (team_id) endpoint += `&team_ids[]=${team_id}`;
@@ -866,15 +866,15 @@ export async function registerRoutes(
         pageCount++;
         
         if (pageCount >= maxPages) {
-          console.log(`Reached max pages (${maxPages}), stopping pagination`);
+          logger.info({ type: "pagination_limit", maxPages });
           break;
         }
       } while (cursor);
       
-      console.log(`Refreshed ${allPlayers.length} players from BallDontLie API`);
+      logger.info({ type: "players_refreshed", count: allPlayers.length });
       res.json({ success: true, count: allPlayers.length, players: allPlayers });
     } catch (error) {
-      console.error("Failed to refresh players:", error);
+      logger.error({ type: "players_refresh_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to refresh players from BallDontLie API",
         message: (error as Error).message 
@@ -890,7 +890,7 @@ export async function registerRoutes(
         : await storage.getAllNflGames();
       
       if (games.length === 0) {
-        console.log(`No games in cache for ${season}${week ? ` Week ${week}` : ''}, fetching from BallDontLie API...`);
+        logger.info({ type: "games_fetch", season, week: week || null });
         let endpoint = `/games?per_page=100&seasons[]=${season}`;
         if (week) endpoint += `&weeks[]=${week}`;
         
@@ -913,12 +913,12 @@ export async function registerRoutes(
         games = week 
           ? await storage.getGamesByWeek(Number(season), Number(week))
           : await storage.getAllNflGames();
-        console.log(`Cached ${games.length} games from BallDontLie API`);
+        logger.info({ type: "games_cached", count: games.length });
       }
       
       res.json(games);
     } catch (error) {
-      console.error("Failed to fetch games:", error);
+      logger.error({ type: "games_fetch_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch games from BallDontLie API",
         message: (error as Error).message 
@@ -932,7 +932,7 @@ export async function registerRoutes(
       let games = await storage.getGamesByWeek(Number(season), Number(week));
       
       if (games.length === 0) {
-        console.log(`No games in cache for ${season} Week ${week}, fetching from BallDontLie API...`);
+        logger.info({ type: "week_games_fetch", season, week });
         const endpoint = `/games?seasons[]=${season}&weeks[]=${week}&per_page=50`;
         const data = await fetchNflFromBallDontLie(endpoint);
         
@@ -952,12 +952,12 @@ export async function registerRoutes(
           });
         }
         games = await storage.getGamesByWeek(Number(season), Number(week));
-        console.log(`Cached ${games.length} games for ${season} Week ${week}`);
+        logger.info({ type: "week_games_cached", season, week, count: games.length });
       }
       
       res.json(games);
     } catch (error) {
-      console.error("Failed to fetch week games:", error);
+      logger.error({ type: "week_games_fetch_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch games from BallDontLie API",
         message: (error as Error).message 
@@ -969,7 +969,7 @@ export async function registerRoutes(
   app.post("/api/nfl/games/refresh/:season/:week", async (req, res) => {
     try {
       const { season, week } = req.params;
-      console.log(`Refreshing games for ${season} Week ${week}...`);
+      logger.info({ type: "games_refresh_start", season, week });
       
       const endpoint = `/games?seasons[]=${season}&weeks[]=${week}&per_page=50`;
       const data = await fetchNflFromBallDontLie(endpoint);
@@ -992,10 +992,10 @@ export async function registerRoutes(
         games.push(saved);
       }
       
-      console.log(`Refreshed ${games.length} games from BallDontLie API`);
+      logger.info({ type: "games_refreshed", count: games.length });
       res.json({ success: true, count: games.length, games });
     } catch (error) {
-      console.error("Failed to refresh games:", error);
+      logger.error({ type: "games_refresh_error", error: String(error) });
       res.status(500).json({ error: "Failed to refresh games from API", message: (error as Error).message });
     }
   });
@@ -1006,7 +1006,7 @@ export async function registerRoutes(
       const metrics = await storage.getWeeklyMetrics(Number(season), Number(week));
       res.json(metrics);
     } catch (error) {
-      console.error("Failed to fetch metrics:", error);
+      logger.error({ type: "metrics_fetch_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch metrics",
         message: (error as Error).message 
@@ -1020,7 +1020,7 @@ export async function registerRoutes(
       const signals = await storage.getExploitSignals(Number(season), Number(week));
       res.json(signals);
     } catch (error) {
-      console.error("Failed to fetch exploit signals:", error);
+      logger.error({ type: "exploit_signals_fetch_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to fetch exploit signals",
         message: (error as Error).message 
@@ -1176,7 +1176,7 @@ export async function registerRoutes(
       const record = await getTeamAtsRecord(team, seasons);
       res.json(record);
     } catch (error) {
-      console.error("Failed to get ATS record:", error);
+      logger.error({ type: "ats_record_error", error: String(error) });
       res.status(500).json({ error: "Failed to get team ATS record" });
     }
   });
@@ -1187,7 +1187,7 @@ export async function registerRoutes(
       const record = await getTeamOverUnderRecord(team);
       res.json(record);
     } catch (error) {
-      console.error("Failed to get O/U record:", error);
+      logger.error({ type: "ou_record_error", error: String(error) });
       res.status(500).json({ error: "Failed to get team over/under record" });
     }
   });
@@ -1201,7 +1201,7 @@ export async function registerRoutes(
       const prediction = await predictSpread(homeTeam, awayTeam, spread);
       res.json(prediction);
     } catch (error) {
-      console.error("Failed to predict spread:", error);
+      logger.error({ type: "spread_prediction_error", error: String(error) });
       res.status(500).json({ error: "Failed to predict spread outcome" });
     }
   });
@@ -1215,7 +1215,7 @@ export async function registerRoutes(
       const prediction = await predictTotal(homeTeam, awayTeam, total);
       res.json(prediction);
     } catch (error) {
-      console.error("Failed to predict total:", error);
+      logger.error({ type: "total_prediction_error", error: String(error) });
       res.status(500).json({ error: "Failed to predict over/under outcome" });
     }
   });
@@ -1239,7 +1239,7 @@ export async function registerRoutes(
         totalPrediction
       });
     } catch (error) {
-      console.error("Failed to analyze matchup:", error);
+      logger.error({ type: "matchup_analysis_error", error: String(error) });
       res.status(500).json({ error: "Failed to analyze matchup" });
     }
   });
@@ -1265,7 +1265,7 @@ export async function registerRoutes(
         }
       });
     } catch (error) {
-      console.error("Failed to get betting trends:", error);
+      logger.error({ type: "betting_trends_error", error: String(error) });
       res.status(500).json({ error: "Failed to get betting trends" });
     }
   });
@@ -1364,7 +1364,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
         }
       });
     } catch (error) {
-      console.error("Failed to generate AI analysis:", error);
+      logger.error({ type: "ai_analysis_error", error: String(error) });
       res.status(500).json({ error: "Failed to generate AI betting analysis" });
     }
   });
@@ -1388,7 +1388,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       });
       res.json({ analysis });
     } catch (error) {
-      console.error("Quick analysis error:", error);
+      logger.error({ type: "quick_analysis_error", error: String(error) });
       res.status(500).json({ error: "Failed to generate quick analysis" });
     }
   });
@@ -1412,7 +1412,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       });
       res.json({ analysis });
     } catch (error) {
-      console.error("Team analysis error:", error);
+      logger.error({ type: "team_analysis_error", error: String(error) });
       res.status(500).json({ error: "Failed to generate team analysis" });
     }
   });
@@ -1434,7 +1434,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       });
       res.json({ analysis });
     } catch (error) {
-      console.error("Matchup analysis error:", error);
+      logger.error({ type: "matchup_ai_error", error: String(error) });
       res.status(500).json({ error: "Failed to generate matchup analysis" });
     }
   });
@@ -1456,7 +1456,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       });
       res.json({ analysis });
     } catch (error) {
-      console.error("Exploit analysis error:", error);
+      logger.error({ type: "exploit_ai_error", error: String(error) });
       res.status(500).json({ error: "Failed to generate exploit analysis" });
     }
   });
@@ -1482,7 +1482,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       const result = await runAgentSwarmAnalysis(input);
       res.json(result);
     } catch (error) {
-      console.error("Agent swarm analysis error:", error);
+      logger.error({ type: "agent_swarm_error", error: String(error) });
       res.status(500).json({ error: "Failed to run agent swarm analysis" });
     }
   });
@@ -1512,7 +1512,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       );
       res.json(result);
     } catch (error) {
-      console.error("Monte Carlo simulation error:", error);
+      logger.error({ type: "monte_carlo_error", error: String(error) });
       res.status(500).json({ error: "Failed to run Monte Carlo simulation" });
     }
   });
@@ -1546,7 +1546,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
 
       res.json(result);
     } catch (error) {
-      console.error("Kelly criterion calculation error:", error);
+      logger.error({ type: "kelly_criterion_error", error: String(error) });
       res.status(500).json({ error: "Failed to calculate Kelly criterion" });
     }
   });
@@ -1562,7 +1562,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       const result = await GeminiService.analyzeBettingValue(game, historicalStats || {});
       res.json(result);
     } catch (error) {
-      console.error("Betting value analysis error:", error);
+      logger.error({ type: "betting_value_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to analyze betting value",
         message: (error as Error).message 
@@ -1581,7 +1581,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       const result = await GeminiService.predictGameOutcome(homeTeam, awayTeam, stats || {});
       res.json(result);
     } catch (error) {
-      console.error("Game prediction error:", error);
+      logger.error({ type: "game_prediction_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to predict game outcome",
         message: (error as Error).message 
@@ -1600,7 +1600,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       const result = await GeminiService.analyzeInjuryImpact(injuries);
       res.json(result);
     } catch (error) {
-      console.error("Injury impact analysis error:", error);
+      logger.error({ type: "injury_impact_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to analyze injury impact",
         message: (error as Error).message 
@@ -1619,7 +1619,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
       const result = await GeminiService.generatePicksNarrative(picks);
       res.json(result);
     } catch (error) {
-      console.error("Picks narrative generation error:", error);
+      logger.error({ type: "picks_narrative_error", error: String(error) });
       res.status(500).json({ 
         error: "Failed to generate picks narrative",
         message: (error as Error).message 
@@ -1727,7 +1727,7 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
   });
 
   startAutoRefresh();
-  console.log("Auto-refresh system started");
+  logger.info({ type: "auto_refresh_started" });
 
   return httpServer;
 }

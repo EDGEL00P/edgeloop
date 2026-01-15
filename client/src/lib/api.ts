@@ -180,7 +180,7 @@ interface ExploitSignal {
   confidence: number;
   status: string;
   thresholdMet: boolean | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
 }
 
