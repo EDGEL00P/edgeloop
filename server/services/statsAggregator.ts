@@ -1,13 +1,20 @@
 import {
   NFL_STATS_SOURCES,
   getStatSourcesByCategory,
-  getEnabledStatSources,
-  fetchStatSource,
-  StatSource
+  fetchStatSource
 } from "./statsSources";
 import { db } from "../db";
 import { nflPlayers, weeklyMetrics, nflTeams } from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
+import { logger } from "../infrastructure/logger";
+
+type StatValue = number | string | boolean | null;
+type StatRecord = Record<string, StatValue>;
+type UnknownRecord = Record<string, unknown>;
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
 
 export interface PlayerStatLine {
   playerId: number;
@@ -16,7 +23,7 @@ export interface PlayerStatLine {
   position: string;
   season: number;
   week?: number;
-  stats: Record<string, any>;
+  stats: StatRecord;
   source: string;
   fetchedAt: Date;
 }
@@ -92,7 +99,7 @@ export interface AggregatedPlayerStats {
 }
 
 export class StatsAggregator {
-  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private cacheDuration = 60 * 60 * 1000; // 1 hour
 
   private getCacheKey(source: string, filters?: Record<string, string>): string {
@@ -100,16 +107,53 @@ export class StatsAggregator {
     return `${source}:${filterStr}`;
   }
 
-  private getFromCache(key: string): any | null {
+  private getFromCache<T>(key: string): T | null {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
-      return cached.data;
+      return cached.data as T;
     }
     return null;
   }
 
-  private setCache(key: string, data: any): void {
+  private setCache<T>(key: string, data: T): void {
     this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private isRecord(value: unknown): value is UnknownRecord {
+    return typeof value === "object" && value !== null;
+  }
+
+  private readNumber(record: UnknownRecord, keys: string[], fallback = 0): number {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === "number" && !Number.isNaN(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+    }
+    return fallback;
+  }
+
+  private readString(record: UnknownRecord, keys: string[], fallback = ""): string {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value;
+      }
+    }
+    return fallback;
+  }
+
+  private getSourceKeyByName(sourceName: string): string | null {
+    const entry = Object.entries(NFL_STATS_SOURCES).find(([, source]) => source.name === sourceName);
+    return entry ? entry[0] : null;
+  }
+
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   async fetchAllPassingStats(season?: number): Promise<PlayerStatLine[]> {
@@ -122,14 +166,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizePassingStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -146,14 +197,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizeRushingStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -170,14 +228,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizeReceivingStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -192,14 +257,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizeDefenseStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -214,14 +286,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizeSpecialTeamsStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -236,14 +315,21 @@ export class StatsAggregator {
     for (const source of sources) {
       try {
         const filters = season ? { season: season.toString() } : undefined;
-        const data = await fetchStatSource(Object.keys(NFL_STATS_SOURCES).find(
-          key => NFL_STATS_SOURCES[key].name === source.name
-        ) || "", filters);
+        const sourceKey = this.getSourceKeyByName(source.name);
+        if (!sourceKey) {
+          logger.warn({ type: "stats_source_missing", source: source.name });
+          continue;
+        }
+        const data = await fetchStatSource(sourceKey, filters);
 
         const stats = this.normalizeNextGenStats(data, source.name);
         allStats.push(...stats);
       } catch (error) {
-        console.error(`Error fetching from ${source.name}:`, error);
+        logger.error({
+          type: "stats_fetch_error",
+          source: source.name,
+          message: this.getErrorMessage(error),
+        });
       }
     }
 
@@ -300,7 +386,11 @@ export class StatsAggregator {
 
       return stats;
     } catch (error) {
-      console.error(`Error aggregating stats for player ${playerId}:`, error);
+      logger.error({
+        type: "stats_aggregate_error",
+        playerId,
+        message: this.getErrorMessage(error),
+      });
       return null;
     }
   }
@@ -315,28 +405,28 @@ export class StatsAggregator {
 
     try {
       const [passing, rushing, receiving, defense, specialTeams, nextGen] = await Promise.all([
-        this.fetchAllPassingStats(season).catch(e => {
-          errors.push(`Passing: ${e.message}`);
+        this.fetchAllPassingStats(season).catch((e: unknown) => {
+          errors.push(`Passing: ${this.getErrorMessage(e)}`);
           return [];
         }),
-        this.fetchAllRushingStats(season).catch(e => {
-          errors.push(`Rushing: ${e.message}`);
+        this.fetchAllRushingStats(season).catch((e: unknown) => {
+          errors.push(`Rushing: ${this.getErrorMessage(e)}`);
           return [];
         }),
-        this.fetchAllReceivingStats(season).catch(e => {
-          errors.push(`Receiving: ${e.message}`);
+        this.fetchAllReceivingStats(season).catch((e: unknown) => {
+          errors.push(`Receiving: ${this.getErrorMessage(e)}`);
           return [];
         }),
-        this.fetchAllDefenseStats(season).catch(e => {
-          errors.push(`Defense: ${e.message}`);
+        this.fetchAllDefenseStats(season).catch((e: unknown) => {
+          errors.push(`Defense: ${this.getErrorMessage(e)}`);
           return [];
         }),
-        this.fetchAllSpecialTeamsStats(season).catch(e => {
-          errors.push(`Special Teams: ${e.message}`);
+        this.fetchAllSpecialTeamsStats(season).catch((e: unknown) => {
+          errors.push(`Special Teams: ${this.getErrorMessage(e)}`);
           return [];
         }),
-        this.fetchNextGenStats(season).catch(e => {
-          errors.push(`NextGen: ${e.message}`);
+        this.fetchNextGenStats(season).catch((e: unknown) => {
+          errors.push(`NextGen: ${this.getErrorMessage(e)}`);
           return [];
         })
       ]);
@@ -358,29 +448,33 @@ export class StatsAggregator {
         errors
       };
     } catch (error) {
-      console.error("Error refreshing all stats:", error);
+      logger.error({
+        type: "stats_refresh_error",
+        message: this.getErrorMessage(error),
+      });
       throw error;
     }
   }
 
-  private normalizePassingStats(data: any, source: string): PlayerStatLine[] {
+  private normalizePassingStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "QB",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"], "QB"),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            attempts: player.attempts || player.att || 0,
-            completions: player.completions || player.comp || 0,
-            yards: player.yards || player.yds || 0,
-            touchdowns: player.touchdowns || player.tds || player.td || 0,
-            interceptions: player.interceptions || player.ints || player.int || 0,
-            rating: player.rating || player.passRating || 0
+            attempts: this.readNumber(player, ["attempts", "att"]),
+            completions: this.readNumber(player, ["completions", "comp"]),
+            yards: this.readNumber(player, ["yards", "yds"]),
+            touchdowns: this.readNumber(player, ["touchdowns", "tds", "td"]),
+            interceptions: this.readNumber(player, ["interceptions", "ints", "int"]),
+            rating: this.readNumber(player, ["rating", "passRating"]),
           },
           source,
           fetchedAt: new Date()
@@ -391,22 +485,23 @@ export class StatsAggregator {
     return stats;
   }
 
-  private normalizeRushingStats(data: any, source: string): PlayerStatLine[] {
+  private normalizeRushingStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "RB",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"], "RB"),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            attempts: player.attempts || player.att || 0,
-            yards: player.yards || player.yds || 0,
-            touchdowns: player.touchdowns || player.tds || player.td || 0,
-            yardsPerAttempt: player.yardsPerAttempt || player.ydsPerAtt || player.ypa || 0
+            attempts: this.readNumber(player, ["attempts", "att"]),
+            yards: this.readNumber(player, ["yards", "yds"]),
+            touchdowns: this.readNumber(player, ["touchdowns", "tds", "td"]),
+            yardsPerAttempt: this.readNumber(player, ["yardsPerAttempt", "ydsPerAtt", "ypa"]),
           },
           source,
           fetchedAt: new Date()
@@ -417,23 +512,24 @@ export class StatsAggregator {
     return stats;
   }
 
-  private normalizeReceivingStats(data: any, source: string): PlayerStatLine[] {
+  private normalizeReceivingStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "WR",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"], "WR"),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            targets: player.targets || player.tgt || 0,
-            receptions: player.receptions || player.rec || 0,
-            yards: player.yards || player.yds || 0,
-            touchdowns: player.touchdowns || player.tds || player.td || 0,
-            yardsPerReception: player.yardsPerReception || player.ydsPerRec || player.ypRec || 0
+            targets: this.readNumber(player, ["targets", "tgt"]),
+            receptions: this.readNumber(player, ["receptions", "rec"]),
+            yards: this.readNumber(player, ["yards", "yds"]),
+            touchdowns: this.readNumber(player, ["touchdowns", "tds", "td"]),
+            yardsPerReception: this.readNumber(player, ["yardsPerReception", "ydsPerRec", "ypRec"]),
           },
           source,
           fetchedAt: new Date()
@@ -444,23 +540,24 @@ export class StatsAggregator {
     return stats;
   }
 
-  private normalizeDefenseStats(data: any, source: string): PlayerStatLine[] {
+  private normalizeDefenseStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "LB",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"], "LB"),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            tackles: player.tackles || player.tack || player.tkl || 0,
-            sacks: player.sacks || player.sck || 0,
-            interceptions: player.interceptions || player.ints || player.int || 0,
-            passesDefended: player.passesDefended || player.pd || player.passDef || 0,
-            forcedFumbles: player.forcedFumbles || player.ff || 0
+            tackles: this.readNumber(player, ["tackles", "tack", "tkl"]),
+            sacks: this.readNumber(player, ["sacks", "sck"]),
+            interceptions: this.readNumber(player, ["interceptions", "ints", "int"]),
+            passesDefended: this.readNumber(player, ["passesDefended", "pd", "passDef"]),
+            forcedFumbles: this.readNumber(player, ["forcedFumbles", "ff"]),
           },
           source,
           fetchedAt: new Date()
@@ -471,24 +568,25 @@ export class StatsAggregator {
     return stats;
   }
 
-  private normalizeSpecialTeamsStats(data: any, source: string): PlayerStatLine[] {
+  private normalizeSpecialTeamsStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "K",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"], "K"),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            fieldGoalsMade: player.fieldGoalsMade || player.fgMade || player.fgm || 0,
-            fieldGoalsAttempted: player.fieldGoalsAttempted || player.fgAttempted || player.fga || 0,
-            extraPointsMade: player.extraPointsMade || player.xpMade || player.xpm || 0,
-            extraPointsAttempted: player.extraPointsAttempted || player.xpAttempted || player.xpa || 0,
-            punts: player.punts || 0,
-            puntAverage: player.puntAverage || player.puntAvg || player.pAvg || 0
+            fieldGoalsMade: this.readNumber(player, ["fieldGoalsMade", "fgMade", "fgm"]),
+            fieldGoalsAttempted: this.readNumber(player, ["fieldGoalsAttempted", "fgAttempted", "fga"]),
+            extraPointsMade: this.readNumber(player, ["extraPointsMade", "xpMade", "xpm"]),
+            extraPointsAttempted: this.readNumber(player, ["extraPointsAttempted", "xpAttempted", "xpa"]),
+            punts: this.readNumber(player, ["punts"]),
+            puntAverage: this.readNumber(player, ["puntAverage", "puntAvg", "pAvg"]),
           },
           source,
           fetchedAt: new Date()
@@ -499,25 +597,26 @@ export class StatsAggregator {
     return stats;
   }
 
-  private normalizeNextGenStats(data: any, source: string): PlayerStatLine[] {
+  private normalizeNextGenStats(data: unknown, source: string): PlayerStatLine[] {
     const stats: PlayerStatLine[] = [];
 
     if (Array.isArray(data)) {
       for (const player of data) {
+        if (!this.isRecord(player)) continue;
         stats.push({
-          playerId: player.id || 0,
-          playerName: player.name || `${player.firstName || ""} ${player.lastName || ""}`,
-          team: player.team || "",
-          position: player.position || "",
-          season: player.season || new Date().getFullYear(),
+          playerId: this.readNumber(player, ["id", "playerId", "player_id"]),
+          playerName: this.readString(player, ["name"], `${this.readString(player, ["firstName", "first_name"])} ${this.readString(player, ["lastName", "last_name"])}`.trim()),
+          team: this.readString(player, ["team", "teamAbbr", "team_abbr"]),
+          position: this.readString(player, ["position"]),
+          season: this.readNumber(player, ["season"], new Date().getFullYear()),
           stats: {
-            epa: player.epa || player.expectedPointsAdded || 0,
-            cpoe: player.cpoe || player.completionPercentageOverExpected || 0,
-            successRate: player.successRate || 0,
-            airYards: player.airYards || 0,
-            topSpeed: player.topSpeed || 0,
-            longestRun: player.longestRun || 0,
-            longestPass: player.longestPass || 0
+            epa: this.readNumber(player, ["epa", "expectedPointsAdded"]),
+            cpoe: this.readNumber(player, ["cpoe", "completionPercentageOverExpected"]),
+            successRate: this.readNumber(player, ["successRate"]),
+            airYards: this.readNumber(player, ["airYards"]),
+            topSpeed: this.readNumber(player, ["topSpeed"]),
+            longestRun: this.readNumber(player, ["longestRun"]),
+            longestPass: this.readNumber(player, ["longestPass"]),
           },
           source,
           fetchedAt: new Date()
@@ -529,10 +628,8 @@ export class StatsAggregator {
   }
 }
 
-export type {
-  NFL_STATS_SOURCES,
-  StatSource
-} from "./statsSources";
+export { NFL_STATS_SOURCES } from "./statsSources";
+export type { StatSource } from "./statsSources";
 
 export {
   getStatSourcesByCategory,

@@ -85,6 +85,39 @@ export interface SGMRecommendation {
   recommendationRating: "strong" | "moderate" | "weak" | "pass";
 }
 
+interface HistoricalProjection {
+  average: number;
+  stdDev: number;
+  samples: number;
+}
+
+interface RecentForm {
+  average: number;
+  trend: number;
+}
+
+interface MatchupFactors {
+  opponentDefensiveRank: number;
+  paceMatchup: number;
+  weatherImpact: number;
+  injuryImpact: number;
+  trend: number;
+}
+
+interface WeatherImpact {
+  value: number;
+  direction: number;
+}
+
+interface WeeklyMetricLike {
+  epaPerPlay?: number | null;
+}
+
+interface PlayerLike {
+  id: number;
+  teamId?: number | null;
+}
+
 export class PropPredictionEngine {
   private readonly PROP_TYPES = {
     passing_yards: { baseLine: 275, stdDev: 45 },
@@ -133,7 +166,7 @@ export class PropPredictionEngine {
       if (!propConfig) throw new Error(`Unknown prop type: ${propType}`);
       
       const historicalData = this.getHistoricalProjection(playerId, propType, propConfig);
-      const recentForm = this.calculateRecentForm(metrics, propType);
+      const recentForm = this.calculateRecentForm(metrics);
       const matchupFactors = await this.calculateMatchupFactors(player, propType);
       const weatherImpact = await this.getWeatherImpact(playerTeam?.id || 0);
       
@@ -367,7 +400,7 @@ export class PropPredictionEngine {
     };
   }
 
-  private calculateRecentForm(metrics: any[], propType: string) {
+  private calculateRecentForm(metrics: WeeklyMetricLike[]): RecentForm {
     if (metrics.length === 0) {
       return { average: 65, trend: 0 };
     }
@@ -385,20 +418,26 @@ export class PropPredictionEngine {
     };
   }
 
-  private async calculateMatchupFactors(player: any, propType: string) {
+  private async calculateMatchupFactors(_player: PlayerLike, _propType: string): Promise<MatchupFactors> {
     return {
       opponentDefensiveRank: 10 + Math.floor(Math.random() * 20),
       paceMatchup: 0.3 + Math.random() * 0.4,
       weatherImpact: 0,
-      injuryImpact: 0
+      injuryImpact: 0,
+      trend: 0,
     };
   }
 
-  private async getWeatherImpact(teamId: number) {
+  private async getWeatherImpact(_teamId: number): Promise<WeatherImpact> {
     return { value: 0, direction: 1 };
   }
 
-  private combineModels(historical: any, recent: any, matchup: any, weather: any) {
+  private combineModels(
+    historical: HistoricalProjection,
+    recent: RecentForm,
+    matchup: MatchupFactors,
+    weather: WeatherImpact
+  ) {
     const predictedLine = historical.average * 0.35 + 
                           recent.average * 0.35 + 
                           historical.average * (1 + matchup.trend) * 0.20 +
@@ -415,7 +454,11 @@ export class PropPredictionEngine {
     return (probability * decimalOdds) - 1;
   }
 
-  private calculateConfidence(historical: any, recent: any, matchup: any) {
+  private calculateConfidence(
+    historical: HistoricalProjection,
+    recent: RecentForm,
+    matchup: MatchupFactors
+  ) {
     const sampleBonus = Math.min(historical.samples / 16, 0.15);
     const trendBonus = Math.abs(recent.trend) * 0.1;
     const base = 0.50;

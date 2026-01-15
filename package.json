@@ -11,13 +11,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "tsc",
+    "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
     "lint": "next lint",
     "format": "prettier --write .",
-    "nx": "nx",
+    "format:check": "prettier --check .",
     "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "postinstall": "echo '✅ Dependencies installed'"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",

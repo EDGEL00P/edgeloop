@@ -3,7 +3,7 @@ import { pgTable, text, varchar, integer, real, timestamp, jsonb, boolean } from
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Export auth models for Replit Auth
+// Export auth models (users, sessions)
 export * from "./models/auth";
 
 export const nflTeams = pgTable("nfl_teams", {
@@ -87,7 +87,7 @@ export const exploitSignals = pgTable("exploit_signals", {
   confidence: real("confidence").notNull(),
   status: text("status").notNull(),
   thresholdMet: boolean("threshold_met").default(false),
-  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -139,29 +139,8 @@ export const insertDataImportSchema = createInsertSchema(dataImports).omit({ las
 export type InsertDataImport = z.infer<typeof insertDataImportSchema>;
 export type DataImport = typeof dataImports.$inferSelect;
 
-import { serial } from "drizzle-orm/pg-core";
-
-export const conversations = pgTable("conversations", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true });
-export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Conversation = typeof conversations.$inferSelect;
-
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  conversationId: integer("conversation_id").notNull(),
-  role: text("role").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
+// Export chat models from the single source of truth.
+export * from "./models/chat";
 
 export const historicalGames = pgTable("historical_games", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

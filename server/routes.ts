@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDataImportSchema } from "@shared/schema";
-import { registerChatRoutes } from "./replit_integrations/chat";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { registerChatRoutes } from "./chat";
+import { setupAuth, registerAuthRoutes } from "./auth";
 import { OmniEngine } from "./analytics/omniEngine";
 import {
   AgentSwarm,
@@ -34,6 +34,7 @@ import { dataRouter, getTeams as getRouterTeams, getGames as getRouterGames } fr
 import { startAutoRefresh, getRefreshStatus, getSyncTimes } from "./services/autoRefresh";
 import { AutoPicksService, generateAutoPicks, getTopPicks } from "./services/autoPicksService";
 import { metrics } from "./infrastructure/metrics";
+import { logger } from "./infrastructure/logger";
 import { circuitBreakerManager } from "./infrastructure/circuit-breaker";
 import { rateLimiterManager } from "./infrastructure/rate-limiter";
 import { CacheService } from "./infrastructure/cache";
@@ -79,7 +80,20 @@ function generateMockPlayerProps(gameId: string) {
     { type: "sacks", category: "Defense", positions: ["LB", "DE"], lines: [0.5, 1.5] },
   ];
 
-  const props: any[] = [];
+  interface MockProp {
+    id: string;
+    gameId: number;
+    playerId: number;
+    playerName: string;
+    teamAbbreviation: string;
+    position: string;
+    propType: string;
+    line: number;
+    odds: number;
+    description: string;
+  }
+
+  const props: MockProp[] = [];
   let propId = 1;
 
   players.forEach(player => {
@@ -113,14 +127,49 @@ function normalizeDivision(division: string): string {
   return division.charAt(0).toUpperCase() + division.slice(1).toLowerCase();
 }
 
-async function fetchNflFromBallDontLie(endpoint: string): Promise<any> {
+interface BallDontLieTeam {
+  id: number;
+  conference?: string;
+  division?: string;
+  location?: string;
+  name?: string;
+  full_name?: string;
+  abbreviation?: string;
+}
+
+interface BallDontLieTeamsResponse {
+  data?: BallDontLieTeam[];
+  meta?: { next_cursor?: string | null };
+}
+
+interface BallDontLiePlayer {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  position?: string | null;
+  position_abbreviation?: string | null;
+  height?: string | null;
+  weight?: string | null;
+  jersey_number?: string | null;
+  college?: string | null;
+  experience?: string | null;
+  age?: number | null;
+  team?: { id?: number | null };
+}
+
+interface BallDontLiePlayersResponse {
+  data?: BallDontLiePlayer[];
+  meta?: { next_cursor?: string | null };
+}
+
+async function fetchNflFromBallDontLie(endpoint: string): Promise<unknown> {
   const apiKey = process.env.BALLDONTLIE_API_KEY;
   if (!apiKey) {
     throw new Error("BALLDONTLIE_API_KEY not configured");
   }
 
   const url = `${BALLDONTLIE_NFL_API_URL}${endpoint}`;
-  console.log(`Fetching NFL data from: ${url}`);
+  logger.info({ type: "balldontlie_fetch", url });
   
   const response = await fetch(url, {
     headers: {
@@ -130,7 +179,7 @@ async function fetchNflFromBallDontLie(endpoint: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`BallDontLie API error: ${response.status} - ${errorText}`);
+    logger.error({ type: "balldontlie_error", status: response.status, error: errorText });
     throw new Error(`BallDontLie API error: ${response.status}`);
   }
 
@@ -507,7 +556,7 @@ export async function registerRoutes(
   // Python Singularity Engine Proxy Routes
   const PYTHON_ENGINE_URL = 'http://localhost:8000';
   
-  async function proxyToPython(path: string, method: 'GET' | 'POST', body?: any): Promise<any> {
+  async function proxyToPython(path: string, method: 'GET' | 'POST', body?: unknown): Promise<unknown> {
     try {
       const response = await fetch(`${PYTHON_ENGINE_URL}${path}`, {
         method,
@@ -519,7 +568,7 @@ export async function registerRoutes(
       }
       return response.json();
     } catch (error) {
-      console.error('Python engine proxy error:', error);
+      logger.error({ type: "python_proxy_error", error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   }
@@ -658,8 +707,8 @@ export async function registerRoutes(
       let teams = await storage.getAllNflTeams();
       
       if (teams.length === 0) {
-        console.log("No teams in cache, fetching from BallDontLie API...");
-        const data = await fetchNflFromBallDontLie("/teams");
+        logger.info({ type: "teams_cache_miss", source: "balldontlie" });
+        const data = await fetchNflFromBallDontLie("/teams") as BallDontLieTeamsResponse;
         for (const team of data.data || []) {
           await storage.upsertNflTeam({
             id: team.id,
@@ -672,12 +721,12 @@ export async function registerRoutes(
           });
         }
         teams = await storage.getAllNflTeams();
-        console.log(`Cached ${teams.length} teams from BallDontLie API`);
+        logger.info({ type: "teams_cache_populated", count: teams.length });
       }
       
       res.json(teams);
     } catch (error) {
-      console.error("Failed to fetch teams:", error);
+      logger.error({ type: "teams_fetch_failed", error: error instanceof Error ? error.message : String(error) });
       res.status(500).json({ 
         error: "Failed to fetch teams from BallDontLie API",
         message: (error as Error).message 
@@ -687,8 +736,8 @@ export async function registerRoutes(
 
   app.post("/api/nfl/teams/refresh", async (_req, res) => {
     try {
-      console.log("Force refreshing teams from BallDontLie API...");
-      const data = await fetchNflFromBallDontLie("/teams");
+      logger.info({ type: "teams_refresh_start" });
+      const data = await fetchNflFromBallDontLie("/teams") as BallDontLieTeamsResponse;
       const teams = [];
       for (const team of data.data || []) {
         const saved = await storage.upsertNflTeam({
@@ -702,10 +751,10 @@ export async function registerRoutes(
         });
         teams.push(saved);
       }
-      console.log(`Refreshed ${teams.length} teams from BallDontLie API`);
+      logger.info({ type: "teams_refresh_complete", count: teams.length });
       res.json({ success: true, count: teams.length, teams });
     } catch (error) {
-      console.error("Failed to refresh teams:", error);
+      logger.error({ type: "teams_refresh_failed", error: error instanceof Error ? error.message : String(error) });
       res.status(500).json({ 
         error: "Failed to refresh teams from BallDontLie API",
         message: (error as Error).message 
@@ -780,29 +829,35 @@ export async function registerRoutes(
       let endpoint = "/players?per_page=100";
       if (team_id) endpoint += `&team_ids[]=${team_id}`;
       
-      let allPlayers: any[] = [];
+      let allPlayers: Array<Awaited<ReturnType<typeof storage.upsertNflPlayer>>> = [];
       let cursor: string | null = null;
       let pageCount = 0;
       const maxPages = 20;
       
       do {
         const fetchEndpoint = cursor ? `${endpoint}&cursor=${cursor}` : endpoint;
-        const data = await fetchNflFromBallDontLie(fetchEndpoint);
+        const data = await fetchNflFromBallDontLie(fetchEndpoint) as {
+          data?: Array<Record<string, unknown>>;
+          meta?: { next_cursor?: string | null };
+        };
         
         for (const player of data.data || []) {
+          const playerRecord = player as Record<string, unknown>;
           const saved = await storage.upsertNflPlayer({
-            id: player.id,
-            firstName: player.first_name || "",
-            lastName: player.last_name || "",
-            position: player.position || null,
-            positionAbbreviation: player.position_abbreviation || null,
-            height: player.height || null,
-            weight: player.weight || null,
-            jerseyNumber: player.jersey_number || null,
-            college: player.college || null,
-            experience: player.experience || null,
-            age: player.age || null,
-            teamId: player.team?.id || null,
+            id: Number(playerRecord.id),
+            firstName: typeof playerRecord.first_name === "string" ? playerRecord.first_name : "",
+            lastName: typeof playerRecord.last_name === "string" ? playerRecord.last_name : "",
+            position: typeof playerRecord.position === "string" ? playerRecord.position : null,
+            positionAbbreviation: typeof playerRecord.position_abbreviation === "string" ? playerRecord.position_abbreviation : null,
+            height: typeof playerRecord.height === "string" ? playerRecord.height : null,
+            weight: typeof playerRecord.weight === "string" ? playerRecord.weight : null,
+            jerseyNumber: typeof playerRecord.jersey_number === "string" ? playerRecord.jersey_number : null,
+            college: typeof playerRecord.college === "string" ? playerRecord.college : null,
+            experience: typeof playerRecord.experience === "string" ? playerRecord.experience : null,
+            age: typeof playerRecord.age === "number" ? playerRecord.age : null,
+            teamId: typeof (playerRecord.team as { id?: unknown } | undefined)?.id === "number"
+              ? (playerRecord.team as { id: number }).id
+              : null,
           });
           allPlayers.push(saved);
         }

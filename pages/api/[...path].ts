@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { Server } from "http";
 import { createServer } from "http";
-import express from "express";
+import express, { type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { registerRoutes } from "../../server/routes";
 
 /**
@@ -45,5 +45,5 @@ export const config = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const bundle = await getExpressBundle();
   await bundle.ready;
-  bundle.app(req as any, res as any);
+  bundle.app(req as unknown as ExpressRequest, res as unknown as ExpressResponse);
 }

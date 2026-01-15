@@ -1,5 +1,4 @@
 import { CacheService, CacheKeys, CacheTTL } from "../infrastructure/cache";
-import { eq, and, or } from "drizzle-orm";
 import { circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { apiLimiters } from "../infrastructure/rate-limiter";
 import { logger } from "../infrastructure/logger";
@@ -7,17 +6,219 @@ import { withHealth } from "../health/withHealth";
 import { SportradarService } from "./sportradarService";
 import { RapidApiNflService } from "./rapidApiNflService";
 
-interface DataSource {
+type JsonRecord = Record<string, unknown>;
+
+interface DataSource<T> {
   name: string;
   priority: number;
-  fetch: () => Promise<any>;
+  fetch: () => Promise<T>;
   isAvailable: () => boolean;
 }
 
-interface RouterConfig {
+interface RouterConfig<T> {
   cacheKey: string;
   cacheTTL: number;
-  sources: DataSource[];
+  sources: Array<DataSource<T>>;
+}
+
+interface TeamSummary {
+  id: string;
+  abbreviation?: string;
+  name?: string;
+  fullName?: string;
+  location?: string;
+}
+
+interface GameTeamSide {
+  team: {
+    id?: string;
+    abbreviation?: string;
+    displayName?: string;
+  };
+  score?: number | null;
+  homeAway?: "home" | "away";
+}
+
+interface GameSummary {
+  id: string;
+  date?: string;
+  status?: string;
+  home_team?: GameTeamSide;
+  away_team?: GameTeamSide;
+  venue?: string;
+}
+
+interface TeamListResponse {
+  data: TeamSummary[];
+  raw?: unknown;
+}
+
+interface GamesResponse {
+  data: GameSummary[];
+  raw?: unknown;
+}
+
+interface PlayerStatsResponse {
+  data: unknown;
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  return typeof value === "object" && value !== null ? (value as JsonRecord) : null;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function toString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return undefined;
+}
+
+function mapSportradarTeams(raw: unknown): TeamSummary[] {
+  const record = asRecord(raw);
+  const teams = asArray(record?.teams);
+  return teams
+    .map((team) => {
+      const teamRecord = asRecord(team);
+      if (!teamRecord) return null;
+      const id = toString(teamRecord.id);
+      if (!id) return null;
+      const name = toString(teamRecord.name);
+      const market = toString(teamRecord.market);
+      return {
+        id,
+        abbreviation: toString(teamRecord.alias),
+        name,
+        fullName: market && name ? `${market} ${name}` : name,
+        location: market,
+      };
+    })
+    .filter((team): team is TeamSummary => team !== null);
+}
+
+function mapEspnTeams(raw: unknown): TeamSummary[] {
+  const record = asRecord(raw);
+  const sports = asArray(record?.sports);
+  const leagues = asArray(asRecord(sports[0])?.leagues);
+  const teams = asArray(asRecord(leagues[0])?.teams);
+  return teams
+    .map((entry) => {
+      const entryRecord = asRecord(entry);
+      const team = asRecord(entryRecord?.team);
+      if (!team) return null;
+      const id = toString(team.id);
+      if (!id) return null;
+      return {
+        id,
+        abbreviation: toString(team.abbreviation),
+        name: toString(team.shortDisplayName),
+        fullName: toString(team.displayName),
+        location: toString(team.location),
+      };
+    })
+    .filter((team): team is TeamSummary => team !== null);
+}
+
+function mapSportradarGames(raw: unknown): GameSummary[] {
+  const record = asRecord(raw);
+  const week = asRecord(record?.week);
+  const games = asArray(week?.games ?? record?.games);
+  return games
+    .map((game) => {
+      const gameRecord = asRecord(game);
+      if (!gameRecord) return null;
+      const id = toString(gameRecord.id);
+      if (!id) return null;
+      const home = asRecord(gameRecord.home);
+      const away = asRecord(gameRecord.away);
+      return {
+        id,
+        date: toString(gameRecord.scheduled),
+        status: toString(gameRecord.status),
+        home_team: home
+          ? {
+              team: {
+                id: toString(home.id),
+                abbreviation: toString(home.alias),
+                displayName: `${toString(home.market) ?? ""} ${toString(home.name) ?? ""}`.trim(),
+              },
+              score: toNumber(asRecord(gameRecord.scoring)?.home_points ?? gameRecord.home_points) ?? null,
+              homeAway: "home",
+            }
+          : undefined,
+        away_team: away
+          ? {
+              team: {
+                id: toString(away.id),
+                abbreviation: toString(away.alias),
+                displayName: `${toString(away.market) ?? ""} ${toString(away.name) ?? ""}`.trim(),
+              },
+              score: toNumber(asRecord(gameRecord.scoring)?.away_points ?? gameRecord.away_points) ?? null,
+              homeAway: "away",
+            }
+          : undefined,
+        venue: toString(asRecord(gameRecord.venue)?.name),
+      };
+    })
+    .filter((game): game is GameSummary => game !== null);
+}
+
+function mapEspnGames(raw: unknown): GameSummary[] {
+  const record = asRecord(raw);
+  const events = asArray(record?.events);
+  return events
+    .map((event) => {
+      const eventRecord = asRecord(event);
+      if (!eventRecord) return null;
+      const id = toString(eventRecord.id);
+      if (!id) return null;
+      const competitions = asArray(eventRecord.competitions);
+      const competition = asRecord(competitions[0]);
+      const competitors = asArray(competition?.competitors);
+      const home = competitors.find((c) => asRecord(c)?.homeAway === "home");
+      const away = competitors.find((c) => asRecord(c)?.homeAway === "away");
+      const homeRecord = asRecord(home);
+      const awayRecord = asRecord(away);
+      const statusType = asRecord(asRecord(eventRecord.status)?.type);
+      return {
+        id,
+        date: toString(eventRecord.date),
+        status: toString(statusType?.name),
+        home_team: homeRecord
+          ? {
+              team: {
+                id: toString(asRecord(homeRecord.team)?.id),
+                abbreviation: toString(asRecord(homeRecord.team)?.abbreviation),
+                displayName: toString(asRecord(homeRecord.team)?.displayName),
+              },
+              score: toNumber(homeRecord.score) ?? null,
+              homeAway: "home",
+            }
+          : undefined,
+        away_team: awayRecord
+          ? {
+              team: {
+                id: toString(asRecord(awayRecord.team)?.id),
+                abbreviation: toString(asRecord(awayRecord.team)?.abbreviation),
+                displayName: toString(asRecord(awayRecord.team)?.displayName),
+              },
+              score: toNumber(awayRecord.score) ?? null,
+              homeAway: "away",
+            }
+          : undefined,
+        venue: toString(asRecord(competition?.venue)?.fullName),
+      };
+    })
+    .filter((game): game is GameSummary => game !== null);
 }
 
 export class DataRouter {
@@ -30,7 +231,7 @@ export class DataRouter {
     return DataRouter.instance;
   }
 
-  async fetch<T>(config: RouterConfig): Promise<T | null> {
+  async fetch<T>(config: RouterConfig<T>): Promise<T | null> {
     const cached = await CacheService.get<T>(config.cacheKey);
     if (cached) {
       logger.debug({ type: "data_router_cache_hit", key: config.cacheKey });
@@ -48,13 +249,14 @@ export class DataRouter {
         if (data) {
           await CacheService.set(config.cacheKey, data, config.cacheTTL);
           logger.info({ type: "data_router_success", source: source.name });
-          return data as T;
+          return data;
         }
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         logger.warn({
           type: "data_router_source_failed",
           source: source.name,
-          error: (error as Error).message,
+          error: message,
         });
       }
     }
@@ -76,7 +278,7 @@ const espnBreaker = circuitBreakerManager.create("espn_router", {
   timeout: 30000,
 });
 
-async function fetchFromBallDontLie(endpoint: string): Promise<any> {
+async function fetchFromBallDontLie(endpoint: string): Promise<unknown> {
   const apiKey = process.env.BALLDONTLIE_API_KEY;
   if (!apiKey) throw new Error("BALLDONTLIE_API_KEY not set");
 
@@ -94,7 +296,7 @@ async function fetchFromBallDontLie(endpoint: string): Promise<any> {
   });
 }
 
-async function fetchFromESPN(endpoint: string): Promise<any> {
+async function fetchFromESPN(endpoint: string): Promise<unknown> {
   const acquired = await apiLimiters.espn.acquire();
   if (!acquired) throw new Error("ESPN rate limit exceeded");
 
@@ -112,9 +314,9 @@ async function fetchFromESPN(endpoint: string): Promise<any> {
   });
 }
 
-export async function getTeams(): Promise<any> {
+export async function getTeams(): Promise<TeamListResponse | null> {
   const router = DataRouter.getInstance();
-  return router.fetch({
+  return router.fetch<TeamListResponse>({
     cacheKey: CacheKeys.teams(),
     cacheTTL: CacheTTL.DAY,
     sources: [
@@ -125,14 +327,8 @@ export async function getTeams(): Promise<any> {
         fetch: async () => {
           const data = await SportradarService.getTeams();
           return {
-            data: data.teams?.map((t: any) => ({
-              id: t.id,
-              abbreviation: t.alias,
-              name: t.name,
-              fullName: t.market ? `${t.market} ${t.name}` : t.name,
-              location: t.market,
-            })) || [],
-            raw: data,
+            data: mapSportradarTeams(data),
+            raw: data as unknown,
           };
         },
       },
@@ -140,7 +336,24 @@ export async function getTeams(): Promise<any> {
         name: "balldontlie",
         priority: 1,
         isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
-        fetch: () => fetchFromBallDontLie("/teams"),
+        fetch: async () => {
+          const data = await fetchFromBallDontLie("/teams");
+          return {
+            data: asArray(asRecord(data)?.data).map((team) => {
+              const teamRecord = asRecord(team);
+              const id = toString(teamRecord?.id);
+              if (!id) return null;
+              return {
+                id,
+                abbreviation: toString(teamRecord?.abbreviation),
+                name: toString(teamRecord?.name),
+                fullName: toString(teamRecord?.full_name),
+                location: toString(teamRecord?.city),
+              };
+            }).filter((team): team is TeamSummary => team !== null),
+            raw: data,
+          };
+        },
       },
       {
         name: "espn",
@@ -149,13 +362,8 @@ export async function getTeams(): Promise<any> {
         fetch: async () => {
           const data = await fetchFromESPN("/teams");
           return {
-            data: data.sports?.[0]?.leagues?.[0]?.teams?.map((t: any) => ({
-              id: t.team.id,
-              abbreviation: t.team.abbreviation,
-              name: t.team.shortDisplayName,
-              fullName: t.team.displayName,
-              location: t.team.location,
-            })) || [],
+            data: mapEspnTeams(data),
+            raw: data,
           };
         },
       },
@@ -163,9 +371,9 @@ export async function getTeams(): Promise<any> {
   });
 }
 
-export async function getGames(season: number, week: number): Promise<any> {
+export async function getGames(season: number, week: number): Promise<GamesResponse | null> {
   const router = DataRouter.getInstance();
-  return router.fetch({
+  return router.fetch<GamesResponse>({
     cacheKey: CacheKeys.gamesByWeek(season, week),
     cacheTTL: CacheTTL.MEDIUM,
     sources: [
@@ -175,17 +383,9 @@ export async function getGames(season: number, week: number): Promise<any> {
         isAvailable: () => !!process.env.SPORTRADAR_API_KEY,
         fetch: async () => {
           const data = await SportradarService.getWeekSchedule(season, "REG", week);
-          const games = data.week?.games || data.games || [];
           return {
-            data: games.map((g: any) => ({
-              id: g.id,
-              date: g.scheduled,
-              status: g.status,
-              home_team: { team: { id: g.home?.id, abbreviation: g.home?.alias, displayName: `${g.home?.market ?? ""} ${g.home?.name ?? ""}`.trim() }, score: g.scoring?.home_points ?? g.home_points ?? null, homeAway: "home" },
-              away_team: { team: { id: g.away?.id, abbreviation: g.away?.alias, displayName: `${g.away?.market ?? ""} ${g.away?.name ?? ""}`.trim() }, score: g.scoring?.away_points ?? g.away_points ?? null, homeAway: "away" },
-              venue: g.venue?.name,
-            })),
-            raw: data,
+            data: mapSportradarGames(data),
+            raw: data as unknown,
           };
         },
       },
@@ -193,7 +393,47 @@ export async function getGames(season: number, week: number): Promise<any> {
         name: "balldontlie",
         priority: 1,
         isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
-        fetch: () => fetchFromBallDontLie(`/games?seasons[]=${season}&weeks[]=${week}&per_page=50`),
+        fetch: async () => {
+          const data = await fetchFromBallDontLie(`/games?seasons[]=${season}&weeks[]=${week}&per_page=50`);
+          return {
+            data: asArray(asRecord(data)?.data).map((game) => {
+              const gameRecord = asRecord(game);
+              const id = toString(gameRecord?.id);
+              if (!id) return null;
+              const home = asRecord(gameRecord?.home_team);
+              const away = asRecord(gameRecord?.away_team);
+              return {
+                id,
+                date: toString(gameRecord?.date),
+                status: toString(gameRecord?.status),
+                home_team: home
+                  ? {
+                      team: {
+                        id: toString(asRecord(home?.team)?.id),
+                        abbreviation: toString(asRecord(home?.team)?.abbreviation),
+                        displayName: toString(asRecord(home?.team)?.displayName),
+                      },
+                      score: toNumber(home?.score) ?? null,
+                      homeAway: "home",
+                    }
+                  : undefined,
+                away_team: away
+                  ? {
+                      team: {
+                        id: toString(asRecord(away?.team)?.id),
+                        abbreviation: toString(asRecord(away?.team)?.abbreviation),
+                        displayName: toString(asRecord(away?.team)?.displayName),
+                      },
+                      score: toNumber(away?.score) ?? null,
+                      homeAway: "away",
+                    }
+                  : undefined,
+                venue: toString(gameRecord?.venue),
+              };
+            }).filter((game): game is GameSummary => game !== null),
+            raw: data,
+          };
+        },
       },
       {
         name: "espn",
@@ -202,14 +442,8 @@ export async function getGames(season: number, week: number): Promise<any> {
         fetch: async () => {
           const data = await fetchFromESPN(`/scoreboard?week=${week}&seasontype=2`);
           return {
-            data: data.events?.map((e: any) => ({
-              id: e.id,
-              date: e.date,
-              status: e.status?.type?.name,
-              home_team: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home"),
-              away_team: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away"),
-              venue: e.competitions?.[0]?.venue?.fullName,
-            })) || [],
+            data: mapEspnGames(data),
+            raw: data,
           };
         },
       },
@@ -219,16 +453,17 @@ export async function getGames(season: number, week: number): Promise<any> {
         isAvailable: () => !!process.env.RAPIDAPI_KEY,
         fetch: async () => {
           const data = await RapidApiNflService.getGames(season, week);
-          return { data: data.response || data.games || data || [] };
+          const record = asRecord(data);
+          return { data: asArray(record?.response ?? record?.games ?? data) };
         },
       },
     ],
   });
 }
 
-export async function getPlayerStats(playerId: number): Promise<any> {
+export async function getPlayerStats(playerId: number): Promise<PlayerStatsResponse | null> {
   const router = DataRouter.getInstance();
-  return router.fetch({
+  return router.fetch<PlayerStatsResponse>({
     cacheKey: `player:stats:${playerId}`,
     cacheTTL: CacheTTL.HOUR,
     sources: [
@@ -236,7 +471,10 @@ export async function getPlayerStats(playerId: number): Promise<any> {
         name: "balldontlie",
         priority: 1,
         isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
-        fetch: () => fetchFromBallDontLie(`/players/${playerId}/stats`),
+        fetch: async () => {
+          const data = await fetchFromBallDontLie(`/players/${playerId}/stats`);
+          return { data };
+        },
       },
       {
         name: "espn",

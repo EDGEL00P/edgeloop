@@ -1,5 +1,4 @@
-import { CacheService, CacheKeys, CacheTTL } from "../infrastructure/cache";
-import { eq, and, or } from "drizzle-orm";
+import { CacheTTL } from "../infrastructure/cache";
 import { logger } from "../infrastructure/logger";
 import { metrics } from "../infrastructure/metrics";
 import { dataRouter, getTeams, getGames } from "./dataRouter";
@@ -18,6 +17,21 @@ interface DataSourceSyncTimes {
   injuries: string | null;
   weather: string | null;
   news: string | null;
+}
+
+interface JobStatus {
+  lastRun: string;
+  nextRun: string;
+  isRunning: boolean;
+}
+
+interface AutoRefreshStatus {
+  isRunning: boolean;
+  jobs: Record<string, JobStatus>;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 const dataSyncTimes: DataSourceSyncTimes = {
@@ -90,7 +104,7 @@ class AutoRefreshManager {
         logger.debug({ type: "refresh_job_completed", name, durationMs: Date.now() - start });
       } catch (error) {
         metrics.increment("refresh_job_error", 1, { job: name });
-        logger.error({ type: "refresh_job_failed", name, error: (error as Error).message });
+        logger.error({ type: "refresh_job_failed", name, error: getErrorMessage(error) });
       } finally {
         job.isRunning = false;
       }
@@ -104,7 +118,7 @@ class AutoRefreshManager {
       await getTeams();
       logger.debug({ type: "cache_warmed", item: "teams" });
     } catch (error) {
-      logger.warn({ type: "cache_warm_failed", item: "teams", error: (error as Error).message });
+      logger.warn({ type: "cache_warm_failed", item: "teams", error: getErrorMessage(error) });
     }
 
     const currentWeek = getCurrentNFLWeek();
@@ -112,14 +126,14 @@ class AutoRefreshManager {
       await getGames(2025, currentWeek);
       logger.debug({ type: "cache_warmed", item: `games_week_${currentWeek}` });
     } catch (error) {
-      logger.warn({ type: "cache_warm_failed", item: "games", error: (error as Error).message });
+      logger.warn({ type: "cache_warm_failed", item: "games", error: getErrorMessage(error) });
     }
 
     logger.info({ type: "cache_warming_completed" });
   }
 
-  getStatus(): Record<string, any> {
-    const status: Record<string, any> = {
+  getStatus(): AutoRefreshStatus {
+    const status: AutoRefreshStatus = {
       isRunning: this.isStarted,
       jobs: {},
     };
@@ -163,7 +177,7 @@ autoRefreshManager.registerJob("odds", 60 * 1000, async () => {
     if (!response.ok) throw new Error(`Odds refresh failed: ${response.status}`);
     updateSyncTime('odds');
   } catch (error) {
-    logger.warn({ type: "odds_refresh_skipped", error: (error as Error).message });
+    logger.warn({ type: "odds_refresh_skipped", error: getErrorMessage(error) });
   }
 });
 

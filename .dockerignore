@@ -1,44 +1,44 @@
-# Dependencies
 node_modules
-.pnp
-.pnp.js
-
-# Testing
+.next
+.git
+.gitignore
+.env
+.env.local
+.env.development
+.env.production
+.env.test
 coverage
-
-# Next.js
-.next/
-out/
-
-# Production
+.nyc_output
+dist
 build
-
-# Misc
-.DS_Store
-*.pem
-Thumbs.db
-
-# Debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# IDE
-.idea
+.DS_Store
+*.pem
 .vscode
+.idea
 *.swp
 *.swo
+*~
+.cache
+.parcel-cache
+.turbo
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+README.md
+*.md
+!README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+.editorconfig
+.prettierrc.json
+.prettierignore
+.eslintrc.json
+tsconfig.json
+vitest.config.ts

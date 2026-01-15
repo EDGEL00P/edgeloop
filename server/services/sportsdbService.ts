@@ -3,7 +3,7 @@ import { withHealth } from "../health/withHealth";
 const BASE = process.env.SPORTSDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json";
 const KEY = process.env.SPORTSDB_KEY || "123";
 
-async function sdbFetch(path: string): Promise<any> {
+async function sdbFetch(path: string): Promise<unknown> {
   const url = `${BASE}/${KEY}${path}`;
   return withHealth("sportsdb", async () => {
     const res = await fetch(url, { headers: { accept: "application/json" } });
