@@ -183,7 +183,7 @@ function validateFile(filePath: string, analysis: FileAnalysis): ValidationResul
 
 function runTypeCheck(filePath: string): Promise<{ success: boolean; output: string; errors: string }> {
   return new Promise((resolve) => {
-    exec(`npx tsc --noEmit "${filePath}"`, (error, stdout) => {
+    exec(`npx tsc --noEmit "${filePath}"`, (error, stdout, stderr) => {
       resolve({
         success: error === null || error === undefined,
         output: stdout || '',
