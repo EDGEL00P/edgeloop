@@ -87,7 +87,7 @@ function mapSportradarTeams(raw: unknown): TeamSummary[] {
   const record = asRecord(raw);
   const teams = asArray(record?.teams);
   return teams
-    .map((team) => {
+    .map((team): TeamSummary | null => {
       const teamRecord = asRecord(team);
       if (!teamRecord) return null;
       const id = toString(teamRecord.id);
@@ -111,7 +111,7 @@ function mapEspnTeams(raw: unknown): TeamSummary[] {
   const leagues = asArray(asRecord(sports[0])?.leagues);
   const teams = asArray(asRecord(leagues[0])?.teams);
   return teams
-    .map((entry) => {
+    .map((entry): TeamSummary | null => {
       const entryRecord = asRecord(entry);
       const team = asRecord(entryRecord?.team);
       if (!team) return null;
@@ -133,7 +133,7 @@ function mapSportradarGames(raw: unknown): GameSummary[] {
   const week = asRecord(record?.week);
   const games = asArray(week?.games ?? record?.games);
   return games
-    .map((game) => {
+    .map((game): GameSummary | null => {
       const gameRecord = asRecord(game);
       if (!gameRecord) return null;
       const id = toString(gameRecord.id);
@@ -176,7 +176,7 @@ function mapEspnGames(raw: unknown): GameSummary[] {
   const record = asRecord(raw);
   const events = asArray(record?.events);
   return events
-    .map((event) => {
+    .map((event): GameSummary | null => {
       const eventRecord = asRecord(event);
       if (!eventRecord) return null;
       const id = toString(eventRecord.id);
@@ -339,7 +339,7 @@ export async function getTeams(): Promise<TeamListResponse | null> {
         fetch: async () => {
           const data = await fetchFromBallDontLie("/teams");
           return {
-            data: asArray(asRecord(data)?.data).map((team) => {
+            data: asArray(asRecord(data)?.data).map((team): TeamSummary | null => {
               const teamRecord = asRecord(team);
               const id = toString(teamRecord?.id);
               if (!id) return null;
@@ -396,7 +396,7 @@ export async function getGames(season: number, week: number): Promise<GamesRespo
         fetch: async () => {
           const data = await fetchFromBallDontLie(`/games?seasons[]=${season}&weeks[]=${week}&per_page=50`);
           return {
-            data: asArray(asRecord(data)?.data).map((game) => {
+            data: asArray(asRecord(data)?.data).map((game): GameSummary | null => {
               const gameRecord = asRecord(game);
               const id = toString(gameRecord?.id);
               if (!id) return null;
@@ -454,7 +454,19 @@ export async function getGames(season: number, week: number): Promise<GamesRespo
         fetch: async () => {
           const data = await RapidApiNflService.getGames(season, week);
           const record = asRecord(data);
-          return { data: asArray(record?.response ?? record?.games ?? data) };
+          const games = asArray(record?.response ?? record?.games ?? data);
+          return { 
+            data: games.map((g): GameSummary | null => {
+              const gameRecord = asRecord(g);
+              const id = toString(gameRecord?.id ?? gameRecord?.game_id);
+              if (!id) return null;
+              return {
+                id,
+                date: toString(gameRecord?.date),
+                status: toString(gameRecord?.status),
+              };
+            }).filter((g): g is GameSummary => g !== null),
+          };
         },
       },
     ],

@@ -42,9 +42,16 @@ export interface CLVMetrics {
   }>;
 }
 
+interface ClosingLineData {
+  spread?: number;
+  total?: number;
+  homeMoneyline?: number;
+  awayMoneyline?: number;
+}
+
 export class CLVTracker {
   private bets: Map<string, BetRecord> = new Map();
-  private closingLines: Map<number, any> = new Map();
+  private closingLines: Map<number, ClosingLineData> = new Map();
 
   recordBet(bet: Omit<BetRecord, "id">): BetRecord {
     const id = `${bet.gameId}-${bet.edgeType}-${bet.selection}-${Date.now()}`;
@@ -215,7 +222,7 @@ export class CLVTracker {
     const clvWinRate = positiveClvCount > 0 ? (positiveClvWins / positiveClvCount) * 100 : 0;
     const noClvWinRate = negativeClvCount > 0 ? (negativeClvWins / negativeClvCount) * 100 : 0;
 
-    const byEdgeTypeWithRoi: Record<string, any> = {};
+    const byEdgeTypeWithRoi: CLVMetrics['byEdgeType'] = {};
     for (const [edgeType, data] of Object.entries(byEdgeType)) {
       byEdgeTypeWithRoi[edgeType] = {
         count: data.count,

@@ -1,3 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run check
+      - name: Run tests
+        run: npm test -- --run
+      - name: Build
+        run: npm run build --if-present
+      - name: Lint
+        run: npm run lint --if-present
 name: CI/CD Pipeline
 
 on:

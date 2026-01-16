@@ -2,52 +2,29 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { logger } from "./infrastructure/logger";
+import { logEnvironmentStatus, validateEnvironment } from "./infrastructure/env";
 
 const app = express();
 const httpServer = createServer(app);
 
-function verifyApiSecrets() {
-  const secrets = [
-    { name: 'BALLDONTLIE_API_KEY', required: true },
-    { name: 'SPORTRADAR_API_KEY', required: false },
-    { name: 'RAPIDAPI_KEY', required: false },
-    { name: 'SPORTSDB_KEY', required: false },
-    { name: 'WEATHER_API_KEY', required: false },
-    { name: 'ODDS_API_KEY', required: false },
-    { name: 'EXA_API_KEY', required: false },
-    { name: 'OPENROUTER_API_KEY', required: false },
-    { name: 'GROK_API_KEY', required: false },
-    { name: 'AI_INTEGRATIONS_OPENAI_API_KEY', required: false },
-    { name: 'AI_INTEGRATIONS_GEMINI_API_KEY', required: false },
-  ];
-
-  logger.info({ type: "secrets_check_start", message: "API secrets status" });
-  for (const { name, required } of secrets) {
-    const value = process.env[name];
-    const status = value ? '✓ loaded' : (required ? '✗ MISSING' : '○ not set');
-    const masked = value ? `${value.substring(0, 4)}...${value.substring(value.length - 4)}` : 'N/A';
-    if (required && !value) {
-      logger.warn({
-        type: "secret_status",
-        name,
-        required,
-        status,
-        masked: value ? masked : "N/A",
-      });
-      continue;
-    }
-    logger.info({
-      type: "secret_status",
-      name,
-      required,
-      status,
-      masked: value ? masked : "N/A",
+// Validate environment on startup
+const envCheck = validateEnvironment();
+if (!envCheck.valid) {
+  logger.error({
+    type: "startup_failed",
+    message: "Missing required environment variables",
+    missing: envCheck.missingRequired,
+  });
+  // Don't exit in production - allow graceful degradation
+  if (process.env.NODE_ENV === 'development') {
+    logger.warn({
+      type: "startup_warning",
+      message: "Continuing with missing required variables (development mode)",
     });
   }
-  logger.info({ type: "secrets_check_complete", message: "API secrets status complete" });
 }
 
-verifyApiSecrets();
+logEnvironmentStatus();
 
 declare module "http" {
   interface IncomingMessage {
@@ -108,9 +85,15 @@ app.use((req, res, next) => {
       return next(err);
     }
     const error = err instanceof Error ? err : new Error(String(err));
-    const status = (err as { status?: number; statusCode?: number }).status ||
-      (err as { statusCode?: number }).statusCode ||
-      500;
+    
+    // Type-safe status code extraction
+    interface ErrorWithStatus {
+      status?: number;
+      statusCode?: number;
+    }
+    const status = (err && typeof err === 'object' && ('status' in err || 'statusCode' in err))
+      ? ((err as ErrorWithStatus).status ?? (err as ErrorWithStatus).statusCode ?? 500)
+      : 500;
 
     logger.error({
       type: "http_error",

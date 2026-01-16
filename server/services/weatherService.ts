@@ -1,5 +1,6 @@
 const OPENWEATHERMAP_API_URL = "https://api.openweathermap.org/data/2.5/weather";
 import { eq, and, or } from "drizzle-orm";
+import { logger } from "../infrastructure/logger";
 
 export interface WeatherData {
   temperature: number;
@@ -80,7 +81,11 @@ export async function getWeatherForVenue(venue: string | null): Promise<WeatherD
   const apiKey = process.env.WEATHER_API_KEY;
   
   if (!apiKey) {
-    console.warn("WEATHER_API_KEY not configured - returning mock weather data");
+    logger.warn({ 
+      type: "weather_api_key_missing", 
+      venue,
+      message: "WEATHER_API_KEY not configured - returning mock weather data" 
+    });
     return getMockWeather(venue);
   }
   
@@ -98,7 +103,12 @@ export async function getWeatherForVenue(venue: string | null): Promise<WeatherD
     const response = await fetch(url);
     
     if (!response.ok) {
-      console.error(`Weather API error: ${response.status}`);
+      logger.error({ 
+        type: "weather_api_error", 
+        status: response.status, 
+        venue,
+        message: `Weather API returned status ${response.status}` 
+      });
       return getMockWeather(venue);
     }
     
@@ -123,7 +133,12 @@ export async function getWeatherForVenue(venue: string | null): Promise<WeatherD
     
     return weather;
   } catch (error) {
-    console.error("Failed to fetch weather:", error);
+    logger.error({ 
+      type: "weather_fetch_failed", 
+      venue,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return getMockWeather(venue);
   }
 }
@@ -192,7 +207,12 @@ export async function getWeatherByCity(city: string): Promise<WeatherData> {
     
     return weather;
   } catch (error) {
-    console.error("Failed to fetch weather by city:", error);
+    logger.error({ 
+      type: "weather_fetch_by_city_failed", 
+      city,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return getMockWeather(null);
   }
 }

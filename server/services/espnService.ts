@@ -121,7 +121,6 @@ const espnCircuitBreaker = circuitBreakerManager.create("espn", {
   failureThreshold: 5,
   successThreshold: 2,
   timeout: 60000,
-  fallback: async () => null,
 });
 
 const ESPN_TEAM_ID_MAP: Record<string, string> = {

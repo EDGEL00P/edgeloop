@@ -62,11 +62,18 @@ export async function setupAuth(app: Express): Promise<void> {
   app.use(getSession());
 }
 
+// Extend session data type to include our custom properties
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
+
 /**
  * Middleware to check if user is authenticated
  */
 export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.session && (req.session as Record<string, unknown>).userId) {
+  if (req.session && req.session.userId) {
     return next();
   }
   return res.status(401).json({ message: "Unauthorized" });
@@ -79,7 +86,10 @@ export function registerAuthRoutes(app: Express): void {
   // Get current user
   app.get("/api/auth/user", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as Record<string, unknown>).userId as string;
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
       if (!db) {
         return res.status(503).json({ message: "Database unavailable" });
       }
@@ -112,7 +122,7 @@ export function registerAuthRoutes(app: Express): void {
         user = newUser;
       }
       
-      (req.session as Record<string, unknown>).userId = user.id;
+      req.session.userId = user.id;
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
