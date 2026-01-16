@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import { eq, and, or } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
 import { circuitBreakerManager, CircuitBreaker, CircuitState } from "../infrastructure/circuit-breaker";
 import { rateLimiterManager, TokenBucketRateLimiter } from "../infrastructure/rate-limiter";
@@ -264,9 +263,18 @@ export async function healthCheck(): Promise<Record<ProviderName, {
   circuitState: CircuitState;
   availableTokens: number;
 }>> {
-  const results: Record<string, any> = {};
+  const results: Record<ProviderName, {
+    healthy: boolean;
+    circuitState: CircuitState;
+    availableTokens: number;
+  }> = {} as Record<ProviderName, {
+    healthy: boolean;
+    circuitState: CircuitState;
+    availableTokens: number;
+  }>;
 
-  for (const [name, provider] of Object.entries(providers)) {
+  const providerEntries = Object.entries(providers) as Array<[ProviderName, ProviderConfig]>;
+  for (const [name, provider] of providerEntries) {
     results[name] = {
       healthy: provider.isHealthy(),
       circuitState: provider.circuitBreaker.getState(),
@@ -274,11 +282,7 @@ export async function healthCheck(): Promise<Record<ProviderName, {
     };
   }
 
-  return results as Record<ProviderName, {
-    healthy: boolean;
-    circuitState: CircuitState;
-    availableTokens: number;
-  }>;
+  return results;
 }
 
 export async function pingProvider(providerName: ProviderName): Promise<{
@@ -308,9 +312,16 @@ export function getProviderStats(): Record<ProviderName, {
   circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
   rateLimiter: { available: number; waitTime: number };
 }> {
-  const stats: Record<string, any> = {};
+  const stats: Record<ProviderName, {
+    circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
+    rateLimiter: { available: number; waitTime: number };
+  }> = {} as Record<ProviderName, {
+    circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
+    rateLimiter: { available: number; waitTime: number };
+  }>;
 
-  for (const [name, provider] of Object.entries(providers)) {
+  const providerEntries = Object.entries(providers) as Array<[ProviderName, ProviderConfig]>;
+  for (const [name, provider] of providerEntries) {
     stats[name] = {
       circuitBreaker: provider.circuitBreaker.getStats(),
       rateLimiter: {
@@ -320,10 +331,7 @@ export function getProviderStats(): Record<ProviderName, {
     };
   }
 
-  return stats as Record<ProviderName, {
-    circuitBreaker: ReturnType<CircuitBreaker["getStats"]>;
-    rateLimiter: { available: number; waitTime: number };
-  }>;
+  return stats;
 }
 
 export function getRoutingMatrix(): Record<TaskType, ProviderName[]> {

@@ -4,7 +4,7 @@ const BASE = process.env.RAPIDAPI_BASE_URL || "https://api-nfl-v1.p.rapidapi.com
 const HOST = process.env.RAPIDAPI_HOST || "api-nfl-v1.p.rapidapi.com";
 const KEY = process.env.RAPIDAPI_KEY;
 
-async function rapidFetch(path: string): Promise<any> {
+async function rapidFetch(path: string): Promise<unknown> {
   if (!KEY) throw new Error("Missing RAPIDAPI_KEY");
   const url = `${BASE}${path}`;
   return withHealth("rapidapi", async () => {

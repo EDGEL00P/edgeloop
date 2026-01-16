@@ -1,36 +1,30 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
+import { logger } from "./infrastructure/logger";
+import { logEnvironmentStatus, validateEnvironment } from "./infrastructure/env";
 
 const app = express();
 const httpServer = createServer(app);
 
-function verifyApiSecrets() {
-  const secrets = [
-    { name: 'BALLDONTLIE_API_KEY', required: true },
-    { name: 'SPORTRADAR_API_KEY', required: false },
-    { name: 'RAPIDAPI_KEY', required: false },
-    { name: 'SPORTSDB_KEY', required: false },
-    { name: 'WEATHER_API_KEY', required: false },
-    { name: 'ODDS_API_KEY', required: false },
-    { name: 'EXA_API_KEY', required: false },
-    { name: 'OPENROUTER_API_KEY', required: false },
-    { name: 'GROK_API_KEY', required: false },
-    { name: 'AI_INTEGRATIONS_OPENAI_API_KEY', required: false },
-    { name: 'AI_INTEGRATIONS_GEMINI_API_KEY', required: false },
-  ];
-
-  console.log('\n=== API Secrets Status ===');
-  for (const { name, required } of secrets) {
-    const value = process.env[name];
-    const status = value ? '✓ loaded' : (required ? '✗ MISSING' : '○ not set');
-    const masked = value ? `${value.substring(0, 4)}...${value.substring(value.length - 4)}` : 'N/A';
-    console.log(`  ${name}: ${status}${value ? ` (${masked})` : ''}`);
+// Validate environment on startup
+const envCheck = validateEnvironment();
+if (!envCheck.valid) {
+  logger.error({
+    type: "startup_failed",
+    message: "Missing required environment variables",
+    missing: envCheck.missingRequired,
+  });
+  // Don't exit in production - allow graceful degradation
+  if (process.env.NODE_ENV === 'development') {
+    logger.warn({
+      type: "startup_warning",
+      message: "Continuing with missing required variables (development mode)",
+    });
   }
-  console.log('==========================\n');
 }
 
-verifyApiSecrets();
+logEnvironmentStatus();
 
 declare module "http" {
   interface IncomingMessage {
@@ -48,21 +42,10 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: unknown = undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -73,12 +56,21 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      const logEntry: Record<string, unknown> = {
+        type: "http_request",
+        method: req.method,
+        path,
+        statusCode: res.statusCode,
+        durationMs: duration,
+      };
+      if (capturedJsonResponse !== undefined) {
+        try {
+          logEntry.response = capturedJsonResponse;
+        } catch {
+          logEntry.response = "[unserializable]";
+        }
       }
-
-      log(logLine);
+      logger.info(logEntry);
     }
   });
 
@@ -88,30 +80,85 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    const error = err instanceof Error ? err : new Error(String(err));
+    
+    // Type-safe status code extraction
+    interface ErrorWithStatus {
+      status?: number;
+      statusCode?: number;
+    }
+    const status = (err && typeof err === 'object' && ('status' in err || 'statusCode' in err))
+      ? ((err as ErrorWithStatus).status ?? (err as ErrorWithStatus).statusCode ?? 500)
+      : 500;
 
-    res.status(status).json({ message });
-    throw err;
+    logger.error({
+      type: "http_error",
+      message: error.message,
+      status,
+      stack: error.stack,
+    });
+
+    res.status(status).json({ message: error.message });
   });
 
   // Next.js handles static files in production and development
   // Routes are already registered above
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
+  // Universal port detection - works on any platform automatically
+  // Platforms set PORT automatically: Vercel, Railway, Render, Fly.io, Heroku, etc.
+  const port = parseInt(
+    process.env.PORT || 
+    process.env.VERCEL_PORT || 
+    process.env.RAILWAY_PORT ||
+    "3000",
+    10
   );
+  
+  // Host configuration - 0.0.0.0 works everywhere (Docker, Railway, Render, etc.)
+  // localhost works for Vercel serverless (but they handle it differently)
+  const host = process.env.HOSTNAME || 
+               process.env.HOST || 
+               (process.env.VERCEL ? "0.0.0.0" : "0.0.0.0");
+  
+  httpServer.listen(port, host, () => {
+    logger.info({
+      type: "server_start",
+      host,
+      port,
+      env: process.env.NODE_ENV || "development",
+      platform: detectPlatform(),
+    });
+  });
+  
+  // Universal graceful shutdown - works on all platforms
+  const shutdown = (signal: string) => {
+    logger.warn({ type: "server_shutdown", signal });
+    httpServer.close(() => {
+      process.exit(0);
+    });
+    // Force exit after 10 seconds
+    setTimeout(() => {
+      logger.error({ type: "server_shutdown_forced", message: "Forced shutdown after timeout" });
+      process.exit(1);
+    }, 10000);
+  };
+  
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  
+  // Platform detection helper
+  function detectPlatform(): string {
+    if (process.env.VERCEL) return "Vercel";
+    if (process.env.RAILWAY_ENVIRONMENT) return "Railway";
+    if (process.env.RENDER) return "Render";
+    if (process.env.FLY_APP_NAME) return "Fly.io";
+    if (process.env.HEROKU_APP_NAME) return "Heroku";
+    if (process.env.REPLIT_DEV_DOMAIN) return "Replit";
+    if (process.env.DOCKER) return "Docker";
+    return "Local/Unknown";
+  }
 })();

@@ -1,307 +1,416 @@
 """
-Market Analyzer for NFL Betting
-Analyzes betting markets, identifies inefficiencies, and compares model predictions
+NFL Market Analyzer
+===================
+Analyzes betting market data to identify edges, steam moves, 
+and reverse line movement opportunities.
 """
-from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass
-import requests
-import numpy as np
-import pandas as pd
-from singularity_config import is_signal_enabled, SINGULARITY_EXPLOIT_CONFIG
+
+import logging
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+
+logger = logging.getLogger(__name__)
+
+
+class SignalType(Enum):
+    """Types of market signals."""
+    STEAM = "steam"  # Sharp money movement
+    RLM = "reverse_line_movement"  # Line moves opposite to public
+    TRAP = "trap"  # Line not moving despite heavy public action
+    WEATHER = "weather"  # Weather-based opportunity
+    INJURY = "injury"  # Key injury impact
+    VALUE = "value"  # Pure mathematical edge
+
 
 @dataclass
-class MarketOdds:
+class MarketSignal:
+    """A betting signal derived from market analysis."""
+    signal_type: SignalType
     game_id: int
-    home_team: str
-    away_team: str
-    opening_spread: float
-    current_spread: float
-    opening_total: float
-    current_total: float
-    opening_home_moneyline: int
-    opening_away_moneyline: int
-    current_home_moneyline: int
-    current_away_moneyline: int
+    side: str  # HOME_SPREAD, AWAY_SPREAD, OVER, UNDER
+    confidence: float  # 0-100
+    edge: float  # Percentage edge
+    description: str
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    
+    # Supporting data
+    model_line: Optional[float] = None
+    market_line: Optional[float] = None
+    public_percentage: Optional[float] = None
+    sharp_percentage: Optional[float] = None
+    
+
+@dataclass
+class LineSnapshot:
+    """A snapshot of betting lines at a point in time."""
+    game_id: int
+    timestamp: datetime
+    
+    # Spread
+    spread: float
+    spread_home_odds: int  # American odds
+    spread_away_odds: int
+    
+    # Total
+    total: float
+    over_odds: int
+    under_odds: int
+    
+    # Moneyline
+    home_ml: int
+    away_ml: int
+    
+    # Source
     sportsbook: str
-    timestamp: str
 
-@dataclass
-class ModelProbability:
-    game_id: int
-    home_win_probability: float
-    away_win_probability: float
-    spread_prediction: float
-    total_prediction: float
-    over_probability: float
-    under_probability: float
-    confidence: float
-    model_version: str
-
-@dataclass
-class BettingEdge:
-    game_id: int
-    edge_type: str
-    selection: str
-    model_probability: float
-    market_probability: float
-    fair_odds: float
-    market_odds: float
-    edge: float
-    kelly_fraction: float
-    confidence: float
-    reason: str
 
 class MarketAnalyzer:
-    def __init__(self):
-        self.vig_juice = 0.048
-
-    def convert_american_to_decimal(self, american_odds: int) -> float:
-        if american_odds > 0:
-            return (american_odds / 100) + 1
-        return (100 / abs(american_odds)) + 1
-
-    def convert_decimal_to_probability(self, decimal_odds: float) -> float:
-        return 1 / decimal_odds
-
-    def convert_american_to_probability(self, american_odds: int) -> float:
-        return self.convert_decimal_to_probability(
-            self.convert_american_to_decimal(american_odds)
-        )
-
-    def calculate_market_probability(self, american_odds: int) -> float:
-        probability = self.convert_american_to_probability(american_odds)
-        return probability
-
-    def calculate_fair_odds(self, model_probability: float) -> float:
-        if model_probability <= 0 or model_probability >= 1:
-            raise ValueError("Model probability must be between 0 and 1")
-        return 1 / model_probability
-
-    def calculate_edge(self, market_odds: float, fair_odds: float) -> float:
-        return (market_odds / fair_odds) - 1
-
-    def calculate_edge_model_vs_market(self, model_probability: float, market_probability: float) -> float:
-        fair_odds = self.calculate_fair_odds(model_probability)
-        market_odds = 1 / market_probability
-        return self.calculate_edge(market_odds, fair_odds)
-
-    def compare_model_to_market(
+    """
+    Analyzes betting market data to identify edges.
+    
+    Detects:
+    - Steam moves (sharp money)
+    - Reverse line movement
+    - Line traps
+    - Value opportunities
+    """
+    
+    def __init__(
         self,
-        model: ModelProbability,
-        market: MarketOdds,
-        kelly_fraction: float = 0.25
-    ) -> List[BettingEdge]:
-        edges = []
-
-        home_market_prob = self.calculate_market_probability(market.current_home_moneyline)
-        away_market_prob = self.calculate_market_probability(market.current_away_moneyline)
-
-        spread_edge = self._compare_spread(model, market, kelly_fraction)
-        if spread_edge:
-            edges.append(spread_edge)
-
-        total_edge = self._compare_total(model, market, kelly_fraction)
-        if total_edge:
-            edges.append(total_edge)
-
-        home_ml_edge = self._compare_moneyline(
-            model, market, "home", home_market_prob, kelly_fraction
-        )
-        if home_ml_edge:
-            edges.append(home_ml_edge)
-
-        away_ml_edge = self._compare_moneyline(
-            model, market, "away", away_market_prob, kelly_fraction
-        )
-        if away_ml_edge:
-            edges.append(away_ml_edge)
-
-        return edges
-
-    def _compare_spread(
+        min_steam_move: float = 0.5,  # Points
+        min_rlm_threshold: float = 60.0,  # % public on one side
+        min_value_edge: float = 3.0,  # % edge required
+    ):
+        """
+        Initialize the market analyzer.
+        
+        Args:
+            min_steam_move: Minimum line movement to flag as steam
+            min_rlm_threshold: Minimum public % to check for RLM
+            min_value_edge: Minimum edge % to flag as value
+        """
+        self.min_steam_move = min_steam_move
+        self.min_rlm_threshold = min_rlm_threshold
+        self.min_value_edge = min_value_edge
+        
+        # Line history storage
+        self._line_history: Dict[int, List[LineSnapshot]] = {}
+        
+        logger.info("MarketAnalyzer initialized")
+    
+    def add_line_snapshot(self, snapshot: LineSnapshot) -> None:
+        """
+        Add a line snapshot to history.
+        
+        Args:
+            snapshot: LineSnapshot to add
+        """
+        if snapshot.game_id not in self._line_history:
+            self._line_history[snapshot.game_id] = []
+        
+        self._line_history[snapshot.game_id].append(snapshot)
+        
+        # Keep sorted by timestamp
+        self._line_history[snapshot.game_id].sort(key=lambda x: x.timestamp)
+    
+    def get_opening_line(self, game_id: int) -> Optional[LineSnapshot]:
+        """Get the opening line for a game."""
+        history = self._line_history.get(game_id, [])
+        return history[0] if history else None
+    
+    def get_current_line(self, game_id: int) -> Optional[LineSnapshot]:
+        """Get the current (latest) line for a game."""
+        history = self._line_history.get(game_id, [])
+        return history[-1] if history else None
+    
+    def detect_steam_move(
         self,
-        model: ModelProbability,
-        market: MarketOdds,
-        kelly_fraction: float
-    ) -> Optional[BettingEdge]:
-        model_spread = model.spread_prediction
-        market_spread = market.current_spread
-        spread_diff = model_spread - market_spread
-
-        if abs(spread_diff) < 0.5:
+        game_id: int,
+        time_window_minutes: int = 10,
+    ) -> Optional[MarketSignal]:
+        """
+        Detect sharp money steam moves.
+        
+        A steam move is a rapid line movement across multiple books
+        in a short time window.
+        
+        Args:
+            game_id: Game ID to analyze
+            time_window_minutes: Window to detect rapid movement
+            
+        Returns:
+            MarketSignal if steam detected, None otherwise
+        """
+        history = self._line_history.get(game_id, [])
+        
+        if len(history) < 2:
             return None
-
-        selection = "away" if spread_diff > 0 else "home"
-        edge_probability = model.home_win_probability if model.home_win_probability > model.away_win_probability else model.away_win_probability
-
-        market_implied_prob = 0.5 - (market_spread * 0.02)
-        fair_odds = self.calculate_fair_odds(edge_probability)
-        market_odds = self.convert_american_to_decimal(
-            market.current_away_moneyline if spread_diff > 0 else market.current_home_moneyline
-        )
-
-        edge = self.calculate_edge_model_vs_market(edge_probability, market_implied_prob)
-
-        if edge < 0.03:
-            return None
-
-        return BettingEdge(
-            game_id=model.game_id,
-            edge_type="spread",
-            selection=selection,
-            model_probability=edge_probability,
-            market_probability=market_implied_prob,
-            fair_odds=fair_odds,
-            market_odds=market_odds,
-            edge=edge,
-            kelly_fraction=kelly_fraction,
-            confidence=model.confidence,
-            reason=f"Model spread ({model_spread:.1f}) differs from market ({market_spread:.1f}) by {spread_diff:.1f} points"
-        )
-
-    def _compare_total(
-        self,
-        model: ModelProbability,
-        market: MarketOdds,
-        kelly_fraction: float
-    ) -> Optional[BettingEdge]:
-        model_total = model.total_prediction
-        market_total = market.current_total
-        total_diff = model_total - market_total
-
-        if abs(total_diff) < 1.5:
-            return None
-
-        selection = "over" if total_diff > 0 else "under"
-        edge_probability = model.over_probability if selection == "over" else model.under_probability
-
-        market_implied_prob = 0.5 - (total_diff * 0.015)
-        fair_odds = self.calculate_fair_odds(edge_probability)
-        market_odds = 1 / market_implied_prob
-
-        edge = self.calculate_edge_model_vs_market(edge_probability, market_implied_prob)
-
-        if edge < 0.03:
-            return None
-
-        return BettingEdge(
-            game_id=model.game_id,
-            edge_type="total",
-            selection=selection,
-            model_probability=edge_probability,
-            market_probability=market_implied_prob,
-            fair_odds=fair_odds,
-            market_odds=market_odds,
-            edge=edge,
-            kelly_fraction=kelly_fraction,
-            confidence=model.confidence,
-            reason=f"Model total ({model_total:.1f}) differs from market ({market_total:.1f}) by {total_diff:.1f} points"
-        )
-
-    def _compare_moneyline(
-        self,
-        model: ModelProbability,
-        market: MarketOdds,
-        selection: str,
-        market_probability: float,
-        kelly_fraction: float
-    ) -> Optional[BettingEdge]:
-        model_probability = model.home_win_probability if selection == "home" else model.away_win_probability
-
-        fair_odds = self.calculate_fair_odds(model_probability)
-        market_odds = self.convert_american_to_decimal(
-            market.current_home_moneyline if selection == "home" else market.current_away_moneyline
-        )
-
-        edge = self.calculate_edge_model_vs_market(model_probability, market_probability)
-
-        if edge < 0.03:
-            return None
-
-        return BettingEdge(
-            game_id=model.game_id,
-            edge_type="moneyline",
-            selection=selection,
-            model_probability=model_probability,
-            market_probability=market_probability,
-            fair_odds=fair_odds,
-            market_odds=market_odds,
-            edge=edge,
-            kelly_fraction=kelly_fraction,
-            confidence=model.confidence,
-            reason=f"Model {selection} win prob ({model_probability*100:.1f}%) > market ({market_probability*100:.1f}%)"
-        )
-
-    def find_opening_line_exploits(
-        self,
-        model: ModelProbability,
-        market: MarketOdds,
-        kelly_fraction: float = 0.25
-    ) -> List[BettingEdge]:
-        edges = []
-
-        opening_home_prob = self.calculate_market_probability(market.opening_home_moneyline)
-        opening_away_prob = self.calculate_market_probability(market.opening_away_moneyline)
-
-        opening_ml_edge_home = self._compare_moneyline(
-            model, market, "home", opening_home_prob, kelly_fraction
-        )
-        if opening_ml_edge_home:
-            opening_ml_edge_home.reason = "OPENING LINE EXPLOIT: " + opening_ml_edge_home.reason
-            edges.append(opening_ml_edge_home)
-
-        opening_ml_edge_away = self._compare_moneyline(
-            model, market, "away", opening_away_prob, kelly_fraction
-        )
-        if opening_ml_edge_away:
-            opening_ml_edge_away.reason = "OPENING LINE EXPLOIT: " + opening_ml_edge_away.reason
-            edges.append(opening_ml_edge_away)
-
-        return edges
-
-    def identify_market_overreaction(
-        self,
-        model: ModelProbability,
-        market: MarketOdds,
-        previous_games: List[Dict]
-    ) -> Optional[BettingEdge]:
-        if len(previous_games) == 0:
-            return None
-
-        last_game = previous_games[0]
-        point_differential = abs(last_game.get('homeTeamScore', 0) - last_game.get('awayTeamScore', 0))
-
-        if point_differential < 21:
-            return None
-
-        line_movement = abs(market.current_spread - market.opening_spread)
-
-        if line_movement < 0.5:
-            return None
-
-        team_adjusted = "home" if market.current_spread > market.opening_spread else "away"
-        model_win_prob = model.home_win_probability if team_adjusted == "home" else model.away_win_probability
-
-        fair_odds = self.calculate_fair_odds(model_win_prob)
-        market_odds = self.convert_american_to_decimal(
-            market.current_home_moneyline if team_adjusted == "home" else market.current_away_moneyline
-        )
-
-        edge = self.calculate_edge_model_vs_market(model_win_prob, 0.5)
-
-        if edge > 0.02:
-            return BettingEdge(
-                game_id=model.game_id,
-                edge_type="moneyline",
-                selection=team_adjusted,
-                model_probability=model_win_prob,
-                market_probability=0.5,
-                fair_odds=fair_odds,
-                market_odds=market_odds,
-                edge=edge,
-                kelly_fraction=0.25,
-                confidence=model.confidence * 0.8,
-                reason=f"MARKET OVERREACTION: {point_differential} point blowout, line moved {line_movement:.1f} points"
-            )
-
+        
+        current = history[-1]
+        
+        # Look for rapid movement in recent history
+        for i in range(len(history) - 2, -1, -1):
+            prev = history[i]
+            time_diff = (current.timestamp - prev.timestamp).total_seconds() / 60
+            
+            if time_diff > time_window_minutes:
+                break
+            
+            spread_move = abs(current.spread - prev.spread)
+            
+            if spread_move >= self.min_steam_move:
+                # Determine direction
+                if current.spread < prev.spread:
+                    side = "HOME_SPREAD"
+                    description = f"Steam on home spread: {prev.spread} → {current.spread}"
+                else:
+                    side = "AWAY_SPREAD"
+                    description = f"Steam on away spread: {prev.spread} → {current.spread}"
+                
+                return MarketSignal(
+                    signal_type=SignalType.STEAM,
+                    game_id=game_id,
+                    side=side,
+                    confidence=min(spread_move * 20, 90),  # Scale confidence
+                    edge=spread_move * 2,  # Rough edge estimate
+                    description=description,
+                    model_line=None,
+                    market_line=current.spread,
+                )
+        
         return None
+    
+    def detect_rlm(
+        self,
+        game_id: int,
+        public_spread_pct: float,
+        public_total_pct: Optional[float] = None,
+    ) -> List[MarketSignal]:
+        """
+        Detect reverse line movement.
+        
+        RLM occurs when the line moves opposite to where public
+        money is flowing, indicating sharp money on the other side.
+        
+        Args:
+            game_id: Game ID to analyze
+            public_spread_pct: % of public on favorite/home
+            public_total_pct: % of public on over (optional)
+            
+        Returns:
+            List of MarketSignals for RLM opportunities
+        """
+        signals = []
+        
+        opening = self.get_opening_line(game_id)
+        current = self.get_current_line(game_id)
+        
+        if not opening or not current:
+            return signals
+        
+        spread_move = current.spread - opening.spread
+        
+        # Check spread RLM
+        if public_spread_pct >= self.min_rlm_threshold:
+            # Public is heavy on home/favorite
+            if spread_move > 0:  # Line moved against public
+                signals.append(MarketSignal(
+                    signal_type=SignalType.RLM,
+                    game_id=game_id,
+                    side="AWAY_SPREAD",
+                    confidence=min(public_spread_pct, 85),
+                    edge=abs(spread_move) * 1.5,
+                    description=f"RLM: {public_spread_pct:.0f}% public on home, line moved {opening.spread} → {current.spread}",
+                    public_percentage=public_spread_pct,
+                ))
+        
+        elif public_spread_pct <= (100 - self.min_rlm_threshold):
+            # Public is heavy on away/underdog
+            if spread_move < 0:  # Line moved against public
+                signals.append(MarketSignal(
+                    signal_type=SignalType.RLM,
+                    game_id=game_id,
+                    side="HOME_SPREAD",
+                    confidence=min(100 - public_spread_pct, 85),
+                    edge=abs(spread_move) * 1.5,
+                    description=f"RLM: {100-public_spread_pct:.0f}% public on away, line moved {opening.spread} → {current.spread}",
+                    public_percentage=100 - public_spread_pct,
+                ))
+        
+        # Check total RLM if data provided
+        if public_total_pct is not None:
+            total_move = current.total - opening.total
+            
+            if public_total_pct >= self.min_rlm_threshold:
+                if total_move < 0:  # Line moved down despite over action
+                    signals.append(MarketSignal(
+                        signal_type=SignalType.RLM,
+                        game_id=game_id,
+                        side="UNDER",
+                        confidence=min(public_total_pct, 85),
+                        edge=abs(total_move) * 0.5,
+                        description=f"RLM: {public_total_pct:.0f}% public on over, total moved {opening.total} → {current.total}",
+                        public_percentage=public_total_pct,
+                    ))
+            
+            elif public_total_pct <= (100 - self.min_rlm_threshold):
+                if total_move > 0:  # Line moved up despite under action
+                    signals.append(MarketSignal(
+                        signal_type=SignalType.RLM,
+                        game_id=game_id,
+                        side="OVER",
+                        confidence=min(100 - public_total_pct, 85),
+                        edge=abs(total_move) * 0.5,
+                        description=f"RLM: {100-public_total_pct:.0f}% public on under, total moved {opening.total} → {current.total}",
+                        public_percentage=100 - public_total_pct,
+                    ))
+        
+        return signals
+    
+    def detect_value(
+        self,
+        game_id: int,
+        model_spread: float,
+        model_total: float,
+    ) -> List[MarketSignal]:
+        """
+        Detect pure value opportunities based on model projections.
+        
+        Args:
+            game_id: Game ID to analyze
+            model_spread: Model projected spread (negative = home favored)
+            model_total: Model projected total
+            
+        Returns:
+            List of MarketSignals for value opportunities
+        """
+        signals = []
+        
+        current = self.get_current_line(game_id)
+        if not current:
+            return signals
+        
+        # Spread value
+        spread_diff = current.spread - model_spread
+        spread_edge = abs(spread_diff) / 3.5 * 100  # Convert to % edge estimate
+        
+        if spread_edge >= self.min_value_edge:
+            if spread_diff > 0:  # Market has home as bigger underdog than model
+                side = "HOME_SPREAD"
+            else:
+                side = "AWAY_SPREAD"
+            
+            signals.append(MarketSignal(
+                signal_type=SignalType.VALUE,
+                game_id=game_id,
+                side=side,
+                confidence=min(spread_edge * 5, 90),
+                edge=spread_edge,
+                description=f"Value: Model {model_spread:.1f} vs Market {current.spread:.1f} ({spread_edge:.1f}% edge)",
+                model_line=model_spread,
+                market_line=current.spread,
+            ))
+        
+        # Total value
+        total_diff = current.total - model_total
+        total_edge = abs(total_diff) / 2.0 * 100  # Convert to % edge
+        
+        if total_edge >= self.min_value_edge:
+            if total_diff > 0:  # Market total higher than model
+                side = "UNDER"
+            else:
+                side = "OVER"
+            
+            signals.append(MarketSignal(
+                signal_type=SignalType.VALUE,
+                game_id=game_id,
+                side=side,
+                confidence=min(total_edge * 5, 90),
+                edge=total_edge,
+                description=f"Value: Model {model_total:.1f} vs Market {current.total:.1f} ({total_edge:.1f}% edge)",
+                model_line=model_total,
+                market_line=current.total,
+            ))
+        
+        return signals
+    
+    def analyze_game(
+        self,
+        game_id: int,
+        model_spread: Optional[float] = None,
+        model_total: Optional[float] = None,
+        public_spread_pct: Optional[float] = None,
+        public_total_pct: Optional[float] = None,
+    ) -> List[MarketSignal]:
+        """
+        Run full market analysis on a game.
+        
+        Args:
+            game_id: Game ID to analyze
+            model_spread: Model projected spread (optional)
+            model_total: Model projected total (optional)
+            public_spread_pct: % of public on home spread (optional)
+            public_total_pct: % of public on over (optional)
+            
+        Returns:
+            List of all detected signals
+        """
+        signals = []
+        
+        # Detect steam moves
+        steam = self.detect_steam_move(game_id)
+        if steam:
+            signals.append(steam)
+        
+        # Detect RLM
+        if public_spread_pct is not None:
+            rlm_signals = self.detect_rlm(game_id, public_spread_pct, public_total_pct)
+            signals.extend(rlm_signals)
+        
+        # Detect value
+        if model_spread is not None and model_total is not None:
+            value_signals = self.detect_value(game_id, model_spread, model_total)
+            signals.extend(value_signals)
+        
+        # Sort by confidence
+        signals.sort(key=lambda x: x.confidence, reverse=True)
+        
+        return signals
+    
+    def get_top_signals(
+        self,
+        min_confidence: float = 50.0,
+        signal_types: Optional[List[SignalType]] = None,
+    ) -> List[MarketSignal]:
+        """
+        Get top signals across all analyzed games.
+        
+        Args:
+            min_confidence: Minimum confidence threshold
+            signal_types: Filter by signal types (optional)
+            
+        Returns:
+            List of signals meeting criteria
+        """
+        # Would need to track all signals generated
+        # For now, return empty list
+        return []
+
+
+def signal_to_dict(signal: MarketSignal) -> Dict[str, Any]:
+    """Convert MarketSignal to dict."""
+    return {
+        "signal_type": signal.signal_type.value,
+        "game_id": signal.game_id,
+        "side": signal.side,
+        "confidence": signal.confidence,
+        "edge": signal.edge,
+        "description": signal.description,
+        "timestamp": signal.timestamp.isoformat(),
+        "model_line": signal.model_line,
+        "market_line": signal.market_line,
+        "public_percentage": signal.public_percentage,
+        "sharp_percentage": signal.sharp_percentage,
+    }

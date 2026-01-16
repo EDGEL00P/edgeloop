@@ -1,5 +1,4 @@
 import { GoogleGenAI } from "@google/genai";
-import { eq, and, or } from "drizzle-orm";
 import { apiLimiters } from "../infrastructure/rate-limiter";
 import { CircuitBreaker, circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { cache, CacheTTL, CacheService } from "../infrastructure/cache";
@@ -120,7 +119,7 @@ function determineComplexity(
   return "flash";
 }
 
-function generateCacheKey(operation: string, input: any): string {
+function generateCacheKey(operation: string, input: unknown): string {
   const inputHash = JSON.stringify(input)
     .split("")
     .reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)

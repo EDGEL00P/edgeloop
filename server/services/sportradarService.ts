@@ -4,7 +4,7 @@ const BASE = process.env.SPORTRADAR_BASE_URL || "https://api.sportradar.com/nfl/
 const LANG = process.env.SPORTRADAR_LANG || "en";
 const API_KEY = process.env.SPORTRADAR_API_KEY;
 
-async function srFetch(path: string): Promise<any> {
+async function srFetch(path: string): Promise<unknown> {
   if (!API_KEY) throw new Error("Missing SPORTRADAR_API_KEY");
   const url = `${BASE}/${LANG}${path}${path.includes("?") ? "&" : "?"}api_key=${encodeURIComponent(API_KEY)}`;
   return withHealth("sportradar", async () => {
