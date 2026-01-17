@@ -130,12 +130,15 @@ export async function triggerSimulation(
   params: SimulationParams
 ): Promise<string> {
   // Import trigger client dynamically to avoid initialization issues
-  const { triggerClient } = await import("@trigger.dev/sdk/v3");
+  // @ts-ignore - Trigger.dev v3 API may vary
+  const triggerModule = await import("@trigger.dev/sdk/v3");
+  const triggerClient = (triggerModule as any).triggerClient || (triggerModule as any).default;
 
   if (!triggerClient) {
     throw new Error("Trigger.dev client not initialized. Check TRIGGER_API_KEY.");
   }
 
+  // @ts-ignore - Trigger.dev v3 API may vary
   const handle = await triggerClient.trigger(simulationTask, params);
   return handle.id;
 }

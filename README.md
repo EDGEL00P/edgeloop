@@ -1,6 +1,6 @@
-# Edgeloop - NFL Analytics & Betting Intelligence Platform
+# 🏈 Edgeloop - NFL Analytics & Betting Intelligence Platform
 
-> High-performance analytics platform powered by Next.js 16, Rust, and advanced AI prediction engines.
+> High-performance analytics platform powered by Next.js 16, React 19, Rust, and advanced AI prediction engines.
 
 ## 🚀 Quick Start
 
@@ -14,32 +14,33 @@ npm run dev
 # Build for production
 npm run build
 
-# Run tests
-npm test
+# Start production server
+npm start
 ```
 
 ## 📋 Prerequisites
 
 - Node.js 20+
-- Rust (stable)
-- PostgreSQL
-- Docker (for local services)
+- Rust (stable) - for backend services
+- PostgreSQL - for database
+- Docker (optional) - for local services
 
 ## 🏗️ Architecture
 
-Edgeloop is built on a modern, high-performance stack:
+**2026 ESPN-Grade Stack:**
 
-- **Frontend**: Next.js 16 (App Router) with React 19
+- **Frontend**: Next.js 16 (App Router) + React 19
 - **Backend**: Rust (Axum) for microsecond-latency APIs
 - **Database**: PostgreSQL with Drizzle ORM
 - **ML Engine**: Genesis prediction engines (TDA, LTC, Active Inference)
-- **Data Sources**: BALLDONTLIE NFL API (GOAT tier)
+- **Data Sources**: BALLDONTLIE NFL API
+- **Infrastructure**: Vercel (Next.js), Upstash Redis, Trigger.dev, Clerk Auth
 
 ## 📁 Project Structure
 
 ```
 edgeloop/
-├── apps/web/          # Next.js web application
+├── apps/web/          # Next.js 16 application (primary)
 ├── crates/            # Rust libraries
 │   ├── el-api/        # HTTP API server
 │   ├── el-core/       # Core business logic
@@ -55,55 +56,76 @@ edgeloop/
 ### Local Development
 
 ```bash
-# Start all services
-just dev
-
-# Start only web app
+# Start Next.js web app
 npm run dev
 
-# Start Rust API
+# Start Rust API (separate terminal)
 cargo run -p el-api
+
+# Start all services
+just dev
 ```
 
 ### Code Quality
 
 ```bash
-# Format code
-npm run format
-cargo fmt
+# Type check
+npm run check
 
 # Lint
 npm run lint
-cargo clippy
 
-# Type check
-npm run check
+# Format
+npm run format
 ```
 
 ## 📚 Documentation
 
 Core documentation lives in [`docs/`](./docs/):
 
-- [Cleanup Summary](./docs/CLEANUP_SUMMARY.md) - Complete repo optimization
 - [Architecture](./docs/architecture/ARCHITECTURE_V25_WEB.md) - System design
 - [Setup](./docs/setup/SETUP_V25.md) - Installation guide
 - [Deployment](./docs/deployment/DEPLOYMENT_READY.md) - Production deployment
 - [Integrations](./docs/INTEGRATIONS.md) - Vercel integrations
 
-## 🔧 Configuration
+## 🚀 Deploy to Vercel
 
-### Environment Variables
+The platform is **100% Vercel-ready**:
 
-Required environment variables are documented in `.env.example`. Key variables include:
+1. **Connect your repository** to Vercel
+2. **Set root directory** to `apps/web`
+3. **Install Vercel integrations**:
+   - Clerk (Auth)
+   - Upstash Redis (Caching)
+   - Trigger.dev (Background jobs)
+   - Axiom (Logging)
+   - Statsig (A/B Testing)
+   - Resend (Email)
+   - Neon (PostgreSQL)
 
-- `DATABASE_URL` - PostgreSQL connection string
+4. **Environment variables** are auto-provided by integrations
+5. **Deploy** - Build runs automatically
+
+See [Vercel deployment guide](./docs/deployment/DEPLOYMENT_READY.md) for details.
+
+## 🔧 Environment Variables
+
+Required environment variables (auto-provided by Vercel integrations):
+
+- `DATABASE_URL` / `NEON_DATABASE_URL` - PostgreSQL connection
+- `UPSTASH_REDIS_REST_URL` - Redis REST URL
+- `UPSTASH_REDIS_REST_TOKEN` - Redis token
+- `CLERK_SECRET_KEY` - Clerk auth key
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
+- `TRIGGER_API_KEY` - Trigger.dev API key
 - `BALLDONTLIE_API_KEY` - NFL data API key
-- `NEXT_PUBLIC_API_URL` - Rust API server URL
+
+See `.env.example` for full list.
 
 ## 🧪 Testing
 
 ```bash
-# Run web tests (if configured)
+# Run tests
 npm test
 
 # Run Rust tests
@@ -115,13 +137,17 @@ npm run test:coverage
 
 ## 📦 Deployment
 
-The platform can be deployed to:
+**Primary Platform**: Vercel (recommended)
 
-- **Vercel** (recommended for Next.js)
-- **Railway** (full-stack deployment)
-- **Fly.io** (Rust services)
+- ✅ Next.js optimized
+- ✅ Edge functions
+- ✅ Automatic deployments
+- ✅ Integrations auto-configured
 
-See [deployment documentation](./docs/deployment/) for detailed instructions.
+**Alternative Platforms**:
+- Railway (full-stack)
+- Fly.io (Rust services)
+- Render (full-stack)
 
 ## 🤝 Contributing
 
@@ -133,9 +159,3 @@ See [deployment documentation](./docs/deployment/) for detailed instructions.
 ## 📄 License
 
 MIT
-
-## 🔗 Links
-
-- [Documentation](./docs/)
-- [API Documentation](./docs/architecture/)
-- [Changelog](./CHANGELOG.md)

@@ -30,6 +30,7 @@ yarn-error.log*
 # Local env files
 .env*.local
 .env
+!.env.example
 
 # Vercel
 .vercel
@@ -70,24 +71,6 @@ overview_*.puml
 .singularity_plan.md
 miner.py
 public/telemetry.json
-
-# Development status files
-*-COMPLETE.md
-*-READY.md
-*_CHECKLIST.md
-STATUS_*.md
-SETUP_*.md
-MIGRATION_*.md
-
-# Old documentation (now organized in docs/)
-ARCHITECTURE_*.md
-README_*.md
-!README.md
-COMPLETE_*.md
-SUMMARY_*.md
-VERIFICATION_*.md
-DEPLOYMENT_*.md
-!docs/**/*.md
 
 # Build artifacts
 tsconfig.tsbuildinfo

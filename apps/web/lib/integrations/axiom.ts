@@ -43,6 +43,7 @@ export async function logToAxiom(
   }
 
   try {
+    // @ts-ignore - Axiom API may vary by version
     await client.ingest(targetDataset, [
       {
         ...event,

@@ -10,17 +10,17 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm --workspace apps/web run dev",
-    "build": "npm --workspace apps/web run build",
-    "start": "npm --workspace apps/web run start",
+    "dev": "cd apps/web && npm run dev",
+    "build": "cd apps/web && npm run build",
+    "start": "cd apps/web && npm run start",
     "check": "tsc -p tsconfig.json",
     "db:push": "drizzle-kit push",
-    "lint": "npm --workspace apps/web run lint",
+    "lint": "cd apps/web && npm run lint",
     "format": "prettier --write .",
     "nx": "nx",
-    "test": "npm --workspace apps/web run test",
-    "test:watch": "npm --workspace apps/web run test -- --watch",
-    "test:coverage": "npm --workspace apps/web run test -- --coverage"
+    "test": "cd apps/web && npm run test",
+    "test:watch": "cd apps/web && npm run test -- --watch",
+    "test:coverage": "cd apps/web && npm run test -- --coverage"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.8",

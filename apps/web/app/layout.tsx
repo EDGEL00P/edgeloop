@@ -61,19 +61,37 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Clerk key - Vercel provides this via integration
+  // During build, use dummy key if not available
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 
+                   (process.env.VERCEL ? undefined : "pk_test_build_only");
+  
+  // During Vercel build, ClerkProvider will get key from environment
+  // During local build, use dummy key to prevent errors
+  const clerkEnabled = !!clerkKey;
+  
+  const content = (
+    <html 
+      lang="en" 
+      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="antialiased text-foreground min-h-screen overflow-x-hidden">
+        <Providers>
+          {children}
+        </Providers>
+      </body>
+    </html>
+  );
+
+  // Only wrap in ClerkProvider if key is available
+  if (!clerkEnabled) {
+    return content;
+  }
+
   return (
-    <ClerkProvider>
-      <html 
-        lang="en" 
-        className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
-        suppressHydrationWarning
-      >
-        <body className="antialiased text-foreground min-h-screen overflow-x-hidden">
-          <Providers>
-            {children}
-          </Providers>
-        </body>
-      </html>
+    <ClerkProvider publishableKey={clerkKey}>
+      {content}
     </ClerkProvider>
   );
 }

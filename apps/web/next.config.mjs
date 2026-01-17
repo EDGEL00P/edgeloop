@@ -14,15 +14,18 @@ const nextConfig = {
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000',
+        : process.env.NEXT_PUBLIC_VERCEL_URL
+          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+          : 'http://localhost:3000',
   },
   
   serverExternalPackages: ['@hono/node-server', 'hono'],
   
-  // Standalone output for Docker
+  // Standalone output for Docker/Railway/Render
+  // Vercel uses this for optimized deployments
   output: 'standalone',
   
-  // Image optimization
+  // Image optimization for Vercel
   images: {
     remotePatterns: [
       {
@@ -36,16 +39,21 @@ const nextConfig = {
     ],
   },
   
-  // PWA Support
-  // Note: next-pwa will be configured separately
-  
   // Mobile-first optimizations
   compress: true,
   poweredByHeader: false,
   
   // Explicitly configure Turbopack for Next.js 16
-  // This silences the warning about using Turbopack with webpack config
+  // Required for Vercel deployments
   turbopack: {},
+  
+  // Production optimizations
+  swcMinify: true,
+  
+  // Experimental features for better performance
+  experimental: {
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
+  },
 };
 
 export default nextConfig;
