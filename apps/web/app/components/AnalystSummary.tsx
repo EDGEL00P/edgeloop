@@ -2,7 +2,7 @@
  * Analyst Summary - Server Component
  * 
  * Breakdown points as 3D studio panels (Halftime Style)
- * Rendered on server
+ * Rendered on server - connects to real API
  */
 
 import 'server-only';
@@ -29,6 +29,7 @@ export async function AnalystSummary({
   week,
 }: AnalystSummaryProps) {
   try {
+    // Fetch prediction from API
     const prediction = await apiClient.getGenesisPrediction({
       home_team_id: homeTeamId,
       away_team_id: awayTeamId,
@@ -36,7 +37,16 @@ export async function AnalystSummary({
       week,
     });
 
-    // Generate breakdown points from prediction data
+    // Fetch team names from API
+    const [homeTeam, awayTeam] = await Promise.all([
+      apiClient.getTeam(homeTeamId).catch(() => null),
+      apiClient.getTeam(awayTeamId).catch(() => null),
+    ]);
+
+    const homeTeamName = homeTeam?.data?.abbreviation || `Team ${homeTeamId}`;
+    const awayTeamName = awayTeam?.data?.abbreviation || `Team ${awayTeamId}`;
+
+    // Generate breakdown points from prediction data (real API data)
     const breakdowns: BreakdownPoint[] = [];
     
     // Pressure mismatch analysis
@@ -44,8 +54,8 @@ export async function AnalystSummary({
       breakdowns.push({
         title: 'PRESSURE MISMATCH',
         description: prediction.home_robustness > prediction.away_robustness
-          ? `Home team (${prediction.home_team_id}) has multiple offensive pathways`
-          : `Away team (${prediction.away_team_id}) offense more predictable`,
+          ? `${homeTeamName} has multiple offensive pathways (Robust)`
+          : `${awayTeamName} offense more predictable (Fragile)`,
         severity: 'high',
         category: 'pressure',
       });
@@ -56,8 +66,8 @@ export async function AnalystSummary({
       breakdowns.push({
         title: 'FORM DISCREPANCY',
         description: prediction.home_form > prediction.away_form
-          ? 'Home team showing better form and rest indicators'
-          : 'Away team displaying fatigue signals',
+          ? `${homeTeamName} showing better form and rest indicators`
+          : `${awayTeamName} displaying fatigue signals`,
         severity: 'medium',
         category: 'form',
       });
@@ -82,6 +92,20 @@ export async function AnalystSummary({
         severity: 'low',
         category: 'matchup',
       });
+    }
+
+    // Data sources breakdown
+    if (prediction.data_sources) {
+      const totalPlays = (prediction.data_sources.plays_analyzed?.home || 0) + 
+                        (prediction.data_sources.plays_analyzed?.away || 0);
+      if (totalPlays > 0) {
+        breakdowns.push({
+          title: 'DATA QUALITY',
+          description: `${totalPlays.toLocaleString()} plays analyzed across ${(prediction.data_sources.games_analyzed?.home || 0) + (prediction.data_sources.games_analyzed?.away || 0)} games`,
+          severity: 'low',
+          category: 'matchup',
+        });
+      }
     }
 
     return (
@@ -126,7 +150,7 @@ export async function AnalystSummary({
     console.error('Failed to load analyst summary:', error);
     return (
       <div className="studio-panel broadcast-spacing text-slate-400">
-        Failed to load analyst breakdown
+        Failed to load analyst breakdown from API
       </div>
     );
   }
