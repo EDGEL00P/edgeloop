@@ -14,7 +14,7 @@
 ### Backend (Rust Services)
 - **Burn ML**: Native Rust neural networks (no Python)
 - **NATS JetStream**: Real-time event streaming
-- **SurrealDB**: Multi-model database (Graph + Vector)
+- **PostgreSQL**: Primary data store
 - **REST APIs**: Expose Rust services to Next.js
 
 ### Architecture Flow
@@ -33,7 +33,6 @@ Rust Services (Axum HTTP Server)
     └── el-db (SurrealDB Queries)
     ↓
 Infrastructure
-    ├── SurrealDB (Data Layer)
     └── NATS JetStream (Event Streaming)
 ```
 
@@ -61,7 +60,6 @@ edgeloop-v25/
 │   ├── oracle/                 # Predictor (Burn inference)
 │   └── executioner/            # Auto-Picks (Simulation)
 └── infrastructure/
-    ├── surreal/                # DB Configs
     └── nats/                   # JetStream Configs
 ```
 
@@ -103,7 +101,7 @@ edgeloop-v25/
 | Styling | Tailwind CSS v4 | Mobile-first utilities |
 | Backend API | Rust (Axum) | Microsecond latency |
 | ML Engine | Burn (Rust) | Native inference |
-| Database | SurrealDB | Graph + Vector in one |
+| Database | PostgreSQL | Relational + analytics |
 | Streaming | NATS JetStream | Real-time events |
 | Scraper | ChromiumOxide (Rust) | Headless browser |
 

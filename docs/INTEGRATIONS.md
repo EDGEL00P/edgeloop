@@ -125,7 +125,7 @@ The `apps/web/proxy.ts` file handles authentication:
 ### Setup
 1. Install Clerk via Vercel integrations
 2. Environment variables are auto-provided
-3. `ClerkProvider` wraps the app in `app/layout.tsx`
+3. `ClerkProvider` wraps the app in `apps/web/app/layout.tsx`
 4. `clerkMiddleware()` handles authentication in `proxy.ts`
 
 ### Usage Examples

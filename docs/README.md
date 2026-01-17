@@ -7,32 +7,18 @@ This directory contains all documentation for the Edgeloop NFL Analytics platfor
 ## Documentation Structure
 
 ### Architecture
-- `architecture/` - System architecture, design decisions, and technical specifications
-  - Architecture plans and roadmaps
-  - Migration strategies
-  - System status and summaries
+- `architecture/` - System architecture and technical specifications
 
 ### Setup
-- `setup/` - Installation and configuration guides
-  - Setup instructions for different environments
-  - Complete setup guides
-  - Version-specific documentation
+- `setup/` - Installation and configuration guide
 
 ### Deployment
-- `deployment/` - Deployment guides and checklists
-  - Deployment procedures
-  - Integration documentation
-  - Verification checklists
-
-### Requirements
-- `requirements/` - Product requirements and epics
-  - Feature specifications
-  - User stories
-  - Epic documentation
+- `deployment/` - Deployment guide
 
 ## Quick Links
 
 - [Main README](../README.md) - Project overview and quick start
-- [Architecture Overview](./architecture/) - System design and architecture
-- [Setup Guide](./setup/) - Installation instructions
-- [Deployment Guide](./deployment/) - Deployment procedures
+- [Architecture Overview](./architecture/ARCHITECTURE_V25_WEB.md)
+- [Setup Guide](./setup/SETUP_V25.md)
+- [Deployment Guide](./deployment/DEPLOYMENT_READY.md)
+- [Integrations](./INTEGRATIONS.md)

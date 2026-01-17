@@ -82,12 +82,12 @@ npm run check
 
 ## 📚 Documentation
 
-Full documentation is available in the [`docs/`](./docs/) directory:
+Core documentation lives in [`docs/`](./docs/):
 
-- [Architecture Documentation](./docs/architecture/)
-- [Setup Guides](./docs/setup/)
-- [Deployment Guides](./docs/deployment/)
-- [Requirements](./docs/requirements/)
+- [Architecture](./docs/architecture/ARCHITECTURE_V25_WEB.md)
+- [Setup](./docs/setup/SETUP_V25.md)
+- [Deployment](./docs/deployment/DEPLOYMENT_READY.md)
+- [Integrations](./docs/INTEGRATIONS.md)
 
 ## 🔧 Configuration
 
@@ -102,7 +102,7 @@ Required environment variables are documented in `.env.example`. Key variables i
 ## 🧪 Testing
 
 ```bash
-# Run all tests
+# Run web tests (if configured)
 npm test
 
 # Run Rust tests

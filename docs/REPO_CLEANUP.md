@@ -3,7 +3,7 @@
 ## Cleanup Completed
 
 ### Branches
-- ✅ Renamed `vscode-setup-c168d` → `production`
+- ✅ Consolidated `main` + `production` into `edgeloop`
 - ✅ Deleted obsolete local branches: `drop-nextjs`, `remove-nextjs-c168d`
 - ✅ Deleted obsolete remote branches: `copilot/*` branches (3 branches)
 - ✅ Cleaned up temporary branches: `production-old`, `production-clean`
@@ -32,12 +32,11 @@
 
 ### Current Branch Structure
 
-**Active Branches:**
-- `main` - Main development branch
-- `production` - Production-ready codebase
+**Active Branch:**
+- `edgeloop` - Single source of truth for development + production
 
 **Removed Branches:**
-- `vscode-setup-c168d` (renamed to production)
+- `vscode-setup-c168d` (renamed to production before consolidation)
 - `drop-nextjs`
 - `remove-nextjs-c168d`
 - `copilot/convert-repo-to-nextjs`

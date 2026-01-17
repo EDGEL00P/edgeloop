@@ -1,13 +1,8 @@
 {
   "include": [
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "next-env.d.ts",
-    "pages/api/**/*",
-    "server/**/*",
-    "shared/**/*",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "server/**/*.ts",
+    "shared/**/*.ts",
+    "shared/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
@@ -37,14 +32,8 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./app/*"
-      ],
       "@shared/*": [
         "./shared/*"
-      ],
-      "@server/*": [
-        "./server/*"
       ]
     },
     "plugins": [

@@ -7,21 +7,20 @@
   },
   "license": "MIT",
   "workspaces": [
-    "apps/*",
-    "libs/*"
+    "apps/*"
   ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "check": "tsc",
+    "dev": "npm --workspace apps/web run dev",
+    "build": "npm --workspace apps/web run build",
+    "start": "npm --workspace apps/web run start",
+    "check": "tsc -p tsconfig.json",
     "db:push": "drizzle-kit push",
-    "lint": "next lint",
+    "lint": "npm --workspace apps/web run lint",
     "format": "prettier --write .",
     "nx": "nx",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "npm --workspace apps/web run test",
+    "test:watch": "npm --workspace apps/web run test -- --watch",
+    "test:coverage": "npm --workspace apps/web run test -- --coverage"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.8",
