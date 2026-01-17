@@ -39,29 +39,13 @@ const nextConfig = {
   // PWA Support
   // Note: next-pwa will be configured separately
   
-  // WebAssembly support for WASM modules
-  webpack: (config, { isServer }) => {
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-      layers: true,
-    };
-    
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    
-    return config;
-  },
-  
   // Mobile-first optimizations
   compress: true,
   poweredByHeader: false,
   
-  // Turbopack (Next.js 16 default)
+  // Explicitly configure Turbopack for Next.js 16
+  // This silences the warning about using Turbopack with webpack config
+  turbopack: {},
 };
 
 export default nextConfig;
