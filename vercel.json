@@ -2,11 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm install && npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm ci || npm install",
   "framework": "nextjs",
   "rootDirectory": "apps/web",
   "outputDirectory": ".next",
   "regions": ["iad1"],
+  "functionFailoverRegions": ["sfo1"],
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet . '!docs/**' '!*.md' '!vercel.json' '!.gitignore'",
   "functions": {
     "app/api/**/*.ts": {
       "memory": 1024,
