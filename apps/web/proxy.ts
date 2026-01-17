@@ -1,6 +1,7 @@
 /**
- * Next.js Middleware with Arcjet Protection & Clerk Authentication
+ * Next.js Proxy with Arcjet Protection & Clerk Authentication
  * Protects all routes with anti-bot, rate limiting, and authentication
+ * Uses the new proxy.ts convention (replaces middleware.ts in Next.js 16+)
  */
 
 import { NextRequest, NextResponse } from "next/server";

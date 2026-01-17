@@ -6,7 +6,7 @@ This directory contains integrations for all Vercel services installed in the pr
 
 ### 1. **Arcjet** - Anti-Scraper Shield & Rate Limiting
 - **Purpose**: Bot detection and rate limiting
-- **Usage**: Automatically protects all routes via `middleware.ts`
+- **Usage**: Automatically protects all routes via `proxy.ts`
 - **Env Var**: `ARCJET_KEY` (auto-provided by Vercel)
 - **Documentation**: [Arcjet Docs](https://docs.arcjet.com/)
 
@@ -50,7 +50,7 @@ This directory contains integrations for all Vercel services installed in the pr
 
 ### 7. **Clerk** - Authentication & Authorization
 - **Purpose**: User authentication and protected routes
-- **Usage**: Integrated in `middleware.ts` and `app/layout.tsx`
+- **Usage**: Integrated in `proxy.ts` and `app/layout.tsx`
 - **Env Vars**:
   - `CLERK_SECRET_KEY`
   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
