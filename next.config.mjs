@@ -37,28 +37,11 @@ const nextConfig = {
       },
     ],
   },
-  
-  // WebAssembly support for 2027 architecture
-  webpack: (config, { isServer }) => {
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-      layers: true,
-    };
-    
-    // Enable WASM in client bundle
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    
-    return config;
-  },
-  
-  // Turbopack (default in Next.js 16 - 2027 build)
-  // Turbopack is automatically enabled in Next.js 16+ with `next dev`
+
+  // Next.js 16 (Turbopack) compatibility:
+  // When using Turbopack, a webpack config without a turbopack config can hard-error on Vercel.
+  // We explicitly set an empty turbopack config and avoid webpack customization here.
+  turbopack: {},
 };
 
 export default nextConfig;
