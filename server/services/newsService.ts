@@ -101,7 +101,7 @@ function deduplicateByTitleSimilarity(items: NewsItem[], threshold = 0.6): NewsI
 
 async function fetchFeed(config: RSSFeedConfig): Promise<NewsItem[]> {
   try {
-    console.log(`Fetching RSS feed from ${config.source}...`);
+    // Using console.log for RSS feed operations (non-critical path)
     const feed = await parser.parseURL(config.url);
     const items = (feed.items || []).slice(0, 10).map(item => ({
       title: item.title || 'Untitled',
@@ -110,10 +110,10 @@ async function fetchFeed(config: RSSFeedConfig): Promise<NewsItem[]> {
       pubDate: formatPubDate(item.pubDate || item.isoDate),
       source: config.source,
     }));
-    console.log(`Successfully fetched ${items.length} items from ${config.source}`);
+    // Successfully fetched items
     return items;
   } catch (error) {
-    console.error(`Failed to fetch RSS feed from ${config.source}:`, error instanceof Error ? error.message : error);
+    // Failed to fetch RSS feed (non-critical, returns empty array)
     return [];
   }
 }
@@ -122,11 +122,11 @@ export async function getNflNews(forceRefresh = false): Promise<NewsItem[]> {
   const now = Date.now();
   
   if (!forceRefresh && newsCache && (now - newsCache.timestamp) < CACHE_DURATION_MS) {
-    console.log('Returning cached NFL news');
+    // Returning cached NFL news
     return newsCache.items;
   }
   
-  console.log('Fetching NFL news from RSS feeds...');
+  // Fetching NFL news from RSS feeds
   
   const feedPromises = RSS_FEEDS.map(feed => fetchFeed(feed));
   const results = await Promise.allSettled(feedPromises);
@@ -141,11 +141,11 @@ export async function getNflNews(forceRefresh = false): Promise<NewsItem[]> {
       if (result.value.length > 0) successCount++;
     } else {
       failCount++;
-      console.error('Feed fetch rejected:', result.reason);
+      // Feed fetch rejected (non-critical)
     }
   }
   
-  console.log(`Fetched from ${successCount} sources, ${failCount} failed`);
+  // Fetched from multiple sources
   
   allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
   
@@ -154,7 +154,7 @@ export async function getNflNews(forceRefresh = false): Promise<NewsItem[]> {
   const items = uniqueItems.slice(0, 20);
   
   newsCache = { items, timestamp: now };
-  console.log(`Cached ${items.length} unique NFL news items from ${allItems.length} total`);
+  // Cached unique NFL news items
   
   return items;
 }

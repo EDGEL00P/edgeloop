@@ -147,7 +147,7 @@ Every service scaffolded from `platform/templates/service` includes:
 - [x] Create `infra/env/` structure
 
 ### Phase 2: Services (Current)
-- [ ] Extract `identity/` from `server/auth/`
+- [x] Extract `identity/` from `server/auth/` ✅
 - [ ] Extract `oracle/` from `server/services/dataRouter.ts`
 - [ ] Extract `execution/` from `server/betting/`
 - [ ] Extract `engine/` (consolidate Rust services)
