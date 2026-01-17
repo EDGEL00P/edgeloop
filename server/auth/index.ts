@@ -40,8 +40,15 @@ export function getSession(): RequestHandler {
     tableName: "sessions",
   });
   
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error("SESSION_SECRET is required in production");
+    }
+  }
+  
   return session({
-    secret: process.env.SESSION_SECRET || "edgeloop-secret-change-in-production",
+    secret: sessionSecret || "edgeloop-secret-change-in-production",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,

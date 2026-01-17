@@ -77,15 +77,24 @@ function assessGameImpact(weather: WeatherData): 'favorable' | 'moderate' | 'sev
   return 'favorable';
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export async function getWeatherForVenue(venue: string | null): Promise<WeatherData> {
   const apiKey = process.env.WEATHER_API_KEY;
   
   if (!apiKey) {
-    logger.warn({ 
+    const errorMessage = "WEATHER_API_KEY not configured - required for production";
+    logger.error({ 
       type: "weather_api_key_missing", 
       venue,
-      message: "WEATHER_API_KEY not configured - returning mock weather data" 
+      message: errorMessage 
     });
+    
+    if (isProduction) {
+      throw new Error(errorMessage);
+    }
+    
+    // Only allow mocks in development
     return getMockWeather(venue);
   }
   
@@ -103,12 +112,19 @@ export async function getWeatherForVenue(venue: string | null): Promise<WeatherD
     const response = await fetch(url);
     
     if (!response.ok) {
+      const errorMessage = `Weather API returned status ${response.status}`;
       logger.error({ 
         type: "weather_api_error", 
         status: response.status, 
         venue,
-        message: `Weather API returned status ${response.status}` 
+        message: errorMessage 
       });
+      
+      if (isProduction) {
+        throw new Error(errorMessage);
+      }
+      
+      // Only allow mocks in development on API errors
       return getMockWeather(venue);
     }
     
@@ -133,12 +149,19 @@ export async function getWeatherForVenue(venue: string | null): Promise<WeatherD
     
     return weather;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error({ 
       type: "weather_fetch_failed", 
       venue,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined
     });
+    
+    if (isProduction) {
+      throw new Error(`Weather API fetch failed: ${errorMessage}`);
+    }
+    
+    // Only allow mocks in development on network errors
     return getMockWeather(venue);
   }
 }
@@ -169,6 +192,10 @@ export async function getWeatherByCity(city: string): Promise<WeatherData> {
   const apiKey = process.env.WEATHER_API_KEY;
   
   if (!apiKey) {
+    const errorMessage = "WEATHER_API_KEY not configured - required for production";
+    if (isProduction) {
+      throw new Error(errorMessage);
+    }
     return getMockWeather(null);
   }
   
@@ -183,6 +210,10 @@ export async function getWeatherByCity(city: string): Promise<WeatherData> {
     const response = await fetch(url);
     
     if (!response.ok) {
+      const errorMessage = `Weather API returned status ${response.status} for city: ${city}`;
+      if (isProduction) {
+        throw new Error(errorMessage);
+      }
       return getMockWeather(null);
     }
     
@@ -207,12 +238,18 @@ export async function getWeatherByCity(city: string): Promise<WeatherData> {
     
     return weather;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error({ 
       type: "weather_fetch_by_city_failed", 
       city,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined
     });
+    
+    if (isProduction) {
+      throw new Error(`Weather API fetch failed for city ${city}: ${errorMessage}`);
+    }
+    
     return getMockWeather(null);
   }
 }

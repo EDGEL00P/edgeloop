@@ -2,10 +2,11 @@ import { withHealth } from "../health/withHealth";
 
 const BASE = process.env.SPORTRADAR_BASE_URL || "https://api.sportradar.com/nfl/official/trial/v7";
 const LANG = process.env.SPORTRADAR_LANG || "en";
-const API_KEY = process.env.SPORTRADAR_API_KEY;
+// Support both SPORTSRADAR_API_KEY (Vercel) and SPORTRADAR_API_KEY (legacy)
+const API_KEY = process.env.SPORTSRADAR_API_KEY || process.env.SPORTRADAR_API_KEY;
 
 async function srFetch(path: string): Promise<unknown> {
-  if (!API_KEY) throw new Error("Missing SPORTRADAR_API_KEY");
+  if (!API_KEY) throw new Error("Missing SPORTSRADAR_API_KEY or SPORTRADAR_API_KEY");
   const url = `${BASE}/${LANG}${path}${path.includes("?") ? "&" : "?"}api_key=${encodeURIComponent(API_KEY)}`;
   return withHealth("sportradar", async () => {
     const res = await fetch(url, { headers: { accept: "application/json" } });

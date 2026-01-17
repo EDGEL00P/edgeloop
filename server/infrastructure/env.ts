@@ -30,9 +30,14 @@ const ENV_VARIABLES: EnvConfig[] = [
   
   // Optional APIs
   {
+    name: 'SPORTSRADAR_API_KEY',
+    required: false,
+    description: 'SportRadar API key for additional NFL data (Vercel format - also accepts SPORTRADAR_API_KEY)',
+  },
+  {
     name: 'SPORTRADAR_API_KEY',
     required: false,
-    description: 'SportRadar API key for additional NFL data',
+    description: 'SportRadar API key (legacy name - use SPORTSRADAR_API_KEY)',
   },
   {
     name: 'RAPIDAPI_KEY',
@@ -41,13 +46,13 @@ const ENV_VARIABLES: EnvConfig[] = [
   },
   {
     name: 'ODDS_API_KEY',
-    required: false,
-    description: 'The Odds API key for betting odds',
+    required: process.env.NODE_ENV === 'production',
+    description: 'The Odds API key for betting odds (required in production)',
   },
   {
     name: 'WEATHER_API_KEY',
-    required: false,
-    description: 'OpenWeatherMap API key for weather data',
+    required: process.env.NODE_ENV === 'production',
+    description: 'OpenWeatherMap API key for weather data (required in production)',
   },
   
   // AI Services (Optional)
@@ -64,12 +69,22 @@ const ENV_VARIABLES: EnvConfig[] = [
   {
     name: 'OPENROUTER_API_KEY',
     required: false,
-    description: 'OpenRouter API key for AI models',
+    description: 'OpenRouter API key for AI models (also accepts AI_INTEGRATIONS_OPENROUTER_API_KEY)',
+  },
+  {
+    name: 'AI_INTEGRATIONS_OPENROUTER_API_KEY',
+    required: false,
+    description: 'OpenRouter API key for AI models (preferred)',
+  },
+  {
+    name: 'AI_INTEGRATIONS_ANTHROPIC_API_KEY',
+    required: false,
+    description: 'Anthropic Claude API key for AI analysis',
   },
   {
     name: 'GROK_API_KEY',
     required: false,
-    description: 'Grok API key for AI analysis',
+    description: 'Grok API key for AI analysis (not yet implemented)',
   },
   
   // Other Services
@@ -197,6 +212,13 @@ const ENV_VARIABLES: EnvConfig[] = [
     required: false,
     description: 'Trigger.dev project ID',
   },
+  
+  // Auth & Security
+  {
+    name: 'SESSION_SECRET',
+    required: process.env.NODE_ENV === 'production',
+    description: 'Secret key for session encryption (required in production)',
+  },
   {
     name: 'RUST_ENGINE_URL',
     required: false,
@@ -311,7 +333,7 @@ export function logEnvironmentStatus(): void {
  */
 export function isServiceAvailable(serviceName: string): boolean {
   const serviceMap: Record<string, string> = {
-    sportradar: 'SPORTRADAR_API_KEY',
+    sportradar: 'SPORTSRADAR_API_KEY',
     rapidapi: 'RAPIDAPI_KEY',
     odds: 'ODDS_API_KEY',
     weather: 'WEATHER_API_KEY',

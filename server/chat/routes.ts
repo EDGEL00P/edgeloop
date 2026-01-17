@@ -10,12 +10,13 @@ import { chatStorage } from "./storage";
 import { logger } from "../infrastructure/logger";
 
 // Initialize AI clients based on available API keys
-const geminiClient = process.env.GEMINI_API_KEY
-  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+// Use AI_INTEGRATIONS_* prefix to match aiRouter and other services
+const geminiClient = process.env.AI_INTEGRATIONS_GEMINI_API_KEY
+  ? new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY })
   : null;
 
-const openaiClient = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openaiClient = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY })
   : null;
 
 type AIProvider = "gemini" | "openai" | "none";
@@ -64,7 +65,7 @@ async function* generateAIResponse(
       if (content) yield content;
     }
   } else {
-    yield "No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.";
+    yield "No AI provider configured. Set AI_INTEGRATIONS_GEMINI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY.";
   }
 }
 
@@ -173,8 +174,8 @@ export function registerChatRoutes(app: Express): void {
     res.json({
       provider,
       available: provider !== "none",
-      geminiConfigured: !!process.env.GEMINI_API_KEY,
-      openaiConfigured: !!process.env.OPENAI_API_KEY,
+      geminiConfigured: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+      openaiConfigured: !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
     });
   });
 }

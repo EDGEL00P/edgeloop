@@ -1,8 +1,0 @@
-# Exclude server directory from Next.js builds
-../server/
-server/
-**/Scene3D*.tsx
-**/Scene3D*.ts
-**/Scene3DWrapper*.tsx
-**/Scene3DWrapper*.ts
-**/[...path]/route.ts

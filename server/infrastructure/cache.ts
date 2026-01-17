@@ -37,6 +37,9 @@ export const CacheKeys = {
   correlation: (legs: string) => `correlation:${legs}`,
   weather: (venue: string) => `weather:${venue}`,
   playerStats: (playerId: string, season: number) => `player:stats:${playerId}:${season}`,
+  activePlayers: () => "players:active",
+  playerInjuries: () => "injuries:players",
+  teamRoster: (teamId: number) => `roster:team:${teamId}`,
 };
 
 interface CacheStats {

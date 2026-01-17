@@ -323,7 +323,7 @@ export async function getTeams(): Promise<TeamListResponse | null> {
       {
         name: "sportradar",
         priority: 0,
-        isAvailable: () => !!process.env.SPORTRADAR_API_KEY,
+        isAvailable: () => !!(process.env.SPORTSRADAR_API_KEY || process.env.SPORTRADAR_API_KEY),
         fetch: async () => {
           const data = await SportradarService.getTeams();
           return {
@@ -380,7 +380,7 @@ export async function getGames(season: number, week: number): Promise<GamesRespo
       {
         name: "sportradar",
         priority: 0,
-        isAvailable: () => !!process.env.SPORTRADAR_API_KEY,
+        isAvailable: () => !!(process.env.SPORTSRADAR_API_KEY || process.env.SPORTRADAR_API_KEY),
         fetch: async () => {
           const data = await SportradarService.getWeekSchedule(season, "REG", week);
           return {
@@ -484,7 +484,7 @@ export async function getPlayerStats(playerId: number): Promise<PlayerStatsRespo
         priority: 1,
         isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
         fetch: async () => {
-          const data = await fetchFromBallDontLie(`/players/${playerId}/stats`);
+          const data = await fetchFromBallDontLie(`/stats?player_ids[]=${playerId}`);
           return { data };
         },
       },
@@ -495,6 +495,78 @@ export async function getPlayerStats(playerId: number): Promise<PlayerStatsRespo
         fetch: async () => {
           const data = await fetchFromESPN(`/athletes/${playerId}/stats`);
           return { data: data };
+        },
+      },
+    ],
+  });
+}
+
+export async function getActivePlayers(): Promise<TeamListResponse | null> {
+  const router = DataRouter.getInstance();
+  return router.fetch<TeamListResponse>({
+    cacheKey: CacheKeys.activePlayers(),
+    cacheTTL: CacheTTL.DAY,
+    sources: [
+      {
+        name: "balldontlie",
+        priority: 0,
+        isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
+        fetch: async () => {
+          const data = await fetchFromBallDontLie("/players/active");
+          return {
+            data: asArray(data?.data ?? data).map((player): TeamSummary | null => {
+              const playerRecord = asRecord(player);
+              const id = toString(playerRecord?.id);
+              if (!id) return null;
+              return {
+                id,
+                abbreviation: toString(playerRecord?.team?.abbreviation),
+                name: `${toString(playerRecord?.first_name) || ""} ${toString(playerRecord?.last_name) || ""}`.trim(),
+                fullName: `${toString(playerRecord?.first_name) || ""} ${toString(playerRecord?.last_name) || ""}`.trim(),
+              };
+            }).filter((p): p is TeamSummary => p !== null),
+            raw: data,
+          };
+        },
+      },
+    ],
+  });
+}
+
+export async function getPlayerInjuries(): Promise<{ data: unknown } | null> {
+  const router = DataRouter.getInstance();
+  return router.fetch<{ data: unknown }>({
+    cacheKey: CacheKeys.playerInjuries(),
+    cacheTTL: CacheTTL.MEDIUM,
+    sources: [
+      {
+        name: "balldontlie",
+        priority: 0,
+        isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
+        fetch: async () => {
+          const data = await fetchFromBallDontLie("/player_injuries");
+          return { data };
+        },
+      },
+    ],
+  });
+}
+
+export async function getTeamRoster(teamId?: number): Promise<{ data: unknown } | null> {
+  const router = DataRouter.getInstance();
+  const cacheKey = teamId ? CacheKeys.teamRoster(teamId) : "team_roster:all";
+  return router.fetch<{ data: unknown }>({
+    cacheKey,
+    cacheTTL: CacheTTL.DAY,
+    sources: [
+      {
+        name: "balldontlie",
+        priority: 0,
+        isAvailable: () => ballDontLieBreaker.getState() !== "OPEN",
+        fetch: async () => {
+          const endpoint = teamId ? `/team_roster?team_id=${teamId}` : "/team_roster";
+          const data = await fetchFromBallDontLie(endpoint);
+          return { data };
         },
       },
     ],

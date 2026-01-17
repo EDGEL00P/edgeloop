@@ -36,7 +36,7 @@ function diff(a?: NormalizedGame, b?: NormalizedGame): string[] {
 
 export async function crossrefGames(season: number, week: number): Promise<CrossrefResult> {
   const [sr, espn, bdl] = await Promise.allSettled([
-    process.env.SPORTRADAR_API_KEY ? SportradarService.getWeekSchedule(season, "REG", week) : Promise.reject(new Error("Sportradar disabled")),
+    (process.env.SPORTSRADAR_API_KEY || process.env.SPORTRADAR_API_KEY) ? SportradarService.getWeekSchedule(season, "REG", week) : Promise.reject(new Error("Sportradar disabled")),
     fetchESPNScoreboard(season, week),
     fetchBDLGames(season, week),
   ]);

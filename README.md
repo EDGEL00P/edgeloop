@@ -113,7 +113,7 @@ See [Vercel deployment guide](./docs/deployment/VERCEL_DEPLOYMENT.md) for detail
 
 ## 🔧 Environment Variables
 
-Required environment variables (auto-provided by Vercel integrations):
+**Required for production** (auto-provided by Vercel integrations):
 
 - `DATABASE_URL` / `NEON_DATABASE_URL` - PostgreSQL connection
 - `UPSTASH_REDIS_REST_URL` - Redis REST URL
@@ -122,6 +122,13 @@ Required environment variables (auto-provided by Vercel integrations):
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
 - `TRIGGER_API_KEY` - Trigger.dev API key
 - `BALLDONTLIE_API_KEY` - NFL data API key
+
+**Required for production APIs** (configure manually):
+
+- `ODDS_API_KEY` - The Odds API key for betting odds (get from [the-odds-api.com](https://the-odds-api.com))
+- `WEATHER_API_KEY` - OpenWeatherMap API key for weather data (get from [openweathermap.org](https://openweathermap.org/api))
+
+> **Note**: In production, the application will fail to start if these API keys are missing. Mock data is only used in development mode.
 
 See `.env.example` for full list.
 

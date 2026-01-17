@@ -96,7 +96,7 @@ import { OddsService, getNflOdds, getOddsForGame } from "./services/oddsService"
 import { EspnService, getTeamStats, getTeamInjuries, getTeamDepthChart, getMatchupData, refreshAllEspnData } from "./services/espnService";
 import { GeminiService } from "./services/geminiService";
 import { getGameMedia, getAllPodcasts, getAllTvNetworks, getTeamRadio } from "./services/mediaService";
-import { dataRouter, getTeams as getRouterTeams, getGames as getRouterGames } from "./services/dataRouter";
+import { dataRouter, getTeams as getRouterTeams, getGames as getRouterGames, getActivePlayers, getPlayerInjuries, getTeamRoster } from "./services/dataRouter";
 import { startAutoRefresh, getRefreshStatus, getSyncTimes } from "./services/autoRefresh";
 import { AutoPicksService, generateAutoPicks, getTopPicks } from "./services/autoPicksService";
 import { metrics } from "./infrastructure/metrics";
@@ -302,6 +302,22 @@ export async function registerRoutes(
   app.get("/api/player-props/:gameId", async (req, res) => {
     try {
       const { gameId } = req.params;
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      // In production, require a real API integration
+      if (isProduction) {
+        logger.error({ 
+          type: "player_props_not_implemented", 
+          gameId,
+          message: "Player props API integration required for production" 
+        });
+        return res.status(501).json({ 
+          error: "Player props API not implemented",
+          message: "Real player props API integration is required for production. Please configure an odds provider API (e.g., The Odds API, SportRadar)."
+        });
+      }
+      
+      // Only allow mocks in development
       const mockProps = generateMockPlayerProps(gameId);
       res.json(mockProps);
     } catch (error) {
@@ -1807,6 +1823,48 @@ Format your response with clear sections: SPREAD ANALYSIS, TOTAL ANALYSIS, KEY F
     } catch (error) {
       res.status(500).json({ 
         error: "Failed to fetch games via data router",
+        message: (error as Error).message 
+      });
+    }
+  });
+
+  // BallDontLie additional endpoints
+  app.get("/api/nfl/players/active", async (_req, res) => {
+    try {
+      const result = await getActivePlayers();
+      res.json(result);
+    } catch (error) {
+      logger.error({ type: "active_players_error", error: String(error) });
+      res.status(500).json({ 
+        error: "Failed to fetch active players",
+        message: (error as Error).message 
+      });
+    }
+  });
+
+  app.get("/api/nfl/injuries", async (_req, res) => {
+    try {
+      const result = await getPlayerInjuries();
+      res.json(result);
+    } catch (error) {
+      logger.error({ type: "player_injuries_error", error: String(error) });
+      res.status(500).json({ 
+        error: "Failed to fetch player injuries",
+        message: (error as Error).message 
+      });
+    }
+  });
+
+  app.get("/api/nfl/roster/:teamId?", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const teamIdNum = teamId ? Number(teamId) : undefined;
+      const result = await getTeamRoster(teamIdNum);
+      res.json(result);
+    } catch (error) {
+      logger.error({ type: "team_roster_error", error: String(error) });
+      res.status(500).json({ 
+        error: "Failed to fetch team roster",
         message: (error as Error).message 
       });
     }
