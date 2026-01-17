@@ -4,7 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm ci || npm install",
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
   "outputDirectory": ".next",
   "regions": ["iad1"],
   "functionFailoverRegions": ["sfo1"],

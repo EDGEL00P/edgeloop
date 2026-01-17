@@ -40,7 +40,11 @@ npm start
 
 ```
 edgeloop/
-├── apps/web/          # Next.js 16 application (primary)
+├── app/               # Next.js 16 App Router (pages & API routes)
+├── lib/               # Shared libraries and utilities
+├── public/            # Static assets
+├── styles/            # Global styles
+├── trigger/           # Trigger.dev background jobs
 ├── crates/            # Rust libraries
 │   ├── el-api/        # HTTP API server
 │   ├── el-core/       # Core business logic
@@ -93,8 +97,7 @@ Core documentation lives in [`docs/`](./docs/):
 The platform is **100% Vercel-ready**:
 
 1. **Connect your repository** to Vercel
-2. **Set root directory** to `apps/web`
-3. **Install Vercel integrations**:
+2. **Install Vercel integrations**:
    - Clerk (Auth)
    - Upstash Redis (Caching)
    - Trigger.dev (Background jobs)
@@ -106,7 +109,7 @@ The platform is **100% Vercel-ready**:
 4. **Environment variables** are auto-provided by integrations
 5. **Deploy** - Build runs automatically
 
-See [Vercel deployment guide](./docs/deployment/DEPLOYMENT_READY.md) for details.
+See [Vercel deployment guide](./docs/deployment/VERCEL_DEPLOYMENT.md) for details.
 
 ## 🔧 Environment Variables
 
