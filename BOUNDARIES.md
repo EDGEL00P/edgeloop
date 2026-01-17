@@ -1,96 +1,128 @@
 # Architectural Boundaries
 
-## The Rule
+**Hard rules that prevent chaos as the codebase scales.**
 
-**"One product stack, one engine boundary, contracts are the only shared language."**
+## Service Rules
 
-## Boundary Rules
-
-### 1. Domains Cannot Import Domains
-**Rule**: `domains/*` cannot import from other `domains/*` directly.
-
-**Why**: Prevents tight coupling between business domains.
-
-**How**: Use `contracts/` schemas and generated SDKs from `sdks/ts/`.
+### 1. Services Never Import Each Other's Code
 
 ```typescript
-// ❌ BAD
-import { authenticateUser } from '../auth/authenticate';
+// ❌ BAD - Direct service import
+import { identityService } from '../services/identity';
 
-// ✅ GOOD
-import { authClient } from '@edgeloop/sdk-ts';
-const user = await authClient.authenticateUser(token);
+// ✅ GOOD - Use generated SDK
+import { identityClient } from '@edgeloop/sdk-ts';
 ```
 
-### 2. Apps Use SDKs Only
-**Rule**: `apps/*` can only talk to domains via SDK.
+**Services only communicate via `sdks/*` generated from `contracts/*`.**
 
-**Why**: Enforces API contracts and prevents breaking changes.
+### 2. Domain Logic Lives in Services, Not in libs/
 
 ```typescript
-// ❌ BAD
-import { getGames } from '../../domains/data/getGames';
+// ❌ BAD - Domain logic in libs/
+libs/trading/betting-logic.ts
 
-// ✅ GOOD
-import { dataClient } from '@edgeloop/sdk-ts';
-const games = await dataClient.getGames(season, week);
+// ✅ GOOD - Domain logic in services/
+services/execution/betting.ts
 ```
 
-### 3. Contracts Are Source of Truth
-**Rule**: All inter-domain communication must go through `contracts/`.
+**`libs/` contains only infrastructure utilities** (logging, config, http clients, retries).
 
-**Why**: Single source of truth prevents API drift.
+### 3. Apps Use SDKs, Not Direct Service Imports
 
 ```typescript
-// ✅ Define in contracts/api/data.ts
-export const GetGamesRequest = z.object({
-  season: z.number(),
-  week: z.number(),
-});
+// ❌ BAD - App importing service directly
+import { oracleService } from '../../services/oracle';
 
-// ✅ Generated in sdks/ts/
-export const dataClient = {
-  getGames: (req: GetGamesRequest) => { ... }
-};
+// ✅ GOOD - App using SDK
+import { oracleClient } from '@edgeloop/sdk-ts';
 ```
 
-### 4. Engine Uses Contracts
-**Rule**: Engine exposes API defined in `contracts/`.
+### 4. Contracts Are the Only Shared Language
 
-**Why**: Engine can be swapped without changing app code.
-
-```typescript
-// Engine exposes REST API from contracts/
-// Apps consume via sdks/ts/
-import { engineClient } from '@edgeloop/sdk-ts';
-const prediction = await engineClient.predict(gameData);
-```
-
-### 5. Python in ml/ Only
-**Rule**: Python code lives in `ml/` for training/evaluation only.
-
-**Why**: Runtime should be TypeScript/Rust for consistency.
-
-```typescript
-// ❌ BAD - Python runtime service
-// python_engine/api.py (runtime)
-
-// ✅ GOOD - Python training only
-// ml/training/train_model.py
-// Exports model → consumed by TS or engine
-```
+- All inter-service APIs defined in `contracts/http/` or `contracts/rpc/`
+- Event schemas in `contracts/events/`
+- No ad-hoc shared types or interfaces
 
 ## Enforcement
 
-- **ESLint**: `.eslintrc.boundaries.js` blocks forbidden imports
-- **CI**: Automated checks in `platform/ci/`
-- **CODEOWNERS**: Domain ownership enforcement
+### ESLint Rules
 
-## Contract-First Workflow
+Path-based `no-restricted-imports` blocks forbidden imports:
 
-1. Define contract in `contracts/api/`
-2. Generate SDKs (`sdks/ts/`, `sdks/rust/`, `sdks/python/`)
-3. Implement domain logic
-4. Update apps to use SDK
+```javascript
+// .eslintrc.boundaries.js
+rules: {
+  'no-restricted-imports': [
+    'error',
+    {
+      patterns: [
+        {
+          group: ['../services/*'],
+          message: 'Services cannot import other services. Use SDKs instead.',
+        },
+        {
+          group: ['../../services/*'],
+          message: 'Apps cannot import services. Use SDKs instead.',
+        },
+      ],
+    },
+  ],
+}
+```
 
-This ensures API contracts are always in sync.
+### CI Validation
+
+- Type checks validate no forbidden imports
+- Contract validation ensures SDKs are up to date
+- Boundary violations fail the build
+
+### CODEOWNERS
+
+Each service has owners:
+
+```
+/services/identity/ @team-auth
+/services/oracle/ @team-data
+/services/execution/ @team-trading
+/contracts/ @team-platform
+```
+
+## Examples
+
+### ✅ Allowed
+
+```typescript
+// Service using its own code
+import { authHelper } from './helpers';
+
+// Service using libs (infrastructure)
+import { logger } from '@edgeloop/libs-observability';
+import { httpClient } from '@edgeloop/libs-runtime';
+
+// Service using SDK (generated from contracts)
+import { oracleClient } from '@edgeloop/sdk-ts';
+
+// App using SDK
+import { identityClient } from '@edgeloop/sdk-ts';
+```
+
+### ❌ Forbidden
+
+```typescript
+// Service importing another service
+import { oracleService } from '../services/oracle';
+
+// Service importing app code
+import { componentUtil } from '../../apps/web/utils';
+
+// App importing service directly
+import { executionService } from '../../services/execution';
+
+// Domain logic in libs
+// libs/trading/calculator.ts - NO!
+```
+
+## One Sentence Rule
+
+**"Services never import services. Apps never import services. Everything uses contracts and generated SDKs."**

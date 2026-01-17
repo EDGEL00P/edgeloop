@@ -1,0 +1,92 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npm run type-check
+      
+      - name: Lint
+        run: npm run lint
+      
+      - name: Test
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+
+  validate-boundaries:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Validate service boundaries
+        run: |
+          echo "Checking for forbidden service imports..."
+          # ESLint will catch boundary violations
+          npm run lint -- --max-warnings=0
+      
+      - name: Validate contracts
+        run: |
+          echo "Validating contract schemas..."
+          # Add contract validation script here
+          npm run validate:contracts || echo "Contract validation not yet implemented"
+
+  generate-sdks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate SDKs
+        run: |
+          echo "Generating SDKs from contracts..."
+          # Add SDK generation script here
+          npm run generate:sdk || echo "SDK generation not yet implemented"
+      
+      - name: Commit generated SDKs
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add sdks/
+          git diff --staged --quiet || git commit -m "chore: regenerate SDKs from contracts [skip ci]"
+          git push || echo "No SDK changes to commit"

@@ -18,7 +18,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "generate:sdk": "npm run generate:sdk:ts",
+    "generate:sdk:ts": "echo 'SDK generation from contracts - implement with zod-to-openapi or similar'",
+    "validate:contracts": "echo 'Contract validation - implement schema validation'"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.8",

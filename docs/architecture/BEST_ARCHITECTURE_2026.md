@@ -1,140 +1,174 @@
-# The Best Architecture (2026)
+# Highest-Ceiling Architecture (2026)
 
 ## Philosophy
 
-**"One product stack, one engine boundary, contracts are the only shared language."**
+**"Contracts are the source of truth. Generated SDKs everywhere. Service boundaries enforced by tooling. A Platform Golden Path."**
 
-## Core Principles
+This is what you pick when you want to support many teams, many deployables, and constant change without chaos.
 
-### 1. One Primary Product Stack
-- **Next.js + TypeScript** for web + API (Route Handlers / Server Actions)
-- One deployable for "product" unless you must split
-- Fastest iteration, single stack for team
+## The Non-Negotiables
 
-### 2. One "Engine" Boundary (Only If Needed)
-- If you need Rust/Python, make it **ONE service**: `engine/`
-- Everything talks to it through a versioned contract (OpenAPI or Protobuf)
-- Avoid microservices - collapse into one engine if possible
-
-### 3. Contract-First Shared Truth
-- Single source: `contracts/`
-- Generated clients: `sdks/ts`, `sdks/rust`, `sdks/python`
-- **No service-to-service imports, ever**
+1. **Contracts are the source of truth** (OpenAPI or Protobuf)
+2. **Generated SDKs everywhere** (TS/Rust/Python)
+3. **Service boundaries enforced by tooling** (no direct imports across services)
+4. **A Platform "Golden Path"** (templates, CI, observability, deployment patterns)
 
 ## Repository Structure
 
 ```
 edgeloop/
-├── apps/
-│   └── web/                      # Next.js (UI + API surface)
-│       ├── app/                  # Pages & API routes
-│       ├── components/           # React components
-│       └── server/               # Server-only code (db, auth, integrations)
-│
-├── domains/                      # Modular monolith domains (pure business logic)
-│   ├── auth/                     # Authentication domain
-│   ├── users/                    # User management domain
-│   ├── data/                     # Sports/weather ingestion logic
-│   ├── trading/                  # Trading/betting domain
-│   └── portfolio/                # Portfolio management domain
-│
-├── contracts/                    # SOURCE OF TRUTH (OpenAPI/proto/zod)
-│   ├── api/                      # API contracts
-│   └── events/                   # Event schemas
-│
-├── sdks/                         # Generated clients from contracts
-│   ├── ts/                       # TypeScript SDK
-│   ├── rust/                     # Rust SDK
-│   └── python/                   # Python SDK
-│
-├── engine/                       # The only non-TS runtime (optional)
-│   ├── service/                  # Rust OR Python inference server
-│   └── models/                   # Exported model artifacts
-│
-├── platform/                     # The golden path: templates + CI helpers
-│   ├── templates/
-│   ├── ci/
-│   └── local-dev/
-│
-├── infra/                        # Docker/k8s/terraform
-│
-└── docs/
-    ├── adr/                      # Architecture decision records
-    └── runbooks/
+  apps/                          # user-facing entrypoints
+    web/                         # Next.js
+    admin/                       # optional
+
+  services/                      # deployables (service-per-domain)
+    identity/                    # authz/authn/session/keys
+    oracle/                      # data ingestion + normalization
+    engine/                      # inference/prediction (Rust if needed)
+    execution/                   # trade execution + risk checks
+    notifications/               # alerts, webhooks, email
+    audit/                       # compliance/event retention
+
+  contracts/                     # SOURCE OF TRUTH (versioned)
+    http/                        # OpenAPI specs OR
+    rpc/                         # protobuf definitions
+    events/                      # event schemas
+
+  sdks/                          # generated from contracts (no hand-written drift)
+    ts/
+    rust/
+    python/
+
+  libs/                          # shared infra libs ONLY (no domain logic)
+    observability/               # logging/tracing/metrics wrappers
+    config/                      # typed config + secrets integration
+    runtime/                     # http client, retries, idempotency helpers
+    ui/                          # design system (if needed)
+    utils/                       # tiny safe helpers
+
+  platform/                      # the "golden path"
+    templates/                   # new service scaffold (health, logs, CI)
+    ci/                          # reusable workflows (build/test/release)
+    deploy/                      # helm charts / kustomize / terraform modules
+    local-dev/                   # docker compose, devcontainer, seed data
+
+  infra/                         # environments + IaC
+    env/
+      dev/
+      staging/
+      prod/
+    terraform/ | pulumi/
+    k8s/                         # manifests or overlays
+
+  docs/
+    adr/
+    runbooks/
+    architecture/
 ```
 
-## Why This Is "The Best"
+## Service Rules (Hard Guardrails)
 
-✅ **Fastest iteration** - One stack (TS/Next.js)  
-✅ **Scales teams** - Domain modules + boundaries  
-✅ **Scales systems** - Engine can become independent without rewriting  
-✅ **Prevents spaghetti** - Contracts + generated SDKs  
-✅ **No polyglot pain** - Python only for training, Rust only for engine (if needed)
+### 1. Services Never Import Each Other's Code
 
-## Migration Plan
+```typescript
+// ❌ BAD
+import { identityService } from '../services/identity';
 
-### Phase 1: Restructure ✅
-- [x] Create `domains/`, `contracts/`, `sdks/`, `engine/`
-- [x] Keep `apps/web/` for Next.js
-- [x] Move Python training to `ml/`
+// ✅ GOOD
+import { identityClient } from '@edgeloop/sdk-ts';
+```
 
-### Phase 2: Extract Domains
-1. **auth/** → From `server/auth/`
-2. **data/** → From `server/services/dataRouter.ts`, `server/crossref/`
-3. **trading/** → From `server/betting/`, `server/services/autoPicksService.ts`
-4. **users/** → User management logic
+**Services only talk via `sdks/*` generated from `contracts/*`.**
 
-### Phase 3: Contracts
-1. Define API schemas in `contracts/api/`
-2. Define events in `contracts/events/`
-3. Use Zod for TypeScript, generate OpenAPI
+### 2. Domain Logic Lives in Services, Not in libs/
 
-### Phase 4: Collapse Engine
-- Collapse: `engine-core`, `oracle`, `executioner`, `sentinel` → `engine/service/`
-- Or keep as modules within monolith (preferred)
-- Use contracts to communicate with engine
+```typescript
+// ❌ BAD - domain logic in libs/
+libs/trading/betting-logic.ts
 
-### Phase 5: SDK Generation
-- Generate TypeScript SDK from contracts
-- Generate Rust/Python SDKs (if engine is separate)
-- Update all code to use SDKs
+// ✅ GOOD - domain logic in services/
+services/execution/betting.ts
+```
 
-## Boundary Rules
+**`libs/` is only "paved road" infrastructure** (logging, config, retries, http clients).
 
-### Hard Rules
+### 3. Contracts Are Immutable & Versioned
 
-1. **Domains cannot import from other domains directly**
-   ```typescript
-   // ❌ BAD
-   import { authLogic } from '../auth/';
+```typescript
+// Versioning approach
+contracts/http/identity/v1/openapi.yaml
+contracts/http/identity/v2/openapi.yaml
+```
 
-   // ✅ GOOD
-   import { authClient } from '@edgeloop/sdk-ts';
-   ```
+**Breaking changes = new version. Both can coexist during migration.**
 
-2. **Apps use SDKs only**
-   ```typescript
-   // ❌ BAD
-   import { tradingService } from '../../domains/trading/';
+## Operational Rules (What Gives It the Ceiling)
 
-   // ✅ GOOD
-   import { tradingClient } from '@edgeloop/sdk-ts';
-   ```
+### Event-Driven Integration
 
-3. **Engine uses contracts**
-   - Engine exposes REST/gRPC API defined in `contracts/`
-   - Apps/domains communicate via generated SDK
+- Cross-domain workflows use events (Kafka/NATS/SQS, etc.)
+- Event schemas defined in `contracts/events/`
+- Idempotency + outbox pattern for reliability
 
-4. **Python in ml/ only**
-   - Training/evaluation only
-   - Export models → consumed by TS or engine
+### Distributed Tracing Everywhere
+
+- OpenTelemetry integration in `libs/observability/`
+- All services emit traces
+- Cross-service request tracking
+
+### Versioned Contracts + Compatibility Checks
+
+- CI validates contract compatibility
+- Breaking changes require explicit version bumps
+- SDK generation ensures no drift
+
+## Platform Golden Path
+
+Every service scaffolded from `platform/templates/service` includes:
+
+✅ **Healthcheck endpoint** (`/health`, `/ready`)  
+✅ **Metrics** (Prometheus or OpenTelemetry)  
+✅ **Tracing** (OpenTelemetry)  
+✅ **Logging** (structured, JSON)  
+✅ **Config loader** (typed, validated)  
+✅ **CI pipeline** (build/test/release)  
+✅ **Docker build** (multi-stage, optimized)
 
 ## Enforcement
 
-- **ESLint**: Path-based `no-restricted-imports`
-- **CI**: Type checks, contract validation
-- **CODEOWNERS**: Per domain
+- **ESLint**: Path-based `no-restricted-imports` (services can't import services)
+- **CI**: Type checks, contract validation, SDK generation
+- **CODEOWNERS**: Per service, per contract
+
+## Migration Path
+
+### Phase 1: Structure ✅
+- [x] Create `services/`, `contracts/`, `sdks/`, `platform/`
+- [x] Create `infra/env/` structure
+
+### Phase 2: Services (Current)
+- [ ] Extract `identity/` from `server/auth/`
+- [ ] Extract `oracle/` from `server/services/dataRouter.ts`
+- [ ] Extract `execution/` from `server/betting/`
+- [ ] Extract `engine/` (consolidate Rust services)
+- [ ] Extract `notifications/` (if exists)
+- [ ] Extract `audit/` (if needed)
+
+### Phase 3: Contracts
+- [ ] Pick contract system (OpenAPI recommended for TS-first)
+- [ ] Define contracts in `contracts/http/` or `contracts/rpc/`
+- [ ] Set up SDK generation pipeline
+
+### Phase 4: SDKs
+- [ ] Generate TypeScript SDK from contracts
+- [ ] Update services to use SDKs
+- [ ] Generate Rust/Python SDKs (if needed)
+
+### Phase 5: Platform
+- [ ] Create service template in `platform/templates/service`
+- [ ] Create reusable CI workflows in `platform/ci/`
+- [ ] Enforce boundaries in CI + ESLint
 
 ## One Sentence Rule
 
-**"One product stack, one engine boundary, contracts are the only shared language."**
+**"Contracts are the source of truth. Generated SDKs everywhere. Service boundaries enforced by tooling. A Platform Golden Path."**

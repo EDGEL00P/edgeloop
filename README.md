@@ -20,7 +20,7 @@ npm start
 
 ## 📋 Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - Rust (stable) - for backend services
 - PostgreSQL - for database
 - Docker (optional) - for local services

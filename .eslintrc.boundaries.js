@@ -1,9 +1,9 @@
 /**
  * Boundary Enforcement Rules
- * Prevents domains from importing each other directly
- * Forces use of contracts/SDKs for inter-domain communication
+ * Prevents services from importing each other directly
+ * Forces use of contracts/SDKs for inter-service communication
  * 
- * Rule: "One product stack, one engine boundary, contracts are the only shared language."
+ * Rule: "Services never import services. Apps never import services. Everything uses contracts and generated SDKs."
  */
 
 module.exports = {
@@ -12,27 +12,27 @@ module.exports = {
       'error',
       {
         patterns: [
-          // Domains cannot import from other domains
+          // Services cannot import from other services
           {
-            group: ['domains/*'],
-            message: 'Domains cannot import from other domains. Use contracts/ and generated SDKs from sdks/ instead.',
+            group: ['../services/*', '../../services/*', '../../../services/*'],
+            message: 'Services cannot import other services. Use @edgeloop/sdk-ts instead.',
             allowTypeImports: false,
           },
-          // Apps cannot import domains directly
+          // Apps cannot import services directly
           {
-            group: ['apps/*/domains/*', 'domains/*'],
-            message: 'Apps cannot import domains directly. Use @edgeloop/sdk-ts instead.',
+            group: ['../../services/*', '../../../services/*'],
+            message: 'Apps cannot import services directly. Use @edgeloop/sdk-ts instead.',
             allowTypeImports: false,
           },
-          // Contracts cannot import domains
+          // Contracts cannot import services or domains
           {
-            group: ['contracts/*/domains/*'],
-            message: 'Contracts cannot import domains. Keep contracts dependency-clean.',
+            group: ['../services/*', '../../services/*', '../domains/*', '../../domains/*'],
+            message: 'Contracts cannot import services or domains. Keep contracts dependency-clean.',
             allowTypeImports: false,
           },
-          // SDKs cannot import domains (only contracts)
+          // SDKs cannot import services (only contracts)
           {
-            group: ['sdks/*/domains/*'],
+            group: ['../services/*', '../../services/*'],
             message: 'SDKs can only import from contracts/. They are generated, not handwritten.',
             allowTypeImports: false,
           },
