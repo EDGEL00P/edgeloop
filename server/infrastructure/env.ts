@@ -86,21 +86,6 @@ const ENV_VARIABLES: EnvConfig[] = [
   
   // Vercel Integrations
   {
-    name: 'ARCJET_KEY',
-    required: false,
-    description: 'Arcjet API key for anti-scraper protection',
-  },
-  {
-    name: 'TINYBIRD_TOKEN',
-    required: false,
-    description: 'Tinybird API token for SQL-to-API odds pipeline',
-  },
-  {
-    name: 'TINYBIRD_API_URL',
-    required: false,
-    description: 'Tinybird API URL',
-  },
-  {
     name: 'STATSIG_SERVER_API_KEY',
     required: false,
     description: 'Statsig server API key for A/B testing',
@@ -131,16 +116,6 @@ const ENV_VARIABLES: EnvConfig[] = [
     description: 'Axiom organization ID',
   },
   {
-    name: 'UPSTASH_REDIS_REST_URL',
-    required: false,
-    description: 'Upstash Redis REST URL',
-  },
-  {
-    name: 'UPSTASH_REDIS_REST_TOKEN',
-    required: false,
-    description: 'Upstash Redis REST token',
-  },
-  {
     name: 'UPSTASH_QSTASH_URL',
     required: false,
     description: 'Upstash QStash URL',
@@ -169,6 +144,68 @@ const ENV_VARIABLES: EnvConfig[] = [
     name: 'NEON_DATABASE_URL',
     required: false,
     description: 'Neon PostgreSQL connection string',
+  },
+  
+  // Core Infrastructure (Edgeloop)
+  {
+    name: 'UPSTASH_REDIS_REST_URL',
+    required: false,
+    description: 'Upstash Redis REST URL for rate limiting and caching',
+  },
+  {
+    name: 'UPSTASH_REDIS_REST_TOKEN',
+    required: false,
+    description: 'Upstash Redis REST token',
+  },
+  {
+    name: 'CLICKHOUSE_HOST',
+    required: false,
+    description: 'ClickHouse server host',
+  },
+  {
+    name: 'CLICKHOUSE_USER',
+    required: false,
+    description: 'ClickHouse username',
+  },
+  {
+    name: 'CLICKHOUSE_PASSWORD',
+    required: false,
+    description: 'ClickHouse password',
+  },
+  {
+    name: 'CLICKHOUSE_DATABASE',
+    required: false,
+    description: 'ClickHouse database name',
+  },
+  {
+    name: 'CLICKHOUSE_PORT',
+    required: false,
+    description: 'ClickHouse HTTP port (default: 8123)',
+  },
+  {
+    name: 'CLICKHOUSE_COMPRESSION',
+    required: false,
+    description: 'Enable HTTP compression for ClickHouse (default: true)',
+  },
+  {
+    name: 'TRIGGER_API_KEY',
+    required: false,
+    description: 'Trigger.dev API key for background jobs',
+  },
+  {
+    name: 'TRIGGER_PROJECT_ID',
+    required: false,
+    description: 'Trigger.dev project ID',
+  },
+  {
+    name: 'RUST_ENGINE_URL',
+    required: false,
+    description: 'Rust backend URL for Apache Arrow IPC communication',
+  },
+  {
+    name: 'RUST_ENGINE_TIMEOUT',
+    required: false,
+    description: 'Rust engine request timeout in milliseconds (default: 30000)',
   },
 ];
 

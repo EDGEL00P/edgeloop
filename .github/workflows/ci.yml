@@ -160,7 +160,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test, build-nextjs, rust-check]
+    needs: [typecheck, lint, test, build-nextjs, rust-check, build-rust]
     if: always()
     steps:
       - name: Check job status
@@ -171,3 +171,4 @@ jobs:
           echo "Test: ${{ needs.test.result }}"
           echo "Build Next.js: ${{ needs.build-nextjs.result }}"
           echo "Rust Check: ${{ needs.rust-check.result }}"
+          echo "Build Rust: ${{ needs.build-rust.result }}"

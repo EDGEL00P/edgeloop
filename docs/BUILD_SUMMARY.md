@@ -29,24 +29,7 @@ edgeloop-1/
 
 ## 🔌 Vercel Integrations
 
-### 1. **Tinybird** - SQL-to-API for Odds Pipeline
-- **Purpose**: High-performance odds queries via SQL
-- **Limit**: 1,000 queries/day
-- **Package**: Custom client (no npm package needed)
-- **API Route**: `/api/odds/tinybird`
-- **Documentation**: [Vercel Integration](https://www.tinybird.co/docs/integrations/vercel)
-
-### 2. **Arcjet** - Anti-Scraper Shield & Rate Limiting
-- **Purpose**: Bot detection and DDoS protection
-- **Tier**: Generous Dev Tier
-- **Package**: `@arcjet/next@^1.0.0-beta.17`
-- **Protection Levels**:
-  - General routes: 10 req/min per IP
-  - Odds endpoints: 30 req/min, 500 req/hour
-- **Middleware**: Applied in `apps/web/middleware.ts`
-- **Documentation**: [Arcjet Docs](https://docs.arcjet.com/)
-
-### 3. **Statsig** - Algorithm A/B Testing
+### 1. **Statsig** - Algorithm A/B Testing
 - **Purpose**: Test prediction algorithm variants
 - **Limit**: 2,000,000 events
 - **Package**: `statsig-node@^6.5.1`
@@ -54,7 +37,7 @@ edgeloop-1/
 - **Integration**: Used in `/api/predictions/genesis`
 - **Documentation**: [Statsig Vercel Integration](https://docs.statsig.com/integrations/vercel)
 
-### 4. **Resend** - High-Priority Email Alerts
+### 2. **Resend** - High-Priority Email Alerts
 - **Purpose**: Send prediction alerts via email
 - **Limit**: 3,000 emails/month
 - **Package**: `resend@^6.7.0`
@@ -129,10 +112,9 @@ edgeloop-1/
 
 ## 🛡️ Security & Protection
 
-### Middleware Stack (`apps/web/middleware.ts`)
+### Middleware Stack (`apps/web/proxy.ts`)
 1. **Clerk Authentication** - Verifies user sessions
-2. **Arcjet Protection** - Bot detection and rate limiting
-3. **Static File Exclusion** - Skips protection for assets
+2. **Static File Exclusion** - Skips processing for assets
 
 ### Environment Variable Protection
 - Database connection is lazy-loaded (prevents build-time errors)
@@ -142,9 +124,8 @@ edgeloop-1/
 ## 📊 API Routes
 
 ### Protected Routes
-- `/api/odds/tinybird` - Odds queries (Arcjet protected)
 - `/api/predictions/genesis` - Predictions with A/B testing
-- `/api/alerts` - Email alerts (Arcjet protected)
+- `/api/alerts` - Email alerts
 
 ### Public Routes
 - `/api/health` - Health check (database optional)
@@ -177,7 +158,6 @@ Supports multiple environment variable names:
 - `next@^16.1.2` - Next.js framework
 - `react@^19.2.3` - React library
 - `@clerk/nextjs@^6.0.0` - Authentication
-- `@arcjet/next@^1.0.0-beta.17` - Security
 - `statsig-node@^6.5.1` - A/B testing
 - `resend@^6.7.0` - Email
 - `@upstash/redis@^1.36.1` - Caching
@@ -221,8 +201,6 @@ Supports multiple environment variable names:
 - ✅ `NEXT_PUBLIC_API_URL`
 
 ### Optional (Auto-provided by Vercel)
-- `ARCJET_KEY`
-- `TINYBIRD_TOKEN`
 - `STATSIG_SERVER_API_KEY`
 - `RESEND_API_KEY`
 - `AXIOM_TOKEN`
@@ -233,7 +211,6 @@ Supports multiple environment variable names:
 ## 🎯 Performance Optimizations
 
 - **Caching**: Upstash Redis for odds (5min) and predictions (30min)
-- **Rate Limiting**: Arcjet + Upstash dual-layer protection
 - **Lazy Loading**: Database, storage, and integrations
 - **Standalone Build**: Optimized Next.js output
 - **Edge Functions**: Deployed to `iad1` region
@@ -242,7 +219,6 @@ Supports multiple environment variable names:
 
 - [Vercel Build Configuration](https://vercel.com/docs/builds/configure-a-build)
 - [Clerk Next.js Quickstart](https://clerk.com/docs/nextjs/getting-started/quickstart)
-- [Arcjet Documentation](https://docs.arcjet.com/)
 - [Statsig Vercel Integration](https://docs.statsig.com/integrations/vercel)
 - [Axiom Vercel Integration](https://axiom.co/docs/apps/vercel)
 - [Neon Documentation](https://neon.com/docs/introduction)

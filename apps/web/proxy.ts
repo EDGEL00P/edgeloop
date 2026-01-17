@@ -1,15 +1,15 @@
 /**
- * Next.js Proxy with Arcjet Protection & Clerk Authentication
- * Protects all routes with anti-bot, rate limiting, and authentication
+ * Next.js Proxy with Clerk Authentication & Rate Limiting
+ * Handles authentication and rate limiting for all routes
  * Uses the new proxy.ts convention (replaces middleware.ts in Next.js 16+)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { protectRoute } from "@/lib/integrations/arcjet";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
-  // Skip protection for static files and Next.js internals
+  // Skip processing for static files and Next.js internals
   const pathname = request.nextUrl.pathname;
   
   if (
@@ -21,19 +21,33 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return NextResponse.next();
   }
 
-  // Protect all routes with Arcjet (bot detection & rate limiting)
-  const protection = await protectRoute(request);
+  // Apply rate limiting (sliding window, 100 req/min)
+  const ip = request.headers.get("x-forwarded-for") || 
+             request.headers.get("x-real-ip") || 
+             "unknown";
   
-  if (!protection.allowed) {
+  const rateLimit = await checkRateLimit(ip, 100, 60);
+  
+  if (!rateLimit.allowed) {
     return NextResponse.json(
       {
-        error: "Request blocked",
-        reason: protection.reason,
+        error: "Too Many Requests",
+        message: "Rate limit exceeded. Please try again later.",
+        reset: rateLimit.reset,
       },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": "100",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          "X-RateLimit-Reset": String(rateLimit.reset),
+          "Retry-After": String(Math.ceil((rateLimit.reset - Date.now()) / 1000)),
+        },
+      }
     );
   }
 
+  // Clerk handles authentication automatically
   return NextResponse.next();
 });
 

@@ -6,19 +6,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendPredictionAlert } from "@/lib/integrations/resend";
 import { logApiRequest, logError } from "@/lib/integrations/axiom";
-import { protectRoute } from "@/lib/integrations/arcjet";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-
-  // Protect with Arcjet
-  const protection = await protectRoute(request);
-  if (!protection.allowed) {
-    return NextResponse.json(
-      { error: "Request blocked" },
-      { status: 429 }
-    );
-  }
 
   try {
     const body = await request.json();

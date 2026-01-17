@@ -225,23 +225,6 @@ export class ApiClient {
     );
   }
 
-  // Tinybird Odds API (via Next.js route)
-  async getOddsViaTinybird(params: {
-    game_id: string;
-    book?: string;
-  }) {
-    const query = new URLSearchParams();
-    query.append('game_id', params.game_id);
-    if (params.book) query.append('book', params.book);
-    
-    // Call Next.js API route (which proxies to Tinybird)
-    const response = await fetch(`/api/odds/tinybird?${query.toString()}`);
-    if (!response.ok) {
-      throw new Error(`Tinybird odds request failed: ${response.statusText}`);
-    }
-    return response.json() as Promise<{ data: any[]; cached: boolean }>;
-  }
-
   // Genesis Prediction with A/B Testing (via Next.js route)
   async getGenesisPredictionWithABTest(params: {
     home_team_id: number;
