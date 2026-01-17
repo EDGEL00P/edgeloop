@@ -15,7 +15,7 @@ interface ProviderConfig {
   circuitBreaker: CircuitBreaker;
   rateLimiter: TokenBucketRateLimiter;
   isHealthy: () => boolean;
-  complete: (prompt: string) => Promise<string>;
+  complete: (prompt: string, taskType: TaskType) => Promise<string>;
 }
 
 const ROUTING_MATRIX: Record<TaskType, ProviderName[]> = {
@@ -25,11 +25,35 @@ const ROUTING_MATRIX: Record<TaskType, ProviderName[]> = {
   creative: ["openrouter", "anthropic", "openai", "gemini"],
 };
 
+function parseNumber(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function envModel(name: string, fallback: string): string {
+  return process.env[name] || fallback;
+}
+
 const MODELS: Record<ProviderName, string> = {
-  gemini: "gemini-2.5-flash",
-  openai: "gpt-4.1",
-  anthropic: "claude-sonnet-4-20250514",
-  openrouter: "meta-llama/llama-3.3-70b-instruct",
+  gemini: envModel("AI_MODEL_GEMINI", "gemini-2.5-flash"),
+  openai: envModel("AI_MODEL_OPENAI", "gpt-4.1"),
+  anthropic: envModel("AI_MODEL_ANTHROPIC", "claude-sonnet-4-20250514"),
+  openrouter: envModel("AI_MODEL_OPENROUTER", "meta-llama/llama-3.3-70b-instruct"),
+};
+
+const MAX_TOKENS_BY_TASK: Record<TaskType, number> = {
+  quick: parseNumber(process.env.AI_MAX_TOKENS_QUICK, 1024),
+  analysis: parseNumber(process.env.AI_MAX_TOKENS_ANALYSIS, 4096),
+  complex: parseNumber(process.env.AI_MAX_TOKENS_COMPLEX, 8192),
+  creative: parseNumber(process.env.AI_MAX_TOKENS_CREATIVE, 4096),
+};
+
+const TEMPERATURE_BY_TASK: Record<TaskType, number> = {
+  quick: parseNumber(process.env.AI_TEMPERATURE_QUICK, 0.2),
+  analysis: parseNumber(process.env.AI_TEMPERATURE_ANALYSIS, 0.3),
+  complex: parseNumber(process.env.AI_TEMPERATURE_COMPLEX, 0.5),
+  creative: parseNumber(process.env.AI_TEMPERATURE_CREATIVE, 0.8),
 };
 
 const openaiClient = new OpenAI({
@@ -78,44 +102,60 @@ const circuitBreakers = {
   }),
 };
 
+function rateLimit(provider: ProviderName, rpm: number, burst: number) {
+  const rpmValue = parseNumber(process.env[`AI_RPM_${provider.toUpperCase()}`], rpm);
+  const burstValue = parseNumber(process.env[`AI_BURST_${provider.toUpperCase()}`], burst);
+  return rateLimiterManager.create(`aiRouter_${provider}`, {
+    requestsPerMinute: rpmValue,
+    burstAllowance: burstValue,
+  });
+}
+
 const rateLimiters = {
-  openai: rateLimiterManager.create("aiRouter_openai", { requestsPerMinute: 20, burstAllowance: 5 }),
-  gemini: rateLimiterManager.create("aiRouter_gemini", { requestsPerMinute: 30, burstAllowance: 10 }),
-  anthropic: rateLimiterManager.create("aiRouter_anthropic", { requestsPerMinute: 15, burstAllowance: 5 }),
-  openrouter: rateLimiterManager.create("aiRouter_openrouter", { requestsPerMinute: 20, burstAllowance: 5 }),
+  openai: rateLimit("openai", 40, 10),
+  gemini: rateLimit("gemini", 60, 15),
+  anthropic: rateLimit("anthropic", 30, 8),
+  openrouter: rateLimit("openrouter", 40, 10),
 };
 
-async function completeWithOpenAI(prompt: string): Promise<string> {
+async function completeWithOpenAI(prompt: string, taskType: TaskType): Promise<string> {
   const response = await openaiClient.chat.completions.create({
     model: MODELS.openai,
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 2048,
+    max_tokens: MAX_TOKENS_BY_TASK[taskType],
+    temperature: TEMPERATURE_BY_TASK[taskType],
   });
   return response.choices[0]?.message?.content || "";
 }
 
-async function completeWithGemini(prompt: string): Promise<string> {
+async function completeWithGemini(prompt: string, taskType: TaskType): Promise<string> {
   const response = await geminiClient.models.generateContent({
     model: MODELS.gemini,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: {
+      maxOutputTokens: MAX_TOKENS_BY_TASK[taskType],
+      temperature: TEMPERATURE_BY_TASK[taskType],
+    },
   });
   return response.text || "";
 }
 
-async function completeWithAnthropic(prompt: string): Promise<string> {
+async function completeWithAnthropic(prompt: string, taskType: TaskType): Promise<string> {
   const response = await anthropicClient.chat.completions.create({
     model: MODELS.anthropic,
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 2048,
+    max_tokens: MAX_TOKENS_BY_TASK[taskType],
+    temperature: TEMPERATURE_BY_TASK[taskType],
   });
   return response.choices[0]?.message?.content || "";
 }
 
-async function completeWithOpenRouter(prompt: string): Promise<string> {
+async function completeWithOpenRouter(prompt: string, taskType: TaskType): Promise<string> {
   const response = await openrouterClient.chat.completions.create({
     model: MODELS.openrouter,
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 2048,
+    max_tokens: MAX_TOKENS_BY_TASK[taskType],
+    temperature: TEMPERATURE_BY_TASK[taskType],
   });
   return response.choices[0]?.message?.content || "";
 }
@@ -170,14 +210,15 @@ function generateCacheKey(prompt: string, taskType: TaskType): string {
 
 async function executeWithProvider(
   provider: ProviderConfig,
-  prompt: string
+  prompt: string,
+  taskType: TaskType
 ): Promise<string> {
   const canProceed = await provider.rateLimiter.acquire();
   if (!canProceed) {
     throw new Error(`Rate limit exceeded for ${provider.name}`);
   }
 
-  return provider.circuitBreaker.execute(() => provider.complete(prompt));
+  return provider.circuitBreaker.execute(() => provider.complete(prompt, taskType));
 }
 
 export async function complete(
@@ -227,7 +268,7 @@ export async function complete(
         taskType 
       });
 
-      const result = await executeWithProvider(provider, prompt);
+      const result = await executeWithProvider(provider, prompt, taskType);
 
       await cache.set(cacheKey, result, CacheTTL.MEDIUM);
       
@@ -294,7 +335,7 @@ export async function pingProvider(providerName: ProviderName): Promise<{
   const startTime = Date.now();
   
   try {
-    await provider.complete("Say 'OK' in one word.");
+    await provider.complete("Say 'OK' in one word.", "quick");
     return {
       success: true,
       latencyMs: Date.now() - startTime,

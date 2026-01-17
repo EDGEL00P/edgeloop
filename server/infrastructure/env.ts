@@ -81,6 +81,118 @@ const ENV_VARIABLES: EnvConfig[] = [
     required: false,
     description: 'Anthropic Claude API key for AI analysis',
   },
+  // AI Model Overrides (Optional)
+  {
+    name: 'AI_MODEL_OPENAI',
+    required: false,
+    description: 'Override OpenAI model used by AI router',
+  },
+  {
+    name: 'AI_MODEL_GEMINI',
+    required: false,
+    description: 'Override Gemini model used by AI router',
+  },
+  {
+    name: 'AI_MODEL_ANTHROPIC',
+    required: false,
+    description: 'Override Anthropic model used by AI router',
+  },
+  {
+    name: 'AI_MODEL_OPENROUTER',
+    required: false,
+    description: 'Override OpenRouter model used by AI router',
+  },
+  {
+    name: 'AI_CHAT_MODEL_GEMINI',
+    required: false,
+    description: 'Override Gemini model used for chat streaming',
+  },
+  {
+    name: 'AI_CHAT_MODEL_OPENAI',
+    required: false,
+    description: 'Override OpenAI model used for chat streaming',
+  },
+  // AI Limits (Optional)
+  {
+    name: 'AI_MAX_TOKENS_QUICK',
+    required: false,
+    description: 'Max tokens for quick AI tasks (default 1024)',
+  },
+  {
+    name: 'AI_MAX_TOKENS_ANALYSIS',
+    required: false,
+    description: 'Max tokens for analysis tasks (default 4096)',
+  },
+  {
+    name: 'AI_MAX_TOKENS_COMPLEX',
+    required: false,
+    description: 'Max tokens for complex tasks (default 8192)',
+  },
+  {
+    name: 'AI_MAX_TOKENS_CREATIVE',
+    required: false,
+    description: 'Max tokens for creative tasks (default 4096)',
+  },
+  {
+    name: 'AI_TEMPERATURE_QUICK',
+    required: false,
+    description: 'Temperature for quick tasks (default 0.2)',
+  },
+  {
+    name: 'AI_TEMPERATURE_ANALYSIS',
+    required: false,
+    description: 'Temperature for analysis tasks (default 0.3)',
+  },
+  {
+    name: 'AI_TEMPERATURE_COMPLEX',
+    required: false,
+    description: 'Temperature for complex tasks (default 0.5)',
+  },
+  {
+    name: 'AI_TEMPERATURE_CREATIVE',
+    required: false,
+    description: 'Temperature for creative tasks (default 0.8)',
+  },
+  {
+    name: 'AI_RPM_OPENAI',
+    required: false,
+    description: 'Override OpenAI requests per minute (default 40)',
+  },
+  {
+    name: 'AI_RPM_GEMINI',
+    required: false,
+    description: 'Override Gemini requests per minute (default 60)',
+  },
+  {
+    name: 'AI_RPM_ANTHROPIC',
+    required: false,
+    description: 'Override Anthropic requests per minute (default 30)',
+  },
+  {
+    name: 'AI_RPM_OPENROUTER',
+    required: false,
+    description: 'Override OpenRouter requests per minute (default 40)',
+  },
+  {
+    name: 'AI_BURST_OPENAI',
+    required: false,
+    description: 'Override OpenAI burst allowance (default 10)',
+  },
+  {
+    name: 'AI_BURST_GEMINI',
+    required: false,
+    description: 'Override Gemini burst allowance (default 15)',
+  },
+  {
+    name: 'AI_BURST_ANTHROPIC',
+    required: false,
+    description: 'Override Anthropic burst allowance (default 8)',
+  },
+  {
+    name: 'AI_BURST_OPENROUTER',
+    required: false,
+    description: 'Override OpenRouter burst allowance (default 10)',
+  },
   {
     name: 'GROK_API_KEY',
     required: false,

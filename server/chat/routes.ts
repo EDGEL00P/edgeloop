@@ -21,6 +21,11 @@ const openaiClient = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 
 type AIProvider = "gemini" | "openai" | "none";
 
+const CHAT_MODELS = {
+  gemini: process.env.AI_CHAT_MODEL_GEMINI || "gemini-2.5-flash",
+  openai: process.env.AI_CHAT_MODEL_OPENAI || "gpt-4.1",
+};
+
 function getAvailableProvider(): AIProvider {
   if (geminiClient) return "gemini";
   if (openaiClient) return "openai";
@@ -42,7 +47,7 @@ async function* generateAIResponse(
     }));
 
     const stream = await geminiClient.models.generateContentStream({
-      model: "gemini-2.0-flash",
+      model: CHAT_MODELS.gemini,
       contents: chatMessages,
     });
 
@@ -52,7 +57,7 @@ async function* generateAIResponse(
     }
   } else if (provider === "openai" && openaiClient) {
     const stream = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: CHAT_MODELS.openai,
       messages: messages.map((m) => ({
         role: m.role as "user" | "assistant" | "system",
         content: m.content,
