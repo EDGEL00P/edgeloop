@@ -18,7 +18,7 @@ This directory contains all documentation for the Edgeloop NFL Analytics platfor
 ## Quick Links
 
 - [Main README](../README.md) - Project overview and quick start
-- [Architecture Overview](./architecture/ARCHITECTURE_V25_WEB.md)
-- [Setup Guide](./setup/SETUP_V25.md)
-- [Deployment Guide](./deployment/DEPLOYMENT_READY.md)
-- [Integrations](./INTEGRATIONS.md)
+- [Architecture](./architecture/ARCHITECTURE_V25_WEB.md) - System design and architecture
+- [Setup](./setup/SETUP_V25.md) - Installation guide
+- [Deployment](./deployment/DEPLOYMENT_READY.md) - Production deployment
+- [Integrations](./INTEGRATIONS.md) - Vercel integrations
