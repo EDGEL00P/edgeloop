@@ -83,6 +83,93 @@ const ENV_VARIABLES: EnvConfig[] = [
     required: false,
     description: 'TheSportsDB API key',
   },
+  
+  // Vercel Integrations
+  {
+    name: 'ARCJET_KEY',
+    required: false,
+    description: 'Arcjet API key for anti-scraper protection',
+  },
+  {
+    name: 'TINYBIRD_TOKEN',
+    required: false,
+    description: 'Tinybird API token for SQL-to-API odds pipeline',
+  },
+  {
+    name: 'TINYBIRD_API_URL',
+    required: false,
+    description: 'Tinybird API URL',
+  },
+  {
+    name: 'STATSIG_SERVER_API_KEY',
+    required: false,
+    description: 'Statsig server API key for A/B testing',
+  },
+  {
+    name: 'RESEND_API_KEY',
+    required: false,
+    description: 'Resend API key for email alerts',
+  },
+  {
+    name: 'RESEND_FROM_EMAIL',
+    required: false,
+    description: 'Resend from email address',
+  },
+  {
+    name: 'AXIOM_TOKEN',
+    required: false,
+    description: 'Axiom API token for logging',
+  },
+  {
+    name: 'AXIOM_DATASET',
+    required: false,
+    description: 'Axiom dataset name',
+  },
+  {
+    name: 'AXIOM_ORG_ID',
+    required: false,
+    description: 'Axiom organization ID',
+  },
+  {
+    name: 'UPSTASH_REDIS_REST_URL',
+    required: false,
+    description: 'Upstash Redis REST URL',
+  },
+  {
+    name: 'UPSTASH_REDIS_REST_TOKEN',
+    required: false,
+    description: 'Upstash Redis REST token',
+  },
+  {
+    name: 'UPSTASH_QSTASH_URL',
+    required: false,
+    description: 'Upstash QStash URL',
+  },
+  {
+    name: 'UPSTASH_QSTASH_TOKEN',
+    required: false,
+    description: 'Upstash QStash token',
+  },
+  {
+    name: 'CLERK_SECRET_KEY',
+    required: false,
+    description: 'Clerk secret key for authentication',
+  },
+  {
+    name: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+    required: false,
+    description: 'Clerk publishable key (public)',
+  },
+  {
+    name: 'CLERK_WEBHOOK_SECRET',
+    required: false,
+    description: 'Clerk webhook secret',
+  },
+  {
+    name: 'NEON_DATABASE_URL',
+    required: false,
+    description: 'Neon PostgreSQL connection string',
+  },
 ];
 
 export interface EnvStatus {

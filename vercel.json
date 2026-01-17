@@ -1,23 +1,18 @@
 {
-  "framework": "nextjs",
   "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "outputDirectory": ".next",
-  "env": {
-    "NODE_ENV": "production"
-  },
+  "framework": "nextjs",
+  "regions": ["iad1"],
   "functions": {
-    "pages/api/**/*.ts": {
+    "apps/web/app/api/**/*.ts": {
       "maxDuration": 60,
       "memory": 1024
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
   "headers": [
     {
       "source": "/api/:path*",
@@ -37,5 +32,10 @@
       ]
     }
   ],
-  "regions": ["iad1"]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
 }

@@ -66,13 +66,13 @@ jobs:
         run: npm ci
       
       - name: Run tests
-        run: npm test -- --run
+        run: npm test -- --ci
 
   # Build Next.js application
   build-nextjs:
     name: Build Next.js
     runs-on: ubuntu-latest
-    needs: [typecheck, lint]
+    needs: [typecheck, lint, test]
     steps:
       - uses: actions/checkout@v4
       

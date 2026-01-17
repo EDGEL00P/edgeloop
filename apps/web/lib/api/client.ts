@@ -224,6 +224,79 @@ export class ApiClient {
       `/api/v1/nfl/odds${queryString ? `?${queryString}` : ''}`
     );
   }
+
+  // Tinybird Odds API (via Next.js route)
+  async getOddsViaTinybird(params: {
+    game_id: string;
+    book?: string;
+  }) {
+    const query = new URLSearchParams();
+    query.append('game_id', params.game_id);
+    if (params.book) query.append('book', params.book);
+    
+    // Call Next.js API route (which proxies to Tinybird)
+    const response = await fetch(`/api/odds/tinybird?${query.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Tinybird odds request failed: ${response.statusText}`);
+    }
+    return response.json() as Promise<{ data: any[]; cached: boolean }>;
+  }
+
+  // Genesis Prediction with A/B Testing (via Next.js route)
+  async getGenesisPredictionWithABTest(params: {
+    home_team_id: number;
+    away_team_id: number;
+    season?: number;
+    week?: number;
+    user_id?: string;
+  }) {
+    const query = new URLSearchParams();
+    query.append('home_team_id', params.home_team_id.toString());
+    query.append('away_team_id', params.away_team_id.toString());
+    if (params.season) query.append('season', params.season.toString());
+    if (params.week) query.append('week', params.week.toString());
+    if (params.user_id) query.append('user_id', params.user_id);
+    
+    const response = await fetch(`/api/predictions/genesis?${query.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Genesis prediction request failed: ${response.statusText}`);
+    }
+    return response.json() as Promise<{
+      game_id: string;
+      home_team_id: number;
+      away_team_id: number;
+      predicted_spread: number;
+      confidence: number;
+      recommendation: string;
+      algorithm: string;
+      cached: boolean;
+    }>;
+  }
+
+  // Send Prediction Alert
+  async sendPredictionAlert(params: {
+    email: string;
+    gameInfo: {
+      homeTeam: string;
+      awayTeam: string;
+      prediction: string;
+      confidence: number;
+      edge: number;
+    };
+  }) {
+    const response = await fetch('/api/alerts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Alert request failed: ${response.statusText}`);
+    }
+    return response.json() as Promise<{ success: boolean; messageId?: string }>;
+  }
 }
 
 // Singleton instance

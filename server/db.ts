@@ -103,10 +103,11 @@ function getDb(): Database {
 export const db = new Proxy({} as Database, {
   get(_target, prop) {
     // Check if we're in a build context where DATABASE_URL might not be available
+    // Vercel sets NODE_ENV=production during build, but VERCEL_ENV is only set at runtime
     const isBuildContext = 
       process.env.NEXT_PHASE === 'phase-production-build' ||
       process.env.NEXT_PHASE === 'phase-development-build' ||
-      (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL);
+      (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL && !process.env.VERCEL_ENV);
     
     // Only attempt to connect if we have a connection string or we're not in build context
     const connectionString = getConnectionString();
@@ -116,7 +117,8 @@ export const db = new Proxy({} as Database, {
       // but will throw a helpful error if actually used
       if (typeof prop === 'string') {
         // Return a function stub for database operations
-        return function stub(...args: unknown[]) {
+        // Return a no-op function that doesn't throw during build
+        return function stub(..._args: unknown[]) {
           throw new Error(
             `Database operation '${prop}' is not available during build time. ` +
             `DATABASE_URL must be set in your environment variables for database operations. ` +

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { ClerkProvider } from '@clerk/nextjs';
 import '../styles/globals.css';
 import { Providers } from './providers';
 
@@ -61,16 +62,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html 
-      lang="en" 
-      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="antialiased text-foreground min-h-screen overflow-x-hidden">
-        <Providers>
-          {children}
-        </Providers>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html 
+        lang="en" 
+        className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+        suppressHydrationWarning
+      >
+        <body className="antialiased text-foreground min-h-screen overflow-x-hidden">
+          <Providers>
+            {children}
+          </Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
