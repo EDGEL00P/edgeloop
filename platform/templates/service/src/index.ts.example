@@ -1,0 +1,34 @@
+/**
+ * Service Entry Point
+ * Example: services/your-service/src/index.ts
+ */
+
+import { createServer } from './server';
+import { loadConfig } from './config';
+import { logger } from '@edgeloop/libs-observability';
+
+const config = loadConfig();
+
+async function main() {
+  const server = createServer(config);
+  
+  server.listen(config.port, () => {
+    logger.info({
+      type: 'service_start',
+      service: config.name,
+      port: config.port,
+      env: config.env,
+    });
+  });
+  
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info({ type: 'service_shutdown', service: config.name });
+    server.close(() => process.exit(0));
+  });
+}
+
+main().catch((error) => {
+  logger.error({ type: 'service_start_failed', error: error.message });
+  process.exit(1);
+});

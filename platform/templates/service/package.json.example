@@ -1,0 +1,24 @@
+{
+  "name": "@edgeloop/service-template",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "health": "curl http://localhost:3000/health",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@edgeloop/sdk-ts": "workspace:*",
+    "@edgeloop/libs-observability": "workspace:*",
+    "@edgeloop/libs-config": "workspace:*",
+    "@edgeloop/libs-runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}
