@@ -84,10 +84,11 @@ npm run check
 
 Core documentation lives in [`docs/`](./docs/):
 
-- [Architecture](./docs/architecture/ARCHITECTURE_V25_WEB.md)
-- [Setup](./docs/setup/SETUP_V25.md)
-- [Deployment](./docs/deployment/DEPLOYMENT_READY.md)
-- [Integrations](./docs/INTEGRATIONS.md)
+- [Cleanup Summary](./docs/CLEANUP_SUMMARY.md) - Complete repo optimization
+- [Architecture](./docs/architecture/ARCHITECTURE_V25_WEB.md) - System design
+- [Setup](./docs/setup/SETUP_V25.md) - Installation guide
+- [Deployment](./docs/deployment/DEPLOYMENT_READY.md) - Production deployment
+- [Integrations](./docs/INTEGRATIONS.md) - Vercel integrations
 
 ## 🔧 Configuration
 
