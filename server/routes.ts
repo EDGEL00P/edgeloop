@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDataImportSchema } from "@shared/schema";
 import { registerChatRoutes } from "./chat";
-import { setupAuth, registerAuthRoutes } from "./auth";
+import { setupAuth, registerAuthRoutes } from "../services/identity";
 import { OmniEngine } from "./analytics/omniEngine";
 import {
   AgentSwarm,
