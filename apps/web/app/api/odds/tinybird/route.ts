@@ -1,7 +1,7 @@
 /**
- * Disabled Tinybird Odds Route
+ * Disabled Odds Route
  *
- * Tinybird + Arcjet are removed from this repo. This route remains only to prevent
+ * This legacy endpoint is intentionally disabled. It remains only to prevent
  * legacy deployments from failing at build-time due to stale imports/types.
  *
  * Status: 410 Gone
