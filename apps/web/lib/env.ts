@@ -22,6 +22,9 @@ const envSchema = z.object({
   TRIGGER_API_KEY: z.string().min(1, "TRIGGER_API_KEY is required"),
   TRIGGER_PROJECT_ID: z.string().optional().default("edgeloop"),
   
+  // Vercel AI Gateway
+  AI_GATEWAY_API_KEY: z.string().min(1, "AI_GATEWAY_API_KEY is required"),
+
   // Rust Engine
   RUST_ENGINE_URL: z.string().url("RUST_ENGINE_URL must be a valid URL"),
 });
@@ -34,6 +37,7 @@ const envResult = envSchema.safeParse({
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   TRIGGER_API_KEY: process.env.TRIGGER_API_KEY,
   TRIGGER_PROJECT_ID: process.env.TRIGGER_PROJECT_ID,
+  AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
   RUST_ENGINE_URL: process.env.RUST_ENGINE_URL,
 });
 
