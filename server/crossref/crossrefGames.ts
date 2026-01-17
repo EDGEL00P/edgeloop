@@ -41,7 +41,7 @@ export async function crossrefGames(season: number, week: number): Promise<Cross
     fetchBDLGames(season, week),
   ]);
 
-  const srGames = sr.status === "fulfilled" ? normalizeSRSchedule(sr.value, season, week) : [];
+  const srGames = sr.status === "fulfilled" ? normalizeSRSchedule(sr.value as Parameters<typeof normalizeSRSchedule>[0], season, week) : [];
   const espnGames = espn.status === "fulfilled" ? normalizeESPNScoreboard(espn.value, season, week) : [];
   const bdlGames = bdl.status === "fulfilled" ? normalizeBDLGames(bdl.value, season, week) : [];
 

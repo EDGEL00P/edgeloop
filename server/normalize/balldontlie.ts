@@ -1,27 +1,48 @@
-import { NormalizedGame } from "./types";
+import {
+  NormalizedGame,
+  BdlGamesResponse,
+  BdlGame,
+} from "./types";
 
-export function normalizeBDLGames(raw: any, season: number, week: number): NormalizedGame[] {
-  const games = raw?.data ?? raw?.games ?? raw ?? [];
-  return (Array.isArray(games) ? games : []).map((g: any) => {
-    const home = g.home_team ?? g.homeTeam ?? {};
-    const away = g.visitor_team ?? g.away_team ?? g.awayTeam ?? {};
+/**
+ * Normalize BallDontLie games response to unified game format
+ * @param raw - Raw BallDontLie API response
+ * @param season - NFL season year
+ * @param week - Week number
+ * @returns Array of normalized games
+ */
+export function normalizeBDLGames(
+  raw: BdlGamesResponse | BdlGame[] | null | undefined,
+  season: number,
+  week: number
+): NormalizedGame[] {
+  // Handle various response shapes
+  const games = Array.isArray(raw)
+    ? raw
+    : (raw as BdlGamesResponse)?.data ?? (raw as BdlGamesResponse)?.games ?? [];
+  
+  return (Array.isArray(games) ? games : []).map((game: BdlGame) => {
+    const home = game.home_team ?? game.homeTeam ?? {};
+    const away = game.visitor_team ?? game.away_team ?? game.awayTeam ?? {};
+    
     const homeAbbr = home.abbreviation ?? home.abbrev ?? home.alias;
     const awayAbbr = away.abbreviation ?? away.abbrev ?? away.alias;
     const key = `${season}-${week}-${awayAbbr ?? "UNK"}@${homeAbbr ?? "UNK"}`;
+    
     return {
       key,
-      sourceGameId: String(g.id ?? ""),
+      sourceGameId: String(game.id ?? ""),
       source: "balldontlie",
       season,
       week,
-      scheduled: g.date ?? g.scheduled ?? g.start_time ?? undefined,
+      scheduled: game.date ?? game.scheduled ?? game.start_time ?? undefined,
       homeAbbr,
       awayAbbr,
       homeName: home.full_name ?? home.name ?? undefined,
       awayName: away.full_name ?? away.name ?? undefined,
-      homeScore: g.home_team_score ?? g.home_score ?? null,
-      awayScore: g.visitor_team_score ?? g.away_score ?? null,
-      status: g.status ?? g.game_status ?? undefined,
+      homeScore: game.home_team_score ?? game.home_score ?? null,
+      awayScore: game.visitor_team_score ?? game.away_score ?? null,
+      status: game.status ?? game.game_status ?? undefined,
     };
   });
 }

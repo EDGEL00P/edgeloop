@@ -217,7 +217,7 @@ export function AIChat() {
                     <Bot className="h-6 w-6 text-white" />
                   </div>
                   <h4 className="text-sm font-medium text-foreground mb-2">
-                    Welcome to NFL Intelligence
+                    Welcome to Edge Loop Intelligence
                   </h4>
                   <p className="text-xs text-muted-foreground max-w-[280px] mx-auto">
                     Ask me about NFL betting analytics, team performance, player stats, exploit signals, and more.

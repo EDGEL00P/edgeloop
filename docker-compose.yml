@@ -1,68 +1,67 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  # SurrealDB - Multi-model database (Graph + Document + Vector)
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: edgeloop-surrealdb
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/edgeloop
-      - REDIS_URL=redis://redis:6379
-      - SESSION_SECRET=${SESSION_SECRET}
-      - REPL_ID=${REPL_ID}
-      - ISSUER_URL=${ISSUER_URL}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=edgeloop
+      - "8000:8000"  # HTTP endpoint
+      - "5432:5432"  # PostgreSQL wire protocol (if needed)
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - surreal-data:/data
+    command: start --log trace --user root --pass root file:/data/edgeloop.db
+    environment:
+      - SURREAL_LOG=trace
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - edgeloop-network
 
-  redis:
-    image: redis:7-alpine
+  # NATS JetStream - Message streaming & RPC
+  nats:
+    image: nats:latest
+    container_name: edgeloop-nats
     ports:
-      - "6379:6379"
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring
+      - "6222:6222"  # Cluster routing
     volumes:
-      - redis_data:/data
+      - nats-data:/data
+      - nats-storage:/store
+      - ./infrastructure/nats/nats.conf:/etc/nats/nats.conf:ro
+    command: ["-c", "/etc/nats/nats.conf", "-js", "-sd", "/store"]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - edgeloop-network
 
-  pgadmin:
-    image: dpage/pgadmin:latest
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@edgeloop.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    ports:
-      - "5050:80"
+  # NATS Box (Management tool - optional)
+  nats-box:
+    image: natsio/nats-box:latest
+    container_name: edgeloop-nats-box
     depends_on:
-      - db
+      - nats
+    networks:
+      - edgeloop-network
+    stdin_open: true
+    tty: true
+    command: ["/bin/sh"]
 
 volumes:
-  postgres_data:
-  redis_data:
+  surreal-data:
+    driver: local
+  nats-data:
+    driver: local
+  nats-storage:
+    driver: local
+
+networks:
+  edgeloop-network:
+    driver: bridge

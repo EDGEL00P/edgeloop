@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+// Jest globals are available by default
 
 describe("BettingService Interfaces", () => {
   it("should define MarketAnalysisResult interface", () => {

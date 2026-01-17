@@ -1,6 +1,94 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Production
+.vercel
+.railway
+
+# Misc
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env*.local
+.env
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cursor
+.cursor/
+
+# Temporary
+tmp/
+temp/
+*.log
+
+# Internal/Development files
+.internal/
+overview.json
+overview_*.puml
+*.puml
+.singularity_plan.md
+miner.py
+public/telemetry.json
+
+# Development status files
+*-COMPLETE.md
+*-READY.md
+*_CHECKLIST.md
+STATUS_*.md
+SETUP_*.md
+MIGRATION_*.md
+
+# Old documentation (now organized in docs/)
+ARCHITECTURE_*.md
+README_*.md
+!README.md
+COMPLETE_*.md
+SUMMARY_*.md
+VERIFICATION_*.md
+DEPLOYMENT_*.md
+!docs/**/*.md
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo

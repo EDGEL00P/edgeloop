@@ -1,12 +1,12 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
-import { eq, and, or } from "drizzle-orm";
 
-interface LogEntry {
+type LogData = Record<string, unknown>;
+
+interface LogEntry extends LogData {
   level: LogLevel;
   type?: string;
   message?: string;
   timestamp: string;
-  [key: string]: any;
 }
 
 class Logger {
@@ -26,7 +26,7 @@ class Logger {
     return this.levels[level] >= this.levels[this.level];
   }
 
-  private formatEntry(level: LogLevel, data: Record<string, any>): LogEntry {
+  private formatEntry(level: LogLevel, data: LogData): LogEntry {
     return {
       level,
       timestamp: new Date().toISOString(),
@@ -58,25 +58,25 @@ class Logger {
     }
   }
 
-  debug(data: Record<string, any>) {
+  debug(data: LogData) {
     if (this.shouldLog("debug")) {
       this.output(this.formatEntry("debug", data));
     }
   }
 
-  info(data: Record<string, any>) {
+  info(data: LogData) {
     if (this.shouldLog("info")) {
       this.output(this.formatEntry("info", data));
     }
   }
 
-  warn(data: Record<string, any>) {
+  warn(data: LogData) {
     if (this.shouldLog("warn")) {
       this.output(this.formatEntry("warn", data));
     }
   }
 
-  error(data: Record<string, any>) {
+  error(data: LogData) {
     if (this.shouldLog("error")) {
       this.output(this.formatEntry("error", data));
     }

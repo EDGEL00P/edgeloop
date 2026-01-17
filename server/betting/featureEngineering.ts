@@ -181,7 +181,7 @@ export class FeatureEngineer {
         matchupSpecific: opponentMetrics
       };
     } catch (error) {
-      console.error(`Error building team metrics for team ${teamId}:`, error);
+      // Team metrics build failed - return null to indicate unavailability
       return null;
     }
   }
@@ -227,12 +227,12 @@ export class FeatureEngineer {
         playerMatchupFeatures: playerMatchupFeatures
       };
     } catch (error) {
-      console.error(`Error building matchup features for game ${gameId}:`, error);
+      // Matchup feature build failed - return null to indicate unavailability
       return null;
     }
   }
 
-  private calculateOffensiveMetrics(metrics: any[]) {
+  private calculateOffensiveMetrics(metrics: { epaPerPlay?: number | null; successRate?: number | null }[]) {
     if (metrics.length === 0) {
       return {
         epaPerPlay: 0,
@@ -261,7 +261,7 @@ export class FeatureEngineer {
     };
   }
 
-  private calculateDefensiveMetrics(metrics: any[]) {
+  private calculateDefensiveMetrics(metrics: { epaPerPlay?: number | null; successRate?: number | null; hdPressureRate?: number | null }[]) {
     if (metrics.length === 0) {
       return {
         epaAllowedPerPlay: 0,

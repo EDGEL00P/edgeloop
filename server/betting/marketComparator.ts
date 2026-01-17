@@ -277,7 +277,7 @@ export class MarketComparator {
   identifyMarketOverreaction(
     model: ModelProbability,
     market: MarketOdds,
-    previousGames: any[]
+    previousGames: { homeTeamScore: number; awayTeamScore: number }[]
   ): BettingEdge | null {
     if (previousGames.length === 0) return null;
 

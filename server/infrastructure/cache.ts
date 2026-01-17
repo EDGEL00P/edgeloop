@@ -1,11 +1,14 @@
-import { eq, and, or } from "drizzle-orm";
-import { historicalGames, weeklyMetrics, nflTeams, nflPlayers } from "@shared/schema";
+/**
+ * In-memory cache with TTL support
+ * Provides a simple, fast caching layer for API responses and computed data
+ */
 
 interface CacheEntry<T> {
   value: T;
   expiresAt: number;
 }
 
+/** Standard cache TTL values in seconds */
 export const CacheTTL = {
   SHORT: 60,
   MEDIUM: 300,
@@ -13,8 +16,9 @@ export const CacheTTL = {
   HOUR: 3600,
   DAY: 86400,
   WEEK: 604800,
-};
+} as const;
 
+/** Cache key generators for consistent key naming */
 export const CacheKeys = {
   apiResponse: (endpoint: string, params: string) => `api:${endpoint}:${params}`,
   team: (teamId: number | string) => `team:${teamId}`,
@@ -32,29 +36,43 @@ export const CacheKeys = {
   playerProps: (playerId: number) => `props:player:${playerId}`,
   correlation: (legs: string) => `correlation:${legs}`,
   weather: (venue: string) => `weather:${venue}`,
+  playerStats: (playerId: string, season: number) => `player:stats:${playerId}:${season}`,
 };
 
+interface CacheStats {
+  hits: number;
+  misses: number;
+}
+
+interface TaggedValue<T> {
+  value: T;
+  tags: string[];
+}
+
+/**
+ * Thread-safe in-memory cache with automatic expiration
+ */
 class MemoryCache {
-  private cache = new Map<string, CacheEntry<any>>();
-  private stats = { hits: 0, misses: 0 };
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private stats: CacheStats = { hits: 0, misses: 0 };
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     this.startCleanup();
   }
 
-  private startCleanup() {
+  private startCleanup(): void {
     this.cleanupInterval = setInterval(() => {
       const now = Date.now();
-      Array.from(this.cache.entries()).forEach(([key, entry]) => {
+      for (const [key, entry] of this.cache.entries()) {
         if (entry.expiresAt < now) {
           this.cache.delete(key);
         }
-      });
+      }
     }, 60000);
   }
 
-  async get<T = any>(key: string): Promise<T | null> {
+  async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
     if (!entry) {
       this.stats.misses++;
@@ -71,7 +89,7 @@ class MemoryCache {
     return entry.value as T;
   }
 
-  async set(key: string, value: any, ttlSeconds: number = CacheTTL.MEDIUM): Promise<boolean> {
+  async set<T>(key: string, value: T, ttlSeconds: number = CacheTTL.MEDIUM): Promise<boolean> {
     this.cache.set(key, {
       value,
       expiresAt: Date.now() + ttlSeconds * 1000,
@@ -110,13 +128,14 @@ class MemoryCache {
     return matchingKeys.length;
   }
 
-  async setWithTags(
+  async setWithTags<T>(
     key: string,
-    value: any,
+    value: T,
     ttlSeconds: number,
     tags: string[]
   ): Promise<boolean> {
-    await this.set(key, { value, tags }, ttlSeconds);
+    const taggedValue: TaggedValue<T> = { value, tags };
+    await this.set(key, taggedValue, ttlSeconds);
     for (const tag of tags) {
       const tagKey = `tag:${tag}`;
       const existing = (await this.get<string[]>(tagKey)) || [];
@@ -136,7 +155,7 @@ class MemoryCache {
     return keys.length;
   }
 
-  getStats() {
+  getStats(): { hits: number; misses: number; hitRate: string; size: number } {
     const total = this.stats.hits + this.stats.misses;
     return {
       hits: this.stats.hits,
@@ -146,18 +165,18 @@ class MemoryCache {
     };
   }
 
-  async mget<T = any>(keys: string[]): Promise<(T | null)[]> {
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
     return Promise.all(keys.map((key) => this.get<T>(key)));
   }
 
-  async mset(entries: { key: string; value: any; ttl?: number }[]): Promise<boolean> {
+  async mset<T>(entries: { key: string; value: T; ttl?: number }[]): Promise<boolean> {
     for (const entry of entries) {
       await this.set(entry.key, entry.value, entry.ttl);
     }
     return true;
   }
 
-  destroy() {
+  destroy(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
@@ -167,12 +186,15 @@ class MemoryCache {
 
 export const cache = new MemoryCache();
 
+/**
+ * Static cache service for convenient access
+ */
 export class CacheService {
-  static async get<T = any>(key: string): Promise<T | null> {
+  static async get<T>(key: string): Promise<T | null> {
     return cache.get<T>(key);
   }
 
-  static async set(key: string, value: any, ttl: number = CacheTTL.MEDIUM): Promise<boolean> {
+  static async set<T>(key: string, value: T, ttl: number = CacheTTL.MEDIUM): Promise<boolean> {
     return cache.set(key, value, ttl);
   }
 
@@ -199,7 +221,7 @@ export class CacheService {
     return cache.deletePattern(pattern);
   }
 
-  static getStats() {
+  static getStats(): { hits: number; misses: number; hitRate: string; size: number } {
     return cache.getStats();
   }
 }

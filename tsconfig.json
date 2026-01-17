@@ -2,12 +2,12 @@
   "include": [
     "app/**/*.ts",
     "app/**/*.tsx",
-    "client/src/**/*",
     "next-env.d.ts",
-    "pages/**/*",
+    "pages/api/**/*",
     "server/**/*",
     "shared/**/*",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -33,12 +33,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./client/src/*"
+        "./app/*"
       ],
       "@shared/*": [
         "./shared/*"
@@ -46,6 +46,11 @@
       "@server/*": [
         "./server/*"
       ]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   }
 }

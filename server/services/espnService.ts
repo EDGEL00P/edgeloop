@@ -17,6 +17,38 @@ const ESPN_HEADERS = {
 
 export type InjuryStatus = "Out" | "Doubtful" | "Questionable" | "Probable" | "IR" | "PUP" | "Suspended";
 
+type EspnRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): EspnRecord | null {
+  return typeof value === "object" && value !== null ? (value as EspnRecord) : null;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function getString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function getNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+function getOptionalNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return undefined;
+}
+
 export interface PlayerInjury {
   playerId: string;
   playerName: string;
@@ -89,7 +121,6 @@ const espnCircuitBreaker = circuitBreakerManager.create("espn", {
   failureThreshold: 5,
   successThreshold: 2,
   timeout: 60000,
-  fallback: async () => null,
 });
 
 const ESPN_TEAM_ID_MAP: Record<string, string> = {
@@ -110,7 +141,7 @@ function getEspnTeamId(teamId: string): string {
   return teamId;
 }
 
-async function fetchFromEspn(url: string): Promise<any> {
+async function fetchFromEspn(url: string): Promise<unknown> {
   const acquired = await apiLimiters.espn.acquire();
   if (!acquired) {
     throw new Error("ESPN rate limit exceeded");
@@ -147,17 +178,22 @@ export async function getTeamStats(teamId: string): Promise<TeamStats | null> {
     const teamUrl = `${ESPN_API_BASE}/teams/${espnTeamId}`;
     const statsUrl = `${ESPN_API_BASE}/teams/${espnTeamId}/statistics`;
 
-    const [teamData, statsData] = await Promise.all([
+    const [teamDataRaw, statsDataRaw] = await Promise.all([
       fetchFromEspn(teamUrl).catch(() => null),
       fetchFromEspn(statsUrl).catch(() => null),
     ]);
 
-    if (!teamData?.team) {
+    const teamData = asRecord(teamDataRaw);
+    const statsData = asRecord(statsDataRaw);
+    const team = asRecord(teamData?.team);
+
+    if (!team) {
       return null;
     }
 
-    const team = teamData.team;
-    const record = team.record?.items?.[0]?.summary || "0-0";
+    const recordItems = asArray(asRecord(team.record)?.items);
+    const recordSummary = asRecord(recordItems[0]);
+    const record = getString(recordSummary?.summary, "0-0");
 
     let offenseRank = 16;
     let defenseRank = 16;
@@ -167,22 +203,28 @@ export async function getTeamStats(teamId: string): Promise<TeamStats | null> {
     let totalYards = 0;
     let totalYardsAllowed = 0;
 
-    if (statsData?.results?.stats?.categories) {
-      const categories = statsData.results.stats.categories;
-      
-      for (const cat of categories) {
-        if (cat.name === "offensive") {
-          for (const stat of cat.stats || []) {
-            if (stat.name === "totalYards") totalYards = stat.value || 0;
-            if (stat.name === "yardsPerPlay") yardsPerPlay = stat.value || 5.5;
-            if (stat.name === "totalPointsPerGame") pointsPerGame = stat.value || 21;
-          }
+    const categories = asArray(asRecord(asRecord(asRecord(statsData?.results)?.stats)?.categories));
+    for (const category of categories) {
+      const categoryRecord = asRecord(category);
+      const categoryName = getString(categoryRecord?.name);
+      const stats = asArray(categoryRecord?.stats);
+      if (categoryName === "offensive") {
+        for (const stat of stats) {
+          const statRecord = asRecord(stat);
+          const statName = getString(statRecord?.name);
+          const statValue = getNumber(statRecord?.value, 0);
+          if (statName === "totalYards") totalYards = statValue;
+          if (statName === "yardsPerPlay") yardsPerPlay = statValue || 5.5;
+          if (statName === "totalPointsPerGame") pointsPerGame = statValue || 21;
         }
-        if (cat.name === "defensive") {
-          for (const stat of cat.stats || []) {
-            if (stat.name === "totalYards") totalYardsAllowed = stat.value || 0;
-            if (stat.name === "totalPointsPerGame") pointsAllowedPerGame = stat.value || 21;
-          }
+      }
+      if (categoryName === "defensive") {
+        for (const stat of stats) {
+          const statRecord = asRecord(stat);
+          const statName = getString(statRecord?.name);
+          const statValue = getNumber(statRecord?.value, 0);
+          if (statName === "totalYards") totalYardsAllowed = statValue;
+          if (statName === "totalPointsPerGame") pointsAllowedPerGame = statValue || 21;
         }
       }
     }
@@ -192,7 +234,7 @@ export async function getTeamStats(teamId: string): Promise<TeamStats | null> {
 
     const stats: TeamStats = {
       teamId,
-      teamName: team.displayName || team.name,
+      teamName: getString(team.displayName, getString(team.name)),
       offenseRank,
       defenseRank,
       epa: Math.round(epa * 100) / 100,
@@ -228,10 +270,13 @@ export async function getTeamInjuries(teamId: string): Promise<PlayerInjury[]> {
     const teamInjuriesUrl = `${ESPN_API_BASE}/teams/${espnTeamId}/injuries`;
     const leagueInjuriesUrl = `${ESPN_API_BASE}/injuries`;
     
-    const [teamData, leagueData] = await Promise.all([
+    const [teamDataRaw, leagueDataRaw] = await Promise.all([
       fetchFromEspn(teamInjuriesUrl).catch(() => ({})),
       fetchFromEspn(leagueInjuriesUrl).catch(() => ({})),
     ]);
+
+    const teamData = asRecord(teamDataRaw) ?? {};
+    const leagueData = asRecord(leagueDataRaw) ?? {};
 
     const injuries: PlayerInjury[] = [];
     const statusMap: Record<string, InjuryStatus> = {
@@ -248,33 +293,44 @@ export async function getTeamInjuries(teamId: string): Promise<PlayerInjury[]> {
       "suspended": "Suspended",
     };
 
-    const processInjury = (injury: any, player?: any) => {
-      const athlete = player || injury.athlete || {};
-      const injuryDetails = injury.injuries?.[0] || injury;
-      const rawStatus = (injuryDetails.status || injury.status || "").toLowerCase();
+    const processInjury = (injury: unknown, player?: unknown): PlayerInjury => {
+      const injuryRecord: EspnRecord = asRecord(injury) ?? {};
+      const playerRecord = asRecord(player);
+      const athlete = playerRecord ?? asRecord(injuryRecord.athlete) ?? {};
+      const injuryDetails = asRecord(asArray(injuryRecord.injuries)[0]) ?? injuryRecord;
+      const rawStatus = getString(injuryDetails.status ?? injuryRecord.status).toLowerCase();
       const status: InjuryStatus = statusMap[rawStatus] || "Questionable";
 
       return {
-        playerId: athlete.id?.toString() || "",
-        playerName: athlete.displayName || athlete.fullName || athlete.name || "",
-        position: athlete.position?.abbreviation || athlete.position || "",
+        playerId: getString(athlete.id),
+        playerName: getString(athlete.displayName, getString(athlete.fullName, getString(athlete.name))),
+        position: getString(asRecord(athlete.position)?.abbreviation, getString(athlete.position)),
         status,
-        injury: injuryDetails.type?.description || injuryDetails.description || injury.longComment || injury.shortComment || "Unknown",
-        returnDate: injuryDetails.date || injury.date || null,
+        injury: getString(
+          asRecord(injuryDetails.type)?.description,
+          getString(injuryDetails.description, getString(injuryRecord.longComment, getString(injuryRecord.shortComment, "Unknown")))
+        ),
+        returnDate: getString(injuryDetails.date, getString(injuryRecord.date)) || null,
       };
     };
 
-    if (teamData?.team?.injuries) {
-      for (const injury of teamData.team.injuries) {
+    const teamInjuries = asArray(asRecord(asRecord(teamData.team)?.injuries));
+    if (teamInjuries.length > 0) {
+      for (const injury of teamInjuries) {
         injuries.push(processInjury(injury));
       }
     }
 
-    if (leagueData?.injuries) {
-      for (const teamInjuries of leagueData.injuries) {
-        if (teamInjuries?.team?.id?.toString() === espnTeamId) {
-          for (const injury of teamInjuries.injuries || []) {
-            if (!injuries.some(i => i.playerId === injury.athlete?.id?.toString())) {
+    const leagueInjuries = asArray(leagueData.injuries);
+    if (leagueInjuries.length > 0) {
+      for (const teamInjuryEntry of leagueInjuries) {
+        const entryRecord = asRecord(teamInjuryEntry);
+        const entryTeamId = getString(asRecord(entryRecord?.team)?.id);
+        if (entryTeamId === espnTeamId) {
+          for (const injury of asArray(entryRecord?.injuries)) {
+            const injuryRecord = asRecord(injury);
+            const athleteId = getString(asRecord(injuryRecord?.athlete)?.id);
+            if (!injuries.some((i) => i.playerId === athleteId)) {
               injuries.push(processInjury(injury));
             }
           }
@@ -282,11 +338,14 @@ export async function getTeamInjuries(teamId: string): Promise<PlayerInjury[]> {
       }
     }
 
-    if (teamData?.items) {
-      for (const item of teamData.items) {
-        const athlete = item.athlete || {};
-        if (!injuries.some(i => i.playerId === athlete.id?.toString())) {
-          injuries.push(processInjury(item, athlete));
+    const teamItems = asArray(teamData.items);
+    if (teamItems.length > 0) {
+      for (const item of teamItems) {
+        const itemRecord = asRecord(item) ?? {};
+        const athlete = asRecord(itemRecord.athlete) ?? {};
+        const athleteId = getString(athlete.id);
+        if (!injuries.some((i) => i.playerId === athleteId)) {
+          injuries.push(processInjury(itemRecord, athlete));
         }
       }
     }
@@ -294,7 +353,7 @@ export async function getTeamInjuries(teamId: string): Promise<PlayerInjury[]> {
     await CacheService.set(cacheKey, injuries, CacheTTL.MEDIUM);
     return injuries;
   } catch (error) {
-    logger.error({ type: "espn_injuries_error", teamId, error: (error as Error).message });
+    logger.error({ type: "espn_injuries_error", teamId, error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -312,27 +371,36 @@ export async function getTeamDepthChart(teamId: string): Promise<DepthChartPosit
     const depthChartUrl = `${ESPN_API_BASE}/teams/${espnTeamId}/depthcharts`;
     const rosterUrl = `${ESPN_API_BASE}/teams/${espnTeamId}/roster`;
     
-    const [depthData, rosterData] = await Promise.all([
+    const [depthDataRaw, rosterDataRaw] = await Promise.all([
       fetchFromEspn(depthChartUrl).catch(() => ({})),
       fetchFromEspn(rosterUrl).catch(() => ({})),
     ]);
 
+    const depthData = asRecord(depthDataRaw) ?? {};
+    const rosterData = asRecord(rosterDataRaw) ?? {};
+
     const depthChart: DepthChartPosition[] = [];
     const positionMap = new Map<string, DepthChartPlayer[]>();
 
-    if (depthData?.depthCharts?.[0]?.positions) {
-      for (const pos of Object.keys(depthData.depthCharts[0].positions)) {
-        const positionData = depthData.depthCharts[0].positions[pos];
+    const depthCharts = asArray(depthData.depthCharts);
+    const firstChart = asRecord(depthCharts[0]);
+    const positions = asRecord(firstChart?.positions) ?? {};
+
+    if (Object.keys(positions).length > 0) {
+      for (const pos of Object.keys(positions)) {
+        const positionData = asRecord(positions[pos]);
         const players: DepthChartPlayer[] = [];
 
-        if (positionData?.athletes) {
+        if (positionData) {
+          const athletes = asArray(positionData.athletes);
           let depth = 1;
-          for (const athlete of positionData.athletes) {
+          for (const athlete of athletes) {
+            const athleteRecord = asRecord(athlete) ?? {};
             players.push({
-              name: athlete.displayName || athlete.fullName || "",
-              jerseyNumber: athlete.jersey || null,
-              experience: athlete.experience?.years?.toString() || null,
-              playerId: athlete.id?.toString() || "",
+              name: getString(athleteRecord.displayName, getString(athleteRecord.fullName)),
+              jerseyNumber: getString(athleteRecord.jersey) || null,
+              experience: getString(asRecord(athleteRecord.experience)?.years) || null,
+              playerId: getString(athleteRecord.id),
               depth,
             });
             depth++;
@@ -345,20 +413,26 @@ export async function getTeamDepthChart(teamId: string): Promise<DepthChartPosit
       }
     }
 
-    if (rosterData?.athletes) {
-      for (const group of rosterData.athletes) {
-        for (const athlete of group.items || []) {
-          const pos = athlete.position?.abbreviation || athlete.position?.displayName || "UNKNOWN";
+    const rosterGroups = asArray(rosterData.athletes);
+    if (rosterGroups.length > 0) {
+      for (const group of rosterGroups) {
+        const groupRecord = asRecord(group) ?? {};
+        const items = asArray(groupRecord.items);
+        for (const athlete of items) {
+          const athleteRecord = asRecord(athlete) ?? {};
+          const positionRecord = asRecord(athleteRecord.position);
+          const pos = getString(positionRecord?.abbreviation, getString(positionRecord?.displayName, "UNKNOWN"));
           if (!positionMap.has(pos)) {
             positionMap.set(pos, []);
           }
           const players = positionMap.get(pos)!;
-          if (!players.some(p => p.playerId === athlete.id?.toString())) {
+          const athleteId = getString(athleteRecord.id);
+          if (!players.some(p => p.playerId === athleteId)) {
             players.push({
-              name: athlete.displayName || athlete.fullName || "",
-              jerseyNumber: athlete.jersey || null,
-              experience: athlete.experience?.years?.toString() || null,
-              playerId: athlete.id?.toString() || "",
+              name: getString(athleteRecord.displayName, getString(athleteRecord.fullName)),
+              jerseyNumber: getString(athleteRecord.jersey) || null,
+              experience: getString(asRecord(athleteRecord.experience)?.years) || null,
+              playerId: athleteId,
               depth: players.length + 1,
             });
           }
@@ -383,7 +457,7 @@ export async function getTeamDepthChart(teamId: string): Promise<DepthChartPosit
     await CacheService.set(cacheKey, depthChart, CacheTTL.HOUR);
     return depthChart;
   } catch (error) {
-    logger.error({ type: "espn_depth_error", teamId, error: (error as Error).message });
+    logger.error({ type: "espn_depth_error", teamId, error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -399,64 +473,77 @@ export async function getMatchupData(gameId: string): Promise<MatchupData | null
   try {
     const url = `${ESPN_API_BASE}/summary?event=${gameId}`;
     const data = await fetchFromEspn(url);
+    const dataRecord = asRecord(data);
+    const header = asRecord(dataRecord?.header);
+    const competitions = asArray(header?.competitions);
+    const competition = asRecord(competitions[0]);
 
-    if (!data?.header?.competitions?.[0]) {
+    if (!competition) {
       return null;
     }
 
-    const competition = data.header.competitions[0];
-    const competitors = competition.competitors || [];
+    const competitors = asArray(competition.competitors);
     
-    const homeCompetitor = competitors.find((c: any) => c.homeAway === "home");
-    const awayCompetitor = competitors.find((c: any) => c.homeAway === "away");
+    const homeCompetitor = competitors.find((c) => getString(asRecord(c)?.homeAway) === "home");
+    const awayCompetitor = competitors.find((c) => getString(asRecord(c)?.homeAway) === "away");
+    const homeRecord = asRecord(homeCompetitor);
+    const awayRecord = asRecord(awayCompetitor);
 
-    if (!homeCompetitor || !awayCompetitor) {
+    if (!homeRecord || !awayRecord) {
       return null;
     }
 
     let prediction = undefined;
-    if (data.predictor) {
+    const predictor = asRecord(dataRecord?.predictor);
+    if (predictor) {
+      const homeTeam = asRecord(predictor.homeTeam);
+      const awayTeam = asRecord(predictor.awayTeam);
       prediction = {
-        homeWinProbability: data.predictor.homeTeam?.gameProjection || 50,
-        awayWinProbability: data.predictor.awayTeam?.gameProjection || 50,
-        predictedSpread: data.predictor.spread || 0,
-        predictedTotal: data.predictor.overUnder || 45,
+        homeWinProbability: getNumber(homeTeam?.gameProjection, 50),
+        awayWinProbability: getNumber(awayTeam?.gameProjection, 50),
+        predictedSpread: getNumber(predictor.spread, 0),
+        predictedTotal: getNumber(predictor.overUnder, 45),
       };
-    } else if (data.odds?.[0]) {
-      const odds = data.odds[0];
+    } else {
+      const oddsList = asArray(dataRecord?.odds);
+      const odds = asRecord(oddsList[0]);
+      if (odds) {
       prediction = {
         homeWinProbability: 50,
         awayWinProbability: 50,
-        predictedSpread: parseFloat(odds.spread) || 0,
-        predictedTotal: parseFloat(odds.overUnder) || 45,
+        predictedSpread: getNumber(odds.spread, 0),
+        predictedTotal: getNumber(odds.overUnder, 45),
       };
+      }
     }
 
     let weather = undefined;
-    if (data.gameInfo?.weather) {
+    const gameInfo = asRecord(dataRecord?.gameInfo);
+    const weatherRecord = asRecord(gameInfo?.weather);
+    if (weatherRecord) {
       weather = {
-        temperature: data.gameInfo.weather.temperature || 70,
-        condition: data.gameInfo.weather.displayValue || "Clear",
+        temperature: getNumber(weatherRecord.temperature, 70),
+        condition: getString(weatherRecord.displayValue, "Clear"),
       };
     }
 
     const matchup: MatchupData = {
       gameId,
       homeTeam: {
-        id: homeCompetitor.team?.id?.toString() || "",
-        name: homeCompetitor.team?.displayName || homeCompetitor.team?.name || "",
-        record: homeCompetitor.record?.[0]?.displayValue || "0-0",
-        score: homeCompetitor.score ? parseInt(homeCompetitor.score) : undefined,
+        id: getString(asRecord(homeRecord.team)?.id),
+        name: getString(asRecord(homeRecord.team)?.displayName, getString(asRecord(homeRecord.team)?.name)),
+        record: getString(asRecord(asArray(homeRecord.record)[0])?.displayValue, "0-0"),
+        score: getOptionalNumber(homeRecord.score),
       },
       awayTeam: {
-        id: awayCompetitor.team?.id?.toString() || "",
-        name: awayCompetitor.team?.displayName || awayCompetitor.team?.name || "",
-        record: awayCompetitor.record?.[0]?.displayValue || "0-0",
-        score: awayCompetitor.score ? parseInt(awayCompetitor.score) : undefined,
+        id: getString(asRecord(awayRecord.team)?.id),
+        name: getString(asRecord(awayRecord.team)?.displayName, getString(asRecord(awayRecord.team)?.name)),
+        record: getString(asRecord(asArray(awayRecord.record)[0])?.displayValue, "0-0"),
+        score: getOptionalNumber(awayRecord.score),
       },
-      venue: data.gameInfo?.venue?.fullName || competition.venue?.fullName || "",
-      gameDate: competition.date || "",
-      status: competition.status?.type?.description || "Scheduled",
+      venue: getString(asRecord(gameInfo?.venue)?.fullName, getString(asRecord(competition.venue)?.fullName)),
+      gameDate: getString(competition.date),
+      status: getString(asRecord(asRecord(competition.status)?.type)?.description, "Scheduled"),
       prediction,
       weather,
     };
@@ -464,7 +551,7 @@ export async function getMatchupData(gameId: string): Promise<MatchupData | null
     await CacheService.set(cacheKey, matchup, CacheTTL.MEDIUM);
     return matchup;
   } catch (error) {
-    logger.error({ type: "espn_matchup_error", gameId, error: (error as Error).message });
+    logger.error({ type: "espn_matchup_error", gameId, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -486,7 +573,7 @@ export async function refreshAllEspnData(): Promise<{ refreshed: number; errors:
       await new Promise(resolve => setTimeout(resolve, 200));
     } catch (error) {
       errors++;
-      logger.error({ type: "espn_refresh_error", teamId, error: (error as Error).message });
+      logger.error({ type: "espn_refresh_error", teamId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -504,12 +591,17 @@ export async function getUpcomingGames(): Promise<MatchupData[]> {
   try {
     const url = `${ESPN_API_BASE}/scoreboard`;
     const data = await fetchFromEspn(url);
+    const dataRecord = asRecord(data) ?? {};
 
     const games: MatchupData[] = [];
 
-    if (data?.events) {
-      for (const event of data.events) {
-        const matchup = await getMatchupData(event.id);
+    const events = asArray(dataRecord.events);
+    if (events.length > 0) {
+      for (const event of events) {
+        const eventRecord = asRecord(event);
+        const eventId = getString(eventRecord?.id);
+        if (!eventId) continue;
+        const matchup = await getMatchupData(eventId);
         if (matchup) {
           games.push(matchup);
         }
@@ -519,7 +611,7 @@ export async function getUpcomingGames(): Promise<MatchupData[]> {
     await CacheService.set(cacheKey, games, CacheTTL.MEDIUM);
     return games;
   } catch (error) {
-    logger.error({ type: "espn_upcoming_error", error: (error as Error).message });
+    logger.error({ type: "espn_upcoming_error", error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }

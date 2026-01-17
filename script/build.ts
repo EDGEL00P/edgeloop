@@ -1,6 +1,9 @@
 import { build as esbuild } from "esbuild";
-import { build as viteBuild } from "vite";
+import { exec } from "child_process";
+import { promisify } from "util";
 import { rm, readFile } from "fs/promises";
+
+const execAsync = promisify(exec);
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -35,8 +38,8 @@ const allowlist = [
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
-  console.log("building client...");
-  await viteBuild();
+  console.log("building Next.js app (2027 build with Turbopack)...");
+  await execAsync("npm run build");
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));

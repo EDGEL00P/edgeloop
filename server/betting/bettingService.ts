@@ -51,8 +51,8 @@ export class BettingService {
     season: number,
     week: number,
     marketOdds: MarketOdds,
-    weather?: any,
-    injuries?: any[]
+    weather?: { temperature?: number; windSpeed?: number; precipitation?: string },
+    injuries?: { playerId: number; playerName: string; status: string }[]
   ): Promise<BettingAnalysis> {
     try {
       const prediction = await bettingModelPredictor.predictGame(
@@ -134,7 +134,6 @@ export class BettingService {
         recommendation
       };
     } catch (error) {
-      console.error(`Error analyzing game ${gameId}:`, error);
       throw error;
     }
   }
@@ -143,8 +142,8 @@ export class BettingService {
     gameId: number,
     prediction: ModelPrediction,
     marketOdds: MarketOdds,
-    weather?: any,
-    injuries?: any[]
+    weather?: { temperature?: number; windSpeed?: number; precipitation?: string },
+    injuries?: { playerId: number; playerName: string; status: string }[]
   ): Promise<SingularityExploit[]> {
     const exploits: SingularityExploit[] = [];
 
@@ -175,7 +174,7 @@ export class BettingService {
       });
     }
 
-    if (weather && (weather.windSpeed > 15 || weather.temperature < 32 || weather.temperature > 90)) {
+    if (weather && ((weather.windSpeed ?? 0) > 15 || (weather.temperature ?? 50) < 32 || (weather.temperature ?? 50) > 90)) {
       exploits.push({
         gameId,
         exploitType: "weather",
@@ -183,7 +182,7 @@ export class BettingService {
         edge: 0.04,
         confidence: 0.7,
         timestamp: new Date(),
-        reason: `Extreme weather: ${weather.windSpeed}mph wind, ${weather.temperature}°F temp`
+        reason: `Extreme weather: ${weather.windSpeed ?? 0}mph wind, ${weather.temperature ?? 0}°F temp`
       });
     }
 
@@ -259,8 +258,8 @@ export class BettingService {
     recommendedBets: BettingEdge[],
     exploits: SingularityExploit[],
     prediction: ModelPrediction,
-    riskAssessment: any
-  ): any {
+    riskAssessment: { modelAgreement: number; injuryUncertainty?: number }
+  ): { action: "bet" | "no_bet" | "pass"; confidence: number; reason: string } {
     if (exploits.length > 0 && exploits[0].confidence > 0.7) {
       const bestExploit = exploits.sort((a, b) => b.confidence - a.confidence)[0];
 
@@ -283,7 +282,7 @@ export class BettingService {
       }
     }
 
-    if (riskAssessment.modelAgreement > 0.4 || riskAssessment.injuryUncertainty > 0.6) {
+    if (riskAssessment.modelAgreement > 0.4 || (riskAssessment.injuryUncertainty ?? 0) > 0.6) {
       return {
         action: "pass",
         confidence: 0.5,
@@ -331,14 +330,15 @@ export class BettingService {
 
     for (const game of games) {
       try {
+        const gameIdNum = parseInt(game.id, 10) || 0;
         const analysis = await this.analyzeGame(
-          game.id,
-          game.homeTeamId!,
-          game.visitorTeamId!,
+          gameIdNum,
+          0, // homeTeamId not available from historical data
+          0, // awayTeamId not available from historical data
           season,
           week,
           {
-            gameId: game.id,
+            gameId: gameIdNum,
             homeTeam: game.homeTeam,
             awayTeam: game.awayTeam,
             openingSpread: game.openingSpread || 0,
@@ -354,15 +354,26 @@ export class BettingService {
           }
         );
         analyses.push(analysis);
-      } catch (error) {
-        console.error(`Error analyzing game ${game.id}:`, error);
+      } catch {
+        // Skip games that fail analysis
       }
     }
 
     return analyses;
   }
 
-  private async getGamesForWeek(season: number, week: number): Promise<any[]> {
+  private async getGamesForWeek(season: number, week: number): Promise<{
+    id: string;
+    homeTeam: string;
+    awayTeam: string;
+    openingSpread: number;
+    currentSpread: number;
+    openingTotal: number;
+    currentTotal: number;
+    gameDate: string;
+    season: number;
+    week: string;
+  }[]> {
     try {
       const games = await db.query.historicalGames.findMany({
         where: and(
@@ -384,8 +395,7 @@ export class BettingService {
         season: game.season,
         week: game.week
       }));
-    } catch (error) {
-      console.error(`Error fetching games for week ${week}:`, error);
+    } catch {
       return [];
     }
   }

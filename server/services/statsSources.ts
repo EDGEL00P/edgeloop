@@ -1,10 +1,17 @@
-import { SINGULARITY_EXPLOIT_CONFIG, getEnabledSignals, isSignalEnabled } from "../singularity-config";
-import { eq, and, or } from "drizzle-orm";
+import { logger } from "../infrastructure/logger";
+
+export type StatCategoryGroup =
+  | "offense"
+  | "defense"
+  | "special_teams"
+  | "advanced"
+  | "turnovers"
+  | "scoring";
 
 export interface StatSource {
   name: string;
   baseUrl: string;
-  category: string;
+  category: StatCategoryGroup;
   enabled: boolean;
   description: string;
 }
@@ -303,7 +310,7 @@ export const STAT_CATEGORIES = {
 
 export type StatCategory = typeof STAT_CATEGORIES[keyof typeof STAT_CATEGORIES][number];
 
-export function getStatSourcesByCategory(category: string): StatSource[] {
+export function getStatSourcesByCategory(category: StatCategoryGroup): StatSource[] {
   return Object.values(NFL_STATS_SOURCES).filter(
     source => source.category === category && source.enabled
   );
@@ -321,7 +328,7 @@ export function getStatSourceUrl(sourceKey: string): string | null {
 export async function fetchStatSource(
   sourceKey: string,
   filters?: Record<string, string>
-): Promise<any> {
+): Promise<unknown> {
   const source = NFL_STATS_SOURCES[sourceKey];
   if (!source || !source.enabled) {
     throw new Error(`Stat source ${sourceKey} is not enabled`);
@@ -341,7 +348,12 @@ export async function fetchStatSource(
     }
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching stats from ${source.name}:`, error);
-    throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error({
+      type: "stats_source_error",
+      source: source.name,
+      message,
+    });
+    throw new Error(`Failed to fetch stats from ${source.name}: ${message}`);
   }
 }

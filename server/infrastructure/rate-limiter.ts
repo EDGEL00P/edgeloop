@@ -90,7 +90,7 @@ class RateLimiterManager {
   }
 
   getStats(): Record<string, { available: number }> {
-    const stats: Record<string, any> = {};
+    const stats: Record<string, { available: number }> = {};
     const entries = Array.from(this.limiters.entries());
     for (const [name, limiter] of entries) {
       stats[name] = {

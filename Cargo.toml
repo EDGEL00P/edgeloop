@@ -1,0 +1,63 @@
+[workspace]
+members = [
+    "crates/el-core",
+    "crates/el-brain",
+    "crates/el-feed",
+    "crates/el-db",
+    "crates/el-api",
+    "crates/genesis",
+    "services/sentinel",
+    "services/oracle",
+    "services/executioner",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Edgeloop Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# Core dependencies
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP Server (Axum)
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# SurrealDB
+surrealdb = { version = "1.5", features = ["kv-rocksdb", "protocol-http"] }
+
+# NATS JetStream
+async-nats = { version = "0.34", features = ["jetstream", "kv"] }
+
+# Burn ML Framework
+burn = { version = "0.16", features = ["ndarray", "train"] }
+burn-ndarray = "0.16"
+
+# ChromiumOxide (Headless Chrome)
+chromiumoxide = "0.7"
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# WebSocket support (for real-time updates)
+axum-extra = { version = "0.9", features = ["typed-header"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.dev]
+opt-level = 1

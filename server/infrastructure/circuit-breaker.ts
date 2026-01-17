@@ -1,4 +1,9 @@
-import { eq, and, or } from "drizzle-orm";
+/**
+ * Circuit Breaker Pattern Implementation
+ * Prevents cascading failures by failing fast when a service is unavailable
+ */
+
+import { logger } from "./logger";
 
 export enum CircuitState {
   CLOSED = "CLOSED",
@@ -11,9 +16,21 @@ export interface CircuitBreakerConfig {
   successThreshold: number;
   timeout: number;
   resetTimeout?: number;
-  fallback?: () => Promise<any>;
+  fallback?: <T>() => Promise<T>;
 }
 
+export interface CircuitBreakerStats {
+  name: string;
+  state: CircuitState;
+  failures: number;
+  successes: number;
+  lastFailure: number | undefined;
+  nextAttempt: number | null;
+}
+
+/**
+ * Circuit breaker for protecting external service calls
+ */
 export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED;
   private failureCount = 0;
@@ -26,18 +43,25 @@ export class CircuitBreaker {
     private config: CircuitBreakerConfig
   ) {}
 
+  /**
+   * Execute a function with circuit breaker protection
+   */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === CircuitState.OPEN) {
       if (Date.now() < this.nextAttempt) {
-        console.warn(`[CircuitBreaker] ${this.name} is OPEN, next attempt in ${this.nextAttempt - Date.now()}ms`);
+        logger.warn({
+          type: "circuit_breaker_open",
+          name: this.name,
+          nextAttemptIn: this.nextAttempt - Date.now(),
+        });
         if (this.config.fallback) {
-          return this.config.fallback();
+          return this.config.fallback<T>();
         }
         throw new Error(`Circuit breaker '${this.name}' is OPEN`);
       }
       this.state = CircuitState.HALF_OPEN;
       this.successCount = 0;
-      console.info(`[CircuitBreaker] ${this.name} transitioning to HALF_OPEN`);
+      logger.info({ type: "circuit_breaker_half_open", name: this.name });
     }
 
     try {
@@ -50,32 +74,36 @@ export class CircuitBreaker {
     }
   }
 
-  private onSuccess() {
+  private onSuccess(): void {
     this.failureCount = 0;
     if (this.state === CircuitState.HALF_OPEN) {
       this.successCount++;
       if (this.successCount >= this.config.successThreshold) {
         this.state = CircuitState.CLOSED;
-        console.info(`[CircuitBreaker] ${this.name} CLOSED`);
+        logger.info({ type: "circuit_breaker_closed", name: this.name });
       }
     }
   }
 
-  private onFailure() {
+  private onFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
 
     if (this.state === CircuitState.HALF_OPEN) {
       this.state = CircuitState.OPEN;
       this.nextAttempt = Date.now() + this.config.timeout;
-      console.warn(`[CircuitBreaker] ${this.name} OPENED from HALF_OPEN`);
+      logger.warn({ type: "circuit_breaker_opened_from_half", name: this.name });
       return;
     }
 
     if (this.failureCount >= this.config.failureThreshold) {
       this.state = CircuitState.OPEN;
       this.nextAttempt = Date.now() + this.config.timeout;
-      console.warn(`[CircuitBreaker] ${this.name} OPENED after ${this.failureCount} failures`);
+      logger.warn({
+        type: "circuit_breaker_opened",
+        name: this.name,
+        failures: this.failureCount,
+      });
     }
   }
 
@@ -83,7 +111,7 @@ export class CircuitBreaker {
     return this.state;
   }
 
-  getStats() {
+  getStats(): CircuitBreakerStats {
     return {
       name: this.name,
       state: this.state,
@@ -94,14 +122,17 @@ export class CircuitBreaker {
     };
   }
 
-  reset() {
+  reset(): void {
     this.state = CircuitState.CLOSED;
     this.failureCount = 0;
     this.successCount = 0;
-    console.info(`[CircuitBreaker] ${this.name} RESET`);
+    logger.info({ type: "circuit_breaker_reset", name: this.name });
   }
 }
 
+/**
+ * Manages multiple circuit breakers
+ */
 export class CircuitBreakerManager {
   private breakers = new Map<string, CircuitBreaker>();
 
@@ -119,18 +150,18 @@ export class CircuitBreakerManager {
     return this.breakers;
   }
 
-  getAllStats() {
-    const stats: Record<string, any> = {};
-    Array.from(this.breakers.entries()).forEach(([name, breaker]) => {
+  getAllStats(): Record<string, CircuitBreakerStats> {
+    const stats: Record<string, CircuitBreakerStats> = {};
+    for (const [name, breaker] of this.breakers.entries()) {
       stats[name] = breaker.getStats();
-    });
+    }
     return stats;
   }
 
-  resetAll() {
-    Array.from(this.breakers.values()).forEach((breaker) => {
+  resetAll(): void {
+    for (const breaker of this.breakers.values()) {
       breaker.reset();
-    });
+    }
   }
 }
 
@@ -142,6 +173,9 @@ export interface RetryConfig {
   retryableErrors?: (error: Error) => boolean;
 }
 
+/**
+ * Exponential backoff retry strategy
+ */
 export class RetryStrategy {
   constructor(private config: RetryConfig) {}
 
@@ -162,7 +196,11 @@ export class RetryStrategy {
         if (attempt < this.config.maxAttempts) {
           const jitter = Math.random() * 0.3 * delay;
           const waitTime = Math.min(delay + jitter, this.config.maxDelayMs);
-          console.warn(`[Retry] Attempt ${attempt} failed, waiting ${Math.round(waitTime)}ms`);
+          logger.warn({
+            type: "retry_attempt",
+            attempt,
+            waitTimeMs: Math.round(waitTime),
+          });
           await this.sleep(waitTime);
           delay *= this.config.backoffMultiplier || 2;
         }
@@ -177,6 +215,9 @@ export class RetryStrategy {
   }
 }
 
+/**
+ * Wrap a promise with a timeout
+ */
 export async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -197,6 +238,9 @@ export async function withTimeout<T>(
   }
 }
 
+/**
+ * Execute with combined resilience patterns
+ */
 export async function resilientExecute<T>(
   name: string,
   fn: () => Promise<T>,
@@ -206,7 +250,7 @@ export async function resilientExecute<T>(
     timeoutMs?: number;
   } = {}
 ): Promise<T> {
-  const execute = async () => {
+  const execute = async (): Promise<T> => {
     let operation = fn;
 
     if (options.timeoutMs) {

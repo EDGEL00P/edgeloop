@@ -1,0 +1,48 @@
+[package]
+name = "engine-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web framework - Axum (maintained by Tokio team)
+axum = "0.7"
+tokio = { version = "1.35", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# DateTime
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# ONNX Runtime for ML inference
+# ort = "2.0"  # Uncomment when ready for ML inference
+
+# gRPC support (when ready)
+# tonic = "0.11"
+# prost = "0.12"
+# prost-types = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+# WASM target support
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

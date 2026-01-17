@@ -1,0 +1,32 @@
+[package]
+name = "el-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# HTTP Server
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+axum-extra = { workspace = true }
+
+# Core dependencies
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }
+
+# Internal crates
+el-core = { path = "../el-core" }
+el-feed = { path = "../el-feed" }
+genesis = { path = "../genesis" }
+# el-brain = { path = "../el-brain" }  # TODO: Enable when Burn models ready
+# el-db = { path = "../el-db" }  # TODO: Enable when SurrealDB ready
+
+# Streaming support
+futures-util = "0.3"
+tokio-stream = "0.1"
