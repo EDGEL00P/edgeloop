@@ -103,7 +103,7 @@ import { metrics } from "./infrastructure/metrics";
 import { logger } from "./infrastructure/logger";
 import { circuitBreakerManager } from "./infrastructure/circuit-breaker";
 import { rateLimiterManager } from "./infrastructure/rate-limiter";
-import { CacheService } from "./infrastructure/cache";
+import { CacheKeys, CacheService, CacheTTL } from "./infrastructure/cache";
 import { healthSnapshot } from "./health/selectSource";
 import { crossrefGames } from "./crossref/crossrefGames";
 
@@ -416,6 +416,12 @@ export async function registerRoutes(
   app.get("/api/exploits/:gameId", async (req, res) => {
     try {
       const { gameId } = req.params;
+      const cacheKey = CacheKeys.apiResponse("exploits", gameId);
+      const cached = await CacheService.get<Record<string, unknown>>(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
       const game = await storage.getNflGame(Number(gameId));
       
       if (!game) {
@@ -442,8 +448,58 @@ export async function registerRoutes(
       const isDivisional = homeTeam && awayTeam ? 
         (homeTeam.division === awayTeam.division && homeTeam.conference === awayTeam.conference) : false;
       
-      const weather = await getWeatherForVenue(game.venue || null);
-      const odds = await getOddsForGame(homeTeamName, awayTeamName);
+      const homeEspnId = homeTeam?.abbreviation
+        ? (EspnService.ESPN_TEAM_ID_MAP[homeTeam.abbreviation] || homeTeam.abbreviation)
+        : undefined;
+      const awayEspnId = awayTeam?.abbreviation
+        ? (EspnService.ESPN_TEAM_ID_MAP[awayTeam.abbreviation] || awayTeam.abbreviation)
+        : undefined;
+
+      const [weather, odds, lineMovement, homeInjuries, awayInjuries] = await Promise.all([
+        getWeatherForVenue(game.venue || null),
+        getOddsForGame(homeTeamName, awayTeamName),
+        storage.getLineMovement(game.id).catch(() => undefined),
+        homeEspnId ? getTeamInjuries(homeEspnId).catch(() => []) : Promise.resolve([]),
+        awayEspnId ? getTeamInjuries(awayEspnId).catch(() => []) : Promise.resolve([]),
+      ]);
+
+      const injuryImpactMap: Record<string, number> = {
+        QB: 4.5,
+        LT: 2.0,
+        LG: 1.5,
+        C: 1.5,
+        RG: 1.5,
+        RT: 2.0,
+        WR: 1.8,
+        TE: 1.2,
+        RB: 1.5,
+        DE: 1.3,
+        DT: 1.0,
+        LB: 1.2,
+        CB: 1.5,
+        S: 1.0,
+        K: 0.8,
+        P: 0.3,
+      };
+
+      const normalizeInjuryStatus = (status: string): "out" | "doubtful" | "questionable" | "probable" => {
+        const normalized = status.toLowerCase();
+        if (normalized.includes("out") || normalized.includes("ir") || normalized.includes("pup") || normalized.includes("suspend")) {
+          return "out";
+        }
+        if (normalized.includes("doubt")) return "doubtful";
+        if (normalized.includes("prob")) return "probable";
+        return "questionable";
+      };
+
+      const mapInjuries = (injuries: typeof homeInjuries) =>
+        injuries.map((injury) => ({
+          playerId: Number(injury.playerId) || 0,
+          playerName: injury.playerName,
+          position: injury.position,
+          status: normalizeInjuryStatus(injury.status),
+          impactScore: injuryImpactMap[injury.position] ?? 0.5,
+        }));
       
       const gameData: GameData = {
         gameId: game.id,
@@ -453,8 +509,12 @@ export async function registerRoutes(
         awayTeamId: game.visitorTeamId,
         spread: odds?.consensus?.spread,
         total: odds?.consensus?.total,
+        openingSpread: lineMovement?.openingSpread ?? undefined,
+        openingTotal: lineMovement?.openingTotal ?? undefined,
+        lineMovementTime: lineMovement?.updatedAt ? new Date(lineMovement.updatedAt).getTime() : undefined,
         venue: game.venue || undefined,
         weather,
+        humidity: weather?.humidity,
         week: game.week,
         isDivisional,
         isPrimetime,
@@ -463,12 +523,16 @@ export async function registerRoutes(
         isSundayNight: isPrimetime && dayOfWeek === "Sunday",
         gameTime,
         gameDay: dayOfWeek,
+        homeInjuries: mapInjuries(homeInjuries),
+        awayInjuries: mapInjuries(awayInjuries),
+        homeStadiumType: weather?.isOutdoor === false ? "dome" : "outdoor",
+        awayStadiumType: weather?.isOutdoor === false ? "dome" : "outdoor",
       };
       
       const exploits = analyzeExploits(gameData);
       const summary = getExploitSummary(exploits);
       
-      res.json({
+      const payload = {
         gameId: game.id,
         homeTeam: homeTeamName,
         awayTeam: awayTeamName,
@@ -476,7 +540,10 @@ export async function registerRoutes(
         exploits,
         summary,
         analyzedAt: new Date().toISOString(),
-      });
+      };
+
+      await CacheService.set(cacheKey, payload, CacheTTL.MEDIUM);
+      res.json(payload);
     } catch (error) {
       logger.error({ type: "exploit_analysis_error", error: String(error) });
       res.status(500).json({
