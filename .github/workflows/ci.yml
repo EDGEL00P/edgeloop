@@ -85,11 +85,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Set API URL environment variable
+        id: set-api-url
+        run: |
+          if [ -n "${{ secrets.NEXT_PUBLIC_API_URL }}" ]; then
+            echo "api_url=${{ secrets.NEXT_PUBLIC_API_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "api_url=http://localhost:3001" >> $GITHUB_OUTPUT
+          fi
+      
       - name: Build Next.js app
         working-directory: apps/web
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
+          NEXT_PUBLIC_API_URL: ${{ steps.set-api-url.outputs.api_url }}
 
   # Rust compilation check
   rust-check:
