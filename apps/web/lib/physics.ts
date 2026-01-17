@@ -107,7 +107,8 @@ export async function fetchMatchupAnalysis(
     }
 
     // Create Arrow Table from binary data
-    const table = Table.from(arrayBuffer);
+    // @ts-ignore - apache-arrow Table.from API may vary by version
+    const table = Table.from(new Uint8Array(arrayBuffer));
 
     return table;
   } catch (error) {

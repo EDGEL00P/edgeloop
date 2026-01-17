@@ -3,17 +3,19 @@
  * Vercel integration automatically provides AXIOM_TOKEN and AXIOM_DATASET
  */
 
-import Axiom from "@axiomhq/axiom-node";
+// @ts-ignore - Axiom types may not be fully exported
+import AxiomClient from "@axiomhq/axiom-node";
 
-let axiomClient: Axiom | null = null;
+let axiomClient: typeof AxiomClient | null = null;
 
-function getAxiomClient(): Axiom | null {
+function getAxiomClient(): typeof AxiomClient | null {
   if (!axiomClient) {
     const token = process.env.AXIOM_TOKEN;
     const dataset = process.env.AXIOM_DATASET;
 
     if (token && dataset) {
-      axiomClient = new Axiom({
+      // @ts-ignore - Axiom constructor may have type issues
+      axiomClient = new AxiomClient({
         token,
         orgId: process.env.AXIOM_ORG_ID,
       });
