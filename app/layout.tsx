@@ -10,6 +10,14 @@ import { NFLScanlines } from './components/NFLScanlines';
 import { NFLFieldLines } from './components/NFLFieldLines';
 import { NFLHUDOverlay } from './components/NFLHUDOverlay';
 import Scene3DWrapper from './components/Scene3DWrapper';
+import {
+  ClerkProvider,
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 
 // Using Geist font for modern 2027 typography
 
@@ -72,33 +80,44 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html 
-      lang="en" 
-      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="antialiased bg-nfl-dark text-white relative overflow-x-hidden perspective-container">
-        <ErrorBoundary>
-          <Providers>
-            {/* 3D Scene Background */}
-            <Scene3DWrapper />
-            
-            {/* NFL HUD Visual Effects Layer */}
-            <div className="fixed inset-0 z-[1]">
-              <NeuralWeb state="idle" intensity={0.3} />
-              <NFLFieldLines />
-              <NFLScanlines />
-              <NFLHUDOverlay />
-            </div>
-            
-            {/* Content Layer */}
-            <div className="relative z-10">
-              <Header />
-              <main className="app-content max-w-7xl mx-auto px-4">{children}</main>
-            </div>
-          </Providers>
-        </ErrorBoundary>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html 
+        lang="en" 
+        className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+        suppressHydrationWarning
+      >
+        <body className="antialiased bg-nfl-dark text-white relative overflow-x-hidden perspective-container">
+          <ErrorBoundary>
+            <Providers>
+              {/* 3D Scene Background */}
+              <Scene3DWrapper />
+              
+              {/* NFL HUD Visual Effects Layer */}
+              <div className="fixed inset-0 z-[1]">
+                <NeuralWeb state="idle" intensity={0.3} />
+                <NFLFieldLines />
+                <NFLScanlines />
+                <NFLHUDOverlay />
+              </div>
+              
+              {/* Content Layer */}
+              <div className="relative z-10">
+                <header className="max-w-7xl mx-auto px-4 pt-4 flex justify-end gap-3">
+                  <SignedOut>
+                    <SignInButton />
+                    <SignUpButton />
+                  </SignedOut>
+                  <SignedIn>
+                    <UserButton />
+                  </SignedIn>
+                </header>
+                <Header />
+                <main className="app-content max-w-7xl mx-auto px-4">{children}</main>
+              </div>
+            </Providers>
+          </ErrorBoundary>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
