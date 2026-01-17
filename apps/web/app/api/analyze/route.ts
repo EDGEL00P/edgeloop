@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { checkRateLimit, broadcastLock } from "@/lib/signals";
+import { RateLimitError } from "@/lib/rate-limit";
 import { triggerPhysicsSimulation } from "@/trigger/predict";
 import { getRealtimeTelemetryLatest } from "@/lib/telemetry";
 import { fetchMatchupAnalysis } from "@/lib/physics";
@@ -75,9 +76,8 @@ async function getClientIp(request: NextRequest): Promise<string> {
     return realIp;
   }
 
-  // Last resort: try to get from request
-  const ip = request.ip || request.headers.get("x-forwarded-for")?.split(",")[0];
-  return ip || "unknown";
+  // Last resort: return unknown if no IP found
+  return "unknown";
 }
 
 /**
@@ -100,12 +100,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       await checkRateLimit(clientIp, 100, 60);
     } catch (error) {
-      if (error instanceof Error && error.name === "RateLimitError") {
+      if (error instanceof RateLimitError) {
         return NextResponse.json(
           {
             success: false,
             error: "Rate limit exceeded",
-            reset: (error as { reset: number }).reset,
+            reset: error.reset,
           },
           {
             status: 429,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           {
             success: false,
             error: "Invalid request payload",
-            details: error.errors,
+            details: error.issues,
           },
           { status: 400 }
         );
@@ -140,10 +140,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Step 4: Broadcast lock signal for the game
     await broadcastLock(body.gameId);
 
-    // Step 5: Fetch real-time telemetry from ClickHouse
-    let telemetryData;
+    // Step 5: Fetch real-time telemetry from Redis
+    let telemetryData: Array<{ timestamp: string | number | Date; [key: string]: unknown }> = [];
     try {
-      telemetryData = await getRealtimeTelemetryLatest(body.gameId, 200);
+      const telemetry = await getRealtimeTelemetryLatest(body.gameId, 200);
+      telemetryData = telemetry;
     } catch (error) {
       console.error("Failed to fetch telemetry:", error);
       // Continue even if telemetry fails - don't block the entire request
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         {
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 }
       );

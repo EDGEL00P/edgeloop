@@ -3,7 +3,7 @@
  * Vercel integration automatically provides AXIOM_TOKEN and AXIOM_DATASET
  */
 
-import { Axiom } from "@axiomhq/axiom-node";
+import Axiom from "@axiomhq/axiom-node";
 
 let axiomClient: Axiom | null = null;
 

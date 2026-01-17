@@ -42,8 +42,8 @@ const envResult = envSchema.safeParse({
 });
 
 if (!envResult.success) {
-  const errors = envResult.error.errors
-    .map((err) => `${err.path.join(".")}: ${err.message}`)
+  const errors = envResult.error.issues
+    .map((err: { path: (string | number)[]; message: string }) => `${err.path.join(".")}: ${err.message}`)
     .join("\n");
   
   throw new Error(
