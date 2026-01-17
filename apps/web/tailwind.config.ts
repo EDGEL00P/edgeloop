@@ -41,6 +41,20 @@ const config: Config = {
         md: 'var(--radius-md)',
         sm: 'var(--radius-sm)',
       },
+      // ESPN-grade NFL design tokens
+      spacing: {
+        'broadcast': '1rem', // Standard broadcast spacing
+        'studio': '2rem', // Studio panel spacing
+      },
+      // Edge states for predictions
+      boxShadow: {
+        'edge-high': '0 0 20px rgba(34, 197, 94, 0.3)',
+        'edge-medium': '0 0 12px rgba(34, 197, 94, 0.2)',
+        'edge-low': '0 0 8px rgba(34, 197, 94, 0.1)',
+        // Risk states
+        'risk-high': '0 0 20px rgba(239, 68, 68, 0.3)',
+        'risk-medium': '0 0 12px rgba(239, 68, 68, 0.2)',
+      },
     },
   },
   plugins: [],

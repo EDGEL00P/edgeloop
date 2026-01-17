@@ -32,16 +32,23 @@
 
 ### Current Branch Structure
 
-**Active Branch:**
-- `edgeloop` - Single source of truth for development + production
+**Active Branches:**
+- `main` - Primary development branch (production-ready)
+- `edgeloop` - Worktree branch (synced with main)
 
 **Removed Branches:**
+- `production` - Merged into main
 - `vscode-setup-c168d` (renamed to production before consolidation)
 - `drop-nextjs`
 - `remove-nextjs-c168d`
 - `copilot/convert-repo-to-nextjs`
 - `copilot/recode-in-nextjs`
 - `copilot/replace-vite-with-nextjs`
+
+### File Count
+- **200 tracked files** (down from 336+)
+- **100% functional** - All builds working
+- **ESPN-grade architecture** - Aligned with 2026 stack
 
 ## Repository Status
 

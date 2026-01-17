@@ -29,10 +29,12 @@
 - ✅ `genesis` - TDA, LTC, Active Inference engines
 - ✅ All GOAT tier endpoints implemented
 
-### Next.js Frontend (`apps/web/`)
-- ✅ Professional sports analytics theme
-- ✅ Genesis prediction dashboard
-- ✅ NFL games display
+### Next.js 16 Frontend (`apps/web/`)
+- ✅ Next.js 16 with React 19 (App Router)
+- ✅ Server Components for predictions
+- ✅ TanStack Query + Zustand state management
+- ✅ Radix UI components
+- ✅ Framer Motion animations
 - ✅ Mobile-first responsive design
 - ✅ API client with all methods
 
