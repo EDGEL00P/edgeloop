@@ -36,6 +36,10 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "../server",
+    "../server/**/*",
+    "**/Scene3D*.tsx",
+    "**/Scene3D*.ts"
   ]
 }

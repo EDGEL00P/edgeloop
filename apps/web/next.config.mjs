@@ -6,7 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['server', 'shared'],
+  // Exclude server directory from Next.js builds
+  // Server code runs separately as Rust backend
+  transpilePackages: ['shared'],
   
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -19,7 +21,8 @@ const nextConfig = {
           : 'http://localhost:3000',
   },
   
-  serverExternalPackages: ['@hono/node-server', 'hono'],
+  // Server packages excluded - not used in Next.js app
+  // serverExternalPackages: ['@hono/node-server', 'hono'],
   
   // Standalone output for Docker/Railway/Render
   // Vercel uses this for optimized deployments
