@@ -1,22 +1,20 @@
 /**
- * Home Page - Mobile-First Design
+ * Home Page - ESPN-Grade 2026 Architecture
  * 
- * Responsive dashboard for NFL analytics and predictions
+ * Server Components for predictions
+ * Streaming + Suspense for live data
+ * Event-driven state orchestration
  */
 
-'use client';
-
 import { Suspense } from 'react';
-import { apiClient } from '@/lib/api/client';
-import DashboardSkeleton from './components/DashboardSkeleton';
 import Dashboard from './components/Dashboard';
+import DashboardSkeleton from './components/DashboardSkeleton';
 
+// Default game IDs (can be made dynamic via searchParams)
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      <Suspense fallback={<DashboardSkeleton />}>
-        <Dashboard />
-      </Suspense>
-    </div>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <Dashboard homeTeamId={1} awayTeamId={2} />
+    </Suspense>
   );
 }

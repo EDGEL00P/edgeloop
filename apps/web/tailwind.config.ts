@@ -45,6 +45,7 @@ const config: Config = {
       spacing: {
         'broadcast': '1rem', // Standard broadcast spacing
         'studio': '2rem', // Studio panel spacing
+        'field': '0.5rem', // Field line spacing
       },
       // Edge states for predictions
       boxShadow: {
@@ -54,6 +55,14 @@ const config: Config = {
         // Risk states
         'risk-high': '0 0 20px rgba(239, 68, 68, 0.3)',
         'risk-medium': '0 0 12px rgba(239, 68, 68, 0.2)',
+      },
+      // 3D perspective utilities
+      perspective: {
+        '1000': '1000px',
+        '800': '800px',
+      },
+      transformStyle: {
+        'preserve-3d': 'preserve-3d',
       },
     },
   },
