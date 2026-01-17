@@ -29,7 +29,7 @@ export const aj = arcjet({
  * Protect API route with Arcjet
  */
 export async function protectRoute(request: NextRequest) {
-  const decision = await aj.protect(request);
+  const decision = await aj.protect(request, {});
   
   if (decision.isDenied()) {
     return {

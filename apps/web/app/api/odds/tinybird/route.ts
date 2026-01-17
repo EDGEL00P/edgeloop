@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   // Protect with Arcjet
-  const protection = await ajOdds.protect(request);
+  const protection = await ajOdds.protect(request, {});
   if (protection.isDenied()) {
     return NextResponse.json(
       { error: "Rate limit exceeded" },
