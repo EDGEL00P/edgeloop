@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { GeistSans, GeistMono } from 'geist/font';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { Providers } from './providers';
 import { Navigation } from './components/Navigation';
@@ -96,6 +97,7 @@ export default function RootLayout({
               <Header />
               <main className="app-content max-w-7xl mx-auto px-4">{children}</main>
             </div>
+            <SpeedInsights />
           </Providers>
         </ErrorBoundary>
       </body>
