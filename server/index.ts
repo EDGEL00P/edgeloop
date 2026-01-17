@@ -157,7 +157,6 @@ app.use((req, res, next) => {
     if (process.env.RENDER) return "Render";
     if (process.env.FLY_APP_NAME) return "Fly.io";
     if (process.env.HEROKU_APP_NAME) return "Heroku";
-    if (process.env.REPLIT_DEV_DOMAIN) return "Replit";
     if (process.env.DOCKER) return "Docker";
     return "Local/Unknown";
   }

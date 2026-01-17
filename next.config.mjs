@@ -14,9 +14,7 @@ const nextConfig = {
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : process.env.REPLIT_DEV_DOMAIN 
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-          : 'http://localhost:3000',
+        : 'http://localhost:3000',
   },
   
   serverExternalPackages: ['@hono/node-server', 'hono'],
