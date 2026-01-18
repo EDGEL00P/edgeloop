@@ -6,7 +6,6 @@
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["iad1"],
-  "functionFailoverRegions": ["sfo1"],
   "ignoreCommand": "git diff HEAD^ HEAD --quiet . '!docs/**' '!*.md' '!vercel.json' '!.gitignore'",
   "git": {
     "deploymentEnabled": {
