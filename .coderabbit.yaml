@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary_instructions: |-
+    explain accurately
+    improvements on all aspects
+  high_level_summary_in_walkthrough: true
+  auto_title_instructions: |-
+    explain accurately
+    improvements on all aspects
+  review_details: true
+  fail_commit_status: true
+  auto_apply_labels: true
+  auto_assign_reviewers: true
+  disable_cache: true
+knowledge_base:
+  opt_out: true
+issue_enrichment:
+  auto_enrich:
+    enabled: true
