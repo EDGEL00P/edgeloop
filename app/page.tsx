@@ -1,5 +1,3 @@
-export const revalidate = 60;
-
 const integrations = [
   {
     title: "Core Data",
@@ -85,6 +83,28 @@ type OddsResponse = {
   games?: unknown[];
 };
 
+type Team = {
+  id: number;
+  abbreviation?: string;
+  name?: string;
+  fullName?: string;
+  location?: string;
+};
+
+type Game = {
+  id: number;
+  date?: string;
+  season?: number;
+  week?: number;
+  status?: string | null;
+  homeTeamId?: number;
+  visitorTeamId?: number;
+  homeTeamScore?: number | null;
+  visitorTeamScore?: number | null;
+  venue?: string | null;
+  time?: string | null;
+};
+
 type FetchResult<T> = {
   ok: boolean;
   data?: T;
@@ -97,7 +117,7 @@ async function fetchJson<T>(url: string, timeoutMs = 5000): Promise<FetchResult<
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      next: { revalidate },
+      cache: "no-store",
     });
     if (!res.ok) {
       return { ok: false, error: `HTTP ${res.status}` };
@@ -116,6 +136,8 @@ export default async function HomePage() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
 
   const apiUnavailable: FetchResult<unknown> = { ok: false, error: "API base not configured" };
+  const season = Number(process.env.NEXT_PUBLIC_NFL_SEASON || 2025);
+  const week = Number(process.env.NEXT_PUBLIC_NFL_WEEK || 1);
   const [health, news, odds] = await Promise.all([
     fetchJson<HealthStatus>(`${appUrl}/api/health`),
     apiBase
@@ -125,6 +147,13 @@ export default async function HomePage() {
       ? fetchJson<OddsResponse>(`${apiBase}/api/odds/nfl`)
       : Promise.resolve(apiUnavailable as FetchResult<OddsResponse>),
   ]);
+
+  const [teams, games] = apiBase
+    ? await Promise.all([
+        fetchJson<Team[]>(`${apiBase}/api/nfl/teams`),
+        fetchJson<Game[]>(`${apiBase}/api/nfl/games?season=${season}&week=${week}`),
+      ])
+    : [apiUnavailable as FetchResult<Team[]>, apiUnavailable as FetchResult<Game[]>];
 
   const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 4) : [];
   const oddsCount = odds.ok && odds.data?.games ? odds.data.games.length : 0;
@@ -136,6 +165,30 @@ export default async function HomePage() {
           "Edge-grade analytics platform is online.",
           "Configure odds + weather APIs for full exploit engine.",
         ];
+  const teamMap = new Map<number, Team>();
+  if (teams.ok && Array.isArray(teams.data)) {
+    teams.data.forEach((team) => {
+      teamMap.set(team.id, team);
+    });
+  }
+  const liveScoreboard =
+    games.ok && Array.isArray(games.data) && games.data.length > 0
+      ? games.data.slice(0, 3).map((game) => {
+          const home = teamMap.get(game.homeTeamId || 0);
+          const away = teamMap.get(game.visitorTeamId || 0);
+          const status = game.status || (game.homeTeamScore || game.visitorTeamScore ? "Final" : "Preview");
+          return {
+            away: away?.abbreviation || away?.name || "AWAY",
+            home: home?.abbreviation || home?.name || "HOME",
+            status,
+            time: game.time || game.date || "TBD",
+            scoreAway: game.visitorTeamScore ?? null,
+            scoreHome: game.homeTeamScore ?? null,
+            spread: "—",
+            total: "—",
+          };
+        })
+      : scoreboardGames;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -225,7 +278,7 @@ export default async function HomePage() {
           </span>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {scoreboardGames.map((game) => (
+          {(liveScoreboard as typeof scoreboardGames).map((game) => (
             <div key={`${game.away}-${game.home}`} className="studio-panel rounded-2xl p-5">
               <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <span>{game.status}</span>
@@ -236,7 +289,15 @@ export default async function HomePage() {
                   <div className="text-xl font-semibold">{game.away}</div>
                   <div className="text-xs text-muted-foreground">Away</div>
                 </div>
-                <div className="text-lg text-muted-foreground">@</div>
+                <div className="text-lg text-muted-foreground">
+                  {game.scoreAway !== null && game.scoreHome !== null ? (
+                    <span className="text-sm text-muted-foreground">
+                      {game.scoreAway} - {game.scoreHome}
+                    </span>
+                  ) : (
+                    "@"
+                  )}
+                </div>
                 <div className="text-right">
                   <div className="text-xl font-semibold">{game.home}</div>
                   <div className="text-xs text-muted-foreground">Home</div>
