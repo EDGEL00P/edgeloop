@@ -6,7 +6,7 @@
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["iad1"],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':(exclude)docs/**' ':(exclude)*.md' ':(exclude)vercel.json' ':(exclude).gitignore' || [ $? -eq 1 ]",
+  "ignoreCommand": "git diff --name-only HEAD^ HEAD | findstr /V /R \"docs\\\\.*\\\\.md$ vercel\\\\.json \\\\.gitignore$\" || exit 0",
   "git": {
     "deploymentEnabled": {
       "main": true,
