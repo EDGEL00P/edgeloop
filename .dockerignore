@@ -40,5 +40,4 @@ Dockerfile
 .prettierrc.json
 .prettierignore
 .eslintrc.json
-tsconfig.json
 vitest.config.ts
