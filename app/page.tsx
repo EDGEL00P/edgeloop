@@ -42,6 +42,33 @@ const statusCards = [
   },
 ];
 
+const scoreboardGames = [
+  {
+    away: "BUF",
+    home: "KC",
+    status: "Preview",
+    time: "Sun 4:25 PM",
+    spread: "KC -2.5",
+    total: "O/U 48.5",
+  },
+  {
+    away: "PHI",
+    home: "DAL",
+    status: "Preview",
+    time: "Sun 8:20 PM",
+    spread: "PHI -1.0",
+    total: "O/U 46.0",
+  },
+  {
+    away: "SF",
+    home: "SEA",
+    status: "Preview",
+    time: "Mon 8:15 PM",
+    spread: "SF -3.5",
+    total: "O/U 44.0",
+  },
+];
+
 type HealthStatus = {
   status?: string;
   timestamp?: string;
@@ -101,9 +128,54 @@ export default async function HomePage() {
 
   const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 4) : [];
   const oddsCount = odds.ok && odds.data?.games ? odds.data.games.length : 0;
+  const tickerItems =
+    newsItems.length > 0
+      ? newsItems.map((item) => item.title || "Breaking NFL Update")
+      : [
+          "Live feed ready — connect your data sources to stream headlines.",
+          "Edge-grade analytics platform is online.",
+          "Configure odds + weather APIs for full exploit engine.",
+        ];
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border/50 bg-secondary/30">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/20"></div>
+            <div>
+              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                NFL Analytics
+              </div>
+              <div className="text-lg font-semibold">Edgeloop Studio</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+              Live
+            </span>
+            <span>Scoreboard</span>
+            <span>Exploits</span>
+            <span>Markets</span>
+          </div>
+        </div>
+      </header>
+
+      <section className="border-b border-border/50 bg-black/20">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
+            Ticker
+          </span>
+          <div className="flex w-full gap-6 overflow-x-auto">
+            {tickerItems.map((item, index) => (
+              <span key={`${item}-${index}`} className="whitespace-nowrap">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="studio-desk studio-light-top">
         <div className="mx-auto max-w-6xl px-6 py-16">
           <div className="flex flex-col gap-6">
@@ -142,6 +214,40 @@ export default async function HomePage() {
               </a>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">ESPN-Style Scoreboard</h2>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Weekly Slate
+          </span>
+        </div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {scoreboardGames.map((game) => (
+            <div key={`${game.away}-${game.home}`} className="studio-panel rounded-2xl p-5">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                <span>{game.status}</span>
+                <span>{game.time}</span>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xl font-semibold">{game.away}</div>
+                  <div className="text-xs text-muted-foreground">Away</div>
+                </div>
+                <div className="text-lg text-muted-foreground">@</div>
+                <div className="text-right">
+                  <div className="text-xl font-semibold">{game.home}</div>
+                  <div className="text-xs text-muted-foreground">Home</div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                <span>{game.spread}</span>
+                <span>{game.total}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
