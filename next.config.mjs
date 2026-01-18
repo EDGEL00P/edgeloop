@@ -56,7 +56,9 @@ const nextConfig = {
   
   // Explicitly configure Turbopack for Next.js 16
   // Required for Vercel deployments
-  turbopack: {},
+  turbopack: {
+    root: __dirname,
+  },
   
   // Experimental features for better performance
   experimental: {
