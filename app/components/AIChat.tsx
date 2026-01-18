@@ -12,7 +12,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, X, Bot, User } from "lucide-react";
 // Simple button and input components
-const Button = ({ type, disabled, size, children, ...props }: any) => (
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  size?: "icon" | "default";
+}
+
+const Button = ({ type, disabled, size, children, ...props }: ButtonProps) => (
   <button
     type={type || "button"}
     disabled={disabled}
@@ -23,7 +27,11 @@ const Button = ({ type, disabled, size, children, ...props }: any) => (
   </button>
 );
 
-const Input = ({ className, ...props }: any) => (
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  className?: string;
+}
+
+const Input = ({ className, ...props }: InputProps) => (
   <input
     className={`rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${className || ""}`}
     {...props}
@@ -68,7 +76,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
       const data = await res.json();
       return data.id;
     } catch (error) {
-      console.error("Failed to create conversation:", error);
+      // Failed to create conversation - return null
       return null;
     }
   };
@@ -142,7 +150,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
                     return updated;
                   });
                 }
-              } catch (e: unknown) {
+              } catch {
                 // Ignore parse errors
               }
             }
