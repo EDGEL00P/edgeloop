@@ -58,9 +58,6 @@ const nextConfig = {
   // Required for Vercel deployments
   turbopack: {},
   
-  // Production optimizations
-  swcMinify: true,
-  
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
