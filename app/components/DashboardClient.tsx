@@ -37,26 +37,7 @@ const sidebarLinks = [
 ];
 
 
-const defaultOddsTrend = [
-  { label: "W1", value: 42 },
-  { label: "W2", value: 48 },
-  { label: "W3", value: 41 },
-  { label: "W4", value: 50 },
-  { label: "W5", value: 47 },
-];
-
-const defaultTeamStats = [
-  { label: "Off", value: 78 },
-  { label: "Def", value: 65 },
-  { label: "ST", value: 54 },
-  { label: "Inj", value: 22 },
-];
-
-const defaultEdgeRisk = [
-  { label: "Edge", edge: 70, risk: 45 },
-  { label: "Risk", edge: 55, risk: 75 },
-  { label: "Totals", edge: 64, risk: 40 },
-];
+// No default fallback data - all data must come from live APIs
 
 /**
  * Dashboard Client Component
@@ -523,12 +504,19 @@ export default function DashboardClient({
                     <div className="text-xs text-muted-foreground">{oddsError}</div>
                   </div>
                 )}
-                {!isMarketsLoading && !oddsError && (
+                {!isMarketsLoading && !oddsError && oddsTrend && oddsTrend.length > 0 && teamStats && teamStats.length > 0 && edgeRisk && edgeRisk.length > 0 && (
                   <Charts
-                    oddsTrend={oddsTrend && oddsTrend.length ? oddsTrend : defaultOddsTrend}
-                    teamStats={teamStats && teamStats.length ? teamStats : defaultTeamStats}
-                    edgeRisk={edgeRisk && edgeRisk.length ? edgeRisk : defaultEdgeRisk}
+                    oddsTrend={oddsTrend}
+                    teamStats={teamStats}
+                    edgeRisk={edgeRisk}
                   />
+                )}
+                {!isMarketsLoading && !oddsError && (!oddsTrend || oddsTrend.length === 0 || !teamStats || teamStats.length === 0 || !edgeRisk || edgeRisk.length === 0) && (
+                  <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-6 text-center" role="alert">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-yellow-400 opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-yellow-400 mb-2">Market data unavailable</div>
+                    <div className="text-xs text-muted-foreground">Waiting for live data from API</div>
+                  </div>
                 )}
               </div>
               </div>

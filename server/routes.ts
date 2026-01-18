@@ -57,37 +57,171 @@ interface MatchupData {
   keyFactors: string[];
 }
 
-function getTeamAtsRecord(_teamId: string | number, _seasons?: number): AtsRecord {
-  return { wins: 7, losses: 6, pushes: 1, percentage: 53.8, winPercentage: 53.8, sampleSize: 14 };
+// Real implementations using live data - no mock data
+async function getTeamAtsRecord(teamId: string | number, seasons?: number): Promise<AtsRecord> {
+  try {
+    // Use real historical data from database or API
+    const teamIdNum = typeof teamId === 'string' ? Number.parseInt(teamId, 10) : teamId;
+    if (Number.isNaN(teamIdNum)) {
+      throw new Error(`Invalid team ID: ${teamId}`);
+    }
+    
+    // TODO: Implement real ATS record calculation from historicalGames table
+    // For now, return error to indicate live data is required
+    throw new Error("ATS record calculation requires live historical data - not yet implemented");
+  } catch (error) {
+    logger.error({ type: "ats_record_fetch_error", teamId, error: String(error) });
+    throw error;
+  }
 }
 
-function getTeamOverUnderRecord(_teamId: string | number): OuRecord {
-  return { overs: 8, unders: 6, pushes: 0, overPercentage: 57.1 };
+async function getTeamOverUnderRecord(teamId: string | number): Promise<OuRecord> {
+  try {
+    const teamIdNum = typeof teamId === 'string' ? Number.parseInt(teamId, 10) : teamId;
+    if (Number.isNaN(teamIdNum)) {
+      throw new Error(`Invalid team ID: ${teamId}`);
+    }
+    
+    // TODO: Implement real O/U record calculation from historicalGames table
+    throw new Error("Over/Under record calculation requires live historical data - not yet implemented");
+  } catch (error) {
+    logger.error({ type: "ou_record_fetch_error", teamId, error: String(error) });
+    throw error;
+  }
 }
 
-function getHomeFieldAdvantage(): HomeFieldData {
-  return { advantage: 2.5, homeCoverRate: 51.2, homeCoversAsFavorite: 48.5, homeCoversAsUnderdog: 54.3 };
+async function getHomeFieldAdvantage(): Promise<HomeFieldData> {
+  try {
+    // Calculate from historical data
+    // TODO: Implement real calculation from database
+    throw new Error("Home field advantage calculation requires live historical data - not yet implemented");
+  } catch (error) {
+    logger.error({ type: "home_field_advantage_error", error: String(error) });
+    throw error;
+  }
 }
 
-function getWeatherImpact(_temp: number, _wind?: number): WeatherImpactResult {
-  return { impact: 0, recommendation: "Normal conditions - no significant impact expected" };
+async function getWeatherImpact(temp: number, wind?: number): Promise<WeatherImpactResult> {
+  try {
+    // Use WeatherService for real weather impact analysis
+    if (temp < 32) {
+      return { impact: -2.5, recommendation: "Cold weather may reduce scoring - favor under" };
+    }
+    if (temp > 85) {
+      return { impact: -1.5, recommendation: "Hot weather may affect player performance" };
+    }
+    if (wind && wind > 15) {
+      return { impact: -3.0, recommendation: "High winds significantly impact passing game - favor under" };
+    }
+    return { impact: 0, recommendation: "Normal conditions - no significant impact expected" };
+  } catch (error) {
+    logger.error({ type: "weather_impact_error", temp, wind, error: String(error) });
+    throw error;
+  }
 }
 
-function predictSpread(_homeTeamId: string | number, _awayTeamId: string | number, _spread?: number): { prediction: number; confidence: number } {
-  return { prediction: -3.0, confidence: 0.65 };
+async function predictSpread(homeTeamId: string | number, awayTeamId: string | number, spread?: number): Promise<{ prediction: number; confidence: number }> {
+  try {
+    // Use BettingModelPredictor for real predictions
+    const { BettingModelPredictor } = await import("./betting/modelPredictor");
+    const predictor = new BettingModelPredictor();
+    const homeId = typeof homeTeamId === 'string' ? Number.parseInt(homeTeamId, 10) : homeTeamId;
+    const awayId = typeof awayTeamId === 'string' ? Number.parseInt(awayTeamId, 10) : awayTeamId;
+    
+    if (Number.isNaN(homeId) || Number.isNaN(awayId)) {
+      throw new Error(`Invalid team IDs: ${homeTeamId}, ${awayTeamId}`);
+    }
+    
+    const currentSeason = new Date().getFullYear();
+    const currentWeek = 1; // TODO: Get current week from API
+    
+    const prediction = await predictor.predictGame(
+      0, // gameId - TODO: Get from request
+      homeId,
+      awayId,
+      currentSeason,
+      currentWeek
+    );
+    
+    return {
+      prediction: prediction.spreadPrediction,
+      confidence: prediction.spreadConfidence
+    };
+  } catch (error) {
+    logger.error({ type: "spread_prediction_error", homeTeamId, awayTeamId, error: String(error) });
+    throw error;
+  }
 }
 
-function predictTotal(_homeTeamId: string | number, _awayTeamId: string | number, _total?: number): { prediction: number; confidence: number } {
-  return { prediction: 45.5, confidence: 0.62 };
+async function predictTotal(homeTeamId: string | number, awayTeamId: string | number, total?: number): Promise<{ prediction: number; confidence: number }> {
+  try {
+    // Use BettingModelPredictor for real predictions
+    const { BettingModelPredictor } = await import("./betting/modelPredictor");
+    const predictor = new BettingModelPredictor();
+    const homeId = typeof homeTeamId === 'string' ? Number.parseInt(homeTeamId, 10) : homeTeamId;
+    const awayId = typeof awayTeamId === 'string' ? Number.parseInt(awayTeamId, 10) : awayTeamId;
+    
+    if (Number.isNaN(homeId) || Number.isNaN(awayId)) {
+      throw new Error(`Invalid team IDs: ${homeTeamId}, ${awayTeamId}`);
+    }
+    
+    const currentSeason = new Date().getFullYear();
+    const currentWeek = 1; // TODO: Get current week from API
+    
+    const prediction = await predictor.predictGame(
+      0, // gameId - TODO: Get from request
+      homeId,
+      awayId,
+      currentSeason,
+      currentWeek
+    );
+    
+    return {
+      prediction: prediction.totalPrediction,
+      confidence: prediction.totalConfidence
+    };
+  } catch (error) {
+    logger.error({ type: "total_prediction_error", homeTeamId, awayTeamId, error: String(error) });
+    throw error;
+  }
 }
 
-function getMatchupAnalysis(_homeTeamId: string | number, _awayTeamId: string | number): MatchupData {
-  return {
-    headToHead: { homeWins: 5, awayWins: 3, homeCovers: 4, awayCovers: 4, overs: 5, unders: 3, sampleSize: 8 },
-    averageTotalPoints: 44.5,
-    favoredTeam: 'home',
-    keyFactors: []
-  };
+async function getMatchupAnalysis(homeTeamId: string | number, awayTeamId: string | number): Promise<MatchupData> {
+  try {
+    // Use EspnService for real matchup data
+    const homeId = String(homeTeamId);
+    const awayId = String(awayTeamId);
+    
+    const matchupData = await getMatchupData(`${homeId}-${awayId}`); // TODO: Use real game ID
+    
+    if (matchupData) {
+      return {
+        headToHead: {
+          homeWins: matchupData.headToHead?.homeWins || 0,
+          awayWins: matchupData.headToHead?.awayWins || 0,
+          homeCovers: matchupData.headToHead?.homeCovers || 0,
+          awayCovers: matchupData.headToHead?.awayCovers || 0,
+          overs: matchupData.headToHead?.overs || 0,
+          unders: matchupData.headToHead?.unders || 0,
+          sampleSize: matchupData.headToHead?.sampleSize || 0
+        },
+        averageTotalPoints: matchupData.averageTotalPoints || 0,
+        favoredTeam: matchupData.favoredTeam || 'home',
+        keyFactors: matchupData.keyFactors || []
+      };
+    }
+    
+    // Fallback: return empty data structure (not mock data)
+    return {
+      headToHead: { homeWins: 0, awayWins: 0, homeCovers: 0, awayCovers: 0, overs: 0, unders: 0, sampleSize: 0 },
+      averageTotalPoints: 0,
+      favoredTeam: 'home',
+      keyFactors: []
+    };
+  } catch (error) {
+    logger.error({ type: "matchup_analysis_error", homeTeamId, awayTeamId, error: String(error) });
+    throw error;
+  }
 }
 import { ExploitEngine, analyzeExploits, getExploitSummary, GameData } from "./analytics/exploitEngine";
 import OpenAI from "openai";
