@@ -17,7 +17,6 @@ import {
 import { useTheme } from "next-themes";
 import type { ExploitSignal, HealthStatus, InjuryRecord, NewsItem } from "../page";
 
-type StatusCard = { title: string; value: string; detail: string };
 type ScoreboardCard = {
   away: string;
   home: string;
@@ -35,7 +34,6 @@ const Charts = dynamic(() => import("./Charts"), {
 });
 
 type DashboardProps = {
-  statusCards: StatusCard[];
   health: { ok: boolean; data?: HealthStatus; error?: string };
   newsItems: NewsItem[];
   oddsCount: number;
@@ -86,7 +84,6 @@ const defaultEdgeRisk = [
 ];
 
 export default function DashboardClient({
-  statusCards,
   health,
   newsItems,
   oddsCount,

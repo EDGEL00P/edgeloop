@@ -1,5 +1,5 @@
 import Parser from 'rss-parser';
-import { eq, and, or } from "drizzle-orm";
+import { logger } from "../infrastructure/logger";
 
 export interface NewsItem {
   title: string;
@@ -14,13 +14,55 @@ interface RSSFeedConfig {
   source: string;
 }
 
-const RSS_FEEDS: RSSFeedConfig[] = [
+const DEFAULT_RSS_FEEDS: RSSFeedConfig[] = [
   { url: 'https://www.espn.com/espn/rss/nfl/news', source: 'ESPN' },
   { url: 'https://www.nfl.com/rss/rsslanding?searchString=home', source: 'NFL.com' },
   { url: 'https://profootballtalk.nbcsports.com/feed/', source: 'Pro Football Talk' },
   { url: 'https://sports.yahoo.com/nfl/rss.xml', source: 'Yahoo Sports' },
   { url: 'https://bleacherreport.com/rss/NFL.rss', source: 'Bleacher Report' },
 ];
+
+function parseFeedList(raw: string | undefined): RSSFeedConfig[] {
+  if (!raw) return [];
+
+  const parsed = safeParseFeedJson(raw);
+  if (parsed) {
+    return parsed
+      .filter((entry) => entry?.url && entry?.source)
+      .map((entry) => ({
+        url: String(entry.url),
+        source: String(entry.source),
+      }));
+  }
+
+  return raw
+    .split(/\r?\n|;/g)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [source, url] = line.split("|").map((value) => value.trim());
+      if (!source || !url) return null;
+      return { source, url };
+    })
+    .filter((entry): entry is RSSFeedConfig => !!entry);
+}
+
+function safeParseFeedJson(raw: string): Array<{ url?: string; source?: string }> | null {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (error) {
+    logger.warn({
+      type: "news_feed_parse_failed",
+      message: "Failed to parse NEWS_RSS_FEEDS",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
+const EXTRA_RSS_FEEDS = parseFeedList(process.env.NEWS_RSS_FEEDS);
+const RSS_FEEDS: RSSFeedConfig[] = [...DEFAULT_RSS_FEEDS, ...EXTRA_RSS_FEEDS];
 
 const parser = new Parser({
   timeout: 10000,
@@ -35,31 +77,28 @@ const CACHE_DURATION_MS = 5 * 60 * 1000;
 function cleanDescription(desc: string | undefined): string {
   if (!desc) return '';
   return desc
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replaceAll(/<[^>]*>/g, '')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
     .trim()
     .slice(0, 200);
 }
 
 function formatPubDate(dateStr: string | undefined): string {
   if (!dateStr) return new Date().toISOString();
-  try {
-    return new Date(dateStr).toISOString();
-  } catch {
-    return new Date().toISOString();
-  }
+  const parsed = new Date(dateStr);
+  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
 }
 
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
+    .replaceAll(/[^\w\s]/g, '')
+    .replaceAll(/\s+/g, ' ')
     .trim();
 }
 
@@ -101,7 +140,6 @@ function deduplicateByTitleSimilarity(items: NewsItem[], threshold = 0.6): NewsI
 
 async function fetchFeed(config: RSSFeedConfig): Promise<NewsItem[]> {
   try {
-    // Using console.log for RSS feed operations (non-critical path)
     const feed = await parser.parseURL(config.url);
     const items = (feed.items || []).slice(0, 10).map(item => ({
       title: item.title || 'Untitled',
@@ -113,7 +151,12 @@ async function fetchFeed(config: RSSFeedConfig): Promise<NewsItem[]> {
     // Successfully fetched items
     return items;
   } catch (error) {
-    // Failed to fetch RSS feed (non-critical, returns empty array)
+    logger.warn({
+      type: "news_feed_fetch_failed",
+      source: config.source,
+      url: config.url,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }

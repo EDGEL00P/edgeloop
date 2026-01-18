@@ -1,8 +1,9 @@
 import { withHealth } from "../health/withHealth";
+import { getRapidApiKey } from "../infrastructure/env";
 
 const BASE = process.env.RAPIDAPI_BASE_URL || "https://api-nfl-v1.p.rapidapi.com";
 const HOST = process.env.RAPIDAPI_HOST || "api-nfl-v1.p.rapidapi.com";
-const KEY = process.env.RAPIDAPI_KEY;
+const KEY = getRapidApiKey();
 
 async function rapidFetch(path: string): Promise<unknown> {
   if (!KEY) throw new Error("Missing RAPIDAPI_KEY");

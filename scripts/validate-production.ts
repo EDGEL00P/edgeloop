@@ -5,6 +5,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
 import { envRegistry } from '../infra/env/registry';
 
 interface ValidationResult {
@@ -84,7 +85,8 @@ export function validateProduction(): ValidationResult {
   return result;
 }
 
-if (require.main === module) {
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
+if (isDirectRun) {
   const result = validateProduction();
   
   if (result.warnings.length > 0) {
@@ -100,5 +102,3 @@ if (require.main === module) {
   
   console.log('✅ Production validation passed');
 }
-
-export { validateProduction };

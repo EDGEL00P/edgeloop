@@ -8,15 +8,19 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import { chatStorage } from "./storage";
 import { logger } from "../infrastructure/logger";
+import { getGeminiApiKey, getOpenAiApiKey } from "../infrastructure/env";
 
 // Initialize AI clients based on available API keys
 // Use AI_INTEGRATIONS_* prefix to match aiRouter and other services
-const geminiClient = process.env.AI_INTEGRATIONS_GEMINI_API_KEY
-  ? new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY })
+const geminiApiKey = getGeminiApiKey();
+const openaiApiKey = getOpenAiApiKey();
+
+const geminiClient = geminiApiKey
+  ? new GoogleGenAI({ apiKey: geminiApiKey })
   : null;
 
-const openaiClient = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY })
+const openaiClient = openaiApiKey
+  ? new OpenAI({ apiKey: openaiApiKey })
   : null;
 
 type AIProvider = "gemini" | "openai" | "none";
@@ -179,8 +183,8 @@ export function registerChatRoutes(app: Express): void {
     res.json({
       provider,
       available: provider !== "none",
-      geminiConfigured: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-      openaiConfigured: !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      geminiConfigured: !!geminiApiKey,
+      openaiConfigured: !!openaiApiKey,
     });
   });
 }

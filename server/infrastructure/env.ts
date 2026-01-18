@@ -12,6 +12,7 @@ interface EnvConfig {
   required: boolean;
   description: string;
   fallback?: string;
+  aliases?: string[];
 }
 
 const ENV_VARIABLES: EnvConfig[] = envRegistry
@@ -22,7 +23,25 @@ const ENV_VARIABLES: EnvConfig[] = envRegistry
       entry.required ||
       (!!entry.requiredInProduction && process.env.NODE_ENV === 'production'),
     description: entry.description,
+    aliases: entry.aliases,
   }));
+
+function resolveEnvValue(config: EnvConfig): string | undefined {
+  const direct = process.env[config.name];
+  if (direct) return direct;
+
+  if (config.aliases) {
+    for (const alias of config.aliases) {
+      const aliasValue = process.env[alias];
+      if (aliasValue) {
+        process.env[config.name] = aliasValue;
+        return aliasValue;
+      }
+    }
+  }
+
+  return undefined;
+}
 
 export interface EnvStatus {
   name: string;
@@ -44,7 +63,7 @@ export function validateEnvironment(): {
   const missingRequired: string[] = [];
 
   for (const config of ENV_VARIABLES) {
-    const value = process.env[config.name];
+    const value = resolveEnvValue(config);
     const loaded = !!value;
     const masked = value
       ? `${value.substring(0, 4)}...${value.substring(value.length - 4)}`
@@ -137,5 +156,25 @@ export function isServiceAvailable(serviceName: string): boolean {
   const envKey = serviceMap[serviceName.toLowerCase()];
   if (!envKey) return false;
 
-  return !!process.env[envKey];
+  if (process.env[envKey]) return true;
+
+  const aliases: Record<string, string[]> = {
+    rapidapi: ['RAPIDAPI_API_KEY'],
+    openai: ['OPENAI_API_KEY'],
+    gemini: ['GEMINI_API_KEY'],
+  };
+
+  return (aliases[serviceName.toLowerCase()] || []).some((alias) => !!process.env[alias]);
+}
+
+export function getRapidApiKey(): string | undefined {
+  return process.env.RAPIDAPI_KEY || process.env.RAPIDAPI_API_KEY;
+}
+
+export function getOpenAiApiKey(): string | undefined {
+  return process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+}
+
+export function getGeminiApiKey(): string | undefined {
+  return process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 }

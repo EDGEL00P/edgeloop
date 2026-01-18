@@ -102,6 +102,16 @@ export const envRegistry: EnvVar[] = [
     requiredInProduction: true,
   },
   {
+    name: "LOG_LEVEL",
+    description: "Logger verbosity level (debug|info|warn|error)",
+    scopes: ["server"],
+  },
+  {
+    name: "METRICS_MODE",
+    description: "Metrics backend mode (memory|redis|disabled)",
+    scopes: ["server"],
+  },
+  {
     name: "CORS_ALLOWED_ORIGINS",
     description: "Comma-separated CORS allowlist",
     scopes: ["server"],
@@ -151,8 +161,32 @@ export const envRegistry: EnvVar[] = [
     managed: true,
   },
   {
+    name: "VERCEL_URL",
+    description: "Vercel deployment URL",
+    scopes: ["server", "build"],
+    managed: true,
+  },
+  {
+    name: "VERCEL_PROJECT_PRODUCTION_URL",
+    description: "Vercel production URL",
+    scopes: ["server", "build"],
+    managed: true,
+  },
+  {
+    name: "VERCEL_DEPLOYMENT_ID",
+    description: "Vercel deployment ID",
+    scopes: ["server", "build"],
+    managed: true,
+  },
+  {
     name: "RAILWAY_ENVIRONMENT",
     description: "Railway environment indicator",
+    scopes: ["server", "build"],
+    managed: true,
+  },
+  {
+    name: "RAILWAY_PUBLIC_DOMAIN",
+    description: "Railway public domain",
     scopes: ["server", "build"],
     managed: true,
   },
@@ -180,6 +214,11 @@ export const envRegistry: EnvVar[] = [
     scopes: ["server"],
     managed: true,
   },
+  {
+    name: "ENV_VALIDATE_SCOPES",
+    description: "Comma-separated env scopes to validate in scripts",
+    scopes: ["infra", "build"],
+  },
 
   // Web (Next.js public)
   {
@@ -193,6 +232,20 @@ export const envRegistry: EnvVar[] = [
     description: "Public API base URL for UI",
     scopes: ["web"],
     public: true,
+  },
+  {
+    name: "NEXT_PUBLIC_VERCEL_URL",
+    description: "Vercel deployment URL override for the web app",
+    scopes: ["web"],
+    public: true,
+    managed: true,
+  },
+  {
+    name: "NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID",
+    description: "Vercel deployment ID exposed to the web app",
+    scopes: ["web"],
+    public: true,
+    managed: true,
   },
   {
     name: "NEXT_PUBLIC_NFL_SEASON",
@@ -233,8 +286,29 @@ export const envRegistry: EnvVar[] = [
     deprecated: true,
   },
   {
+    name: "SPORTRADAR_BASE_URL",
+    description: "Sportradar base URL override",
+    scopes: ["server"],
+  },
+  {
+    name: "SPORTRADAR_LANG",
+    description: "Sportradar language override",
+    scopes: ["server"],
+  },
+  {
     name: "RAPIDAPI_KEY",
     description: "RapidAPI key",
+    scopes: ["server"],
+    aliases: ["RAPIDAPI_API_KEY"],
+  },
+  {
+    name: "RAPIDAPI_BASE_URL",
+    description: "RapidAPI base URL override",
+    scopes: ["server"],
+  },
+  {
+    name: "RAPIDAPI_HOST",
+    description: "RapidAPI host override",
     scopes: ["server"],
   },
   {
@@ -254,12 +328,18 @@ export const envRegistry: EnvVar[] = [
     scopes: ["server"],
     required: true,
   },
+  {
+    name: "NEWS_RSS_FEEDS",
+    description: "Additional NFL news RSS feeds (JSON array or Source|URL list)",
+    scopes: ["server"],
+  },
 
   // AI providers
   {
     name: "AI_INTEGRATIONS_OPENAI_API_KEY",
     description: "OpenAI API key",
     scopes: ["server"],
+    aliases: ["OPENAI_API_KEY"],
   },
   {
     name: "AI_INTEGRATIONS_OPENAI_BASE_URL",
@@ -270,6 +350,7 @@ export const envRegistry: EnvVar[] = [
     name: "AI_INTEGRATIONS_GEMINI_API_KEY",
     description: "Gemini API key",
     scopes: ["server"],
+    aliases: ["GEMINI_API_KEY"],
   },
   {
     name: "AI_INTEGRATIONS_GEMINI_BASE_URL",

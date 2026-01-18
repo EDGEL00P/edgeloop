@@ -18,7 +18,6 @@ export interface AuthUser {
   profileImageUrl: string | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {

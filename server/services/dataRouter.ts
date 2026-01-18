@@ -2,6 +2,7 @@ import { CacheService, CacheKeys, CacheTTL } from "../infrastructure/cache";
 import { circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { apiLimiters } from "../infrastructure/rate-limiter";
 import { logger } from "../infrastructure/logger";
+import { getRapidApiKey } from "../infrastructure/env";
 import { withHealth } from "../health/withHealth";
 import { SportradarService } from "./sportradarService";
 import { RapidApiNflService } from "./rapidApiNflService";
@@ -450,7 +451,7 @@ export async function getGames(season: number, week: number): Promise<GamesRespo
       {
         name: "rapidapi",
         priority: 3,
-        isAvailable: () => !!process.env.RAPIDAPI_KEY,
+        isAvailable: () => !!getRapidApiKey(),
         fetch: async () => {
           const data = await RapidApiNflService.getGames(season, week);
           const record = asRecord(data);

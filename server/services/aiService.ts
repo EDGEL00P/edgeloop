@@ -1,8 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { eq, and, or } from "drizzle-orm";
+import { getGeminiApiKey } from "../infrastructure/env";
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: getGeminiApiKey(),
   httpOptions: {
     apiVersion: "",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,

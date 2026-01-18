@@ -4,6 +4,7 @@ import { circuitBreakerManager, CircuitBreaker, CircuitState } from "../infrastr
 import { rateLimiterManager, TokenBucketRateLimiter } from "../infrastructure/rate-limiter";
 import { cache, CacheTTL } from "../infrastructure/cache";
 import { logger } from "../infrastructure/logger";
+import { getGeminiApiKey, getOpenAiApiKey } from "../infrastructure/env";
 
 export type TaskType = "quick" | "analysis" | "complex" | "creative";
 
@@ -57,12 +58,12 @@ const TEMPERATURE_BY_TASK: Record<TaskType, number> = {
 };
 
 const openaiClient = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: getOpenAiApiKey(),
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
 const geminiClient = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: getGeminiApiKey(),
   httpOptions: {
     apiVersion: "",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,

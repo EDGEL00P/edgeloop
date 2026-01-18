@@ -3,9 +3,10 @@ import { apiLimiters } from "../infrastructure/rate-limiter";
 import { CircuitBreaker, circuitBreakerManager } from "../infrastructure/circuit-breaker";
 import { cache, CacheTTL, CacheService } from "../infrastructure/cache";
 import { logger } from "../infrastructure/logger";
+import { getGeminiApiKey } from "../infrastructure/env";
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: getGeminiApiKey(),
   httpOptions: {
     apiVersion: "",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,

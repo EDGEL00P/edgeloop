@@ -3,9 +3,10 @@ import { eq, and, or } from "drizzle-orm";
 import * as ss from "simple-statistics";
 import * as math from "mathjs";
 import _ from "lodash";
+import { getOpenAiApiKey } from "../infrastructure/env";
 
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: getOpenAiApiKey(),
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 

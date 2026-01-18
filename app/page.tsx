@@ -1,23 +1,5 @@
 import DashboardClient from "./components/DashboardClient";
 
-const statusCards = [
-  {
-    title: "Health",
-    value: "/api/health",
-    detail: "Live readiness probe",
-  },
-  {
-    title: "Deployment",
-    value: "Vercel + Railway",
-    detail: "Edge + service build targets",
-  },
-  {
-    title: "Architecture",
-    value: "Platform + Domain",
-    detail: "Contract-first, single engine boundary",
-  },
-];
-
 const fallbackScoreboard = [
   {
     away: "BUF",
@@ -258,7 +240,6 @@ export default async function HomePage() {
 
   return (
     <DashboardClient
-      statusCards={statusCards}
       health={health}
       newsItems={newsItems}
       oddsCount={oddsCount}

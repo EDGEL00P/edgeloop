@@ -5,6 +5,7 @@ import { insertDataImportSchema } from "@shared/schema";
 import { registerChatRoutes } from "./chat";
 import { setupAuth, registerAuthRoutes } from "../services/identity";
 import { OmniEngine } from "./analytics/omniEngine";
+import { getOpenAiApiKey } from "./infrastructure/env";
 import {
   AgentSwarm,
   runAgentSwarmAnalysis,
@@ -1370,7 +1371,7 @@ export async function registerRoutes(
       ]);
 
       const openai = new OpenAI({
-        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        apiKey: getOpenAiApiKey(),
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 

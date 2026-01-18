@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter, Oswald } from "next/font/google";
 import { Toaster } from "sonner";
 import ThemeProvider from "./components/ThemeProvider";
+import type { ReactNode } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="en">
