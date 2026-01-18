@@ -1,4 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
+import cors from "cors";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { logger } from "./infrastructure/logger";
@@ -15,16 +18,38 @@ if (!envCheck.valid) {
     message: "Missing required environment variables",
     missing: envCheck.missingRequired,
   });
-  // Don't exit in production - allow graceful degradation
-  if (process.env.NODE_ENV === 'development') {
-    logger.warn({
-      type: "startup_warning",
-      message: "Continuing with missing required variables (development mode)",
-    });
+  if (process.env.NODE_ENV === "production") {
+    // Fail hard in production to prevent silent degradation
+    process.exit(1);
   }
+  logger.warn({
+    type: "startup_warning",
+    message: "Continuing with missing required variables (development mode)",
+  });
 }
 
 logEnvironmentStatus();
+
+app.disable("x-powered-by");
+
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (process.env.NODE_ENV === "development") return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS origin not allowed"));
+    },
+    credentials: true,
+  })
+);
 
 declare module "http" {
   interface IncomingMessage {
@@ -34,13 +59,14 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: "2mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 
 app.use((req, res, next) => {
   const start = Date.now();

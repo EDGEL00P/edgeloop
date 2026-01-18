@@ -3,6 +3,9 @@
  * Provides a simple, fast caching layer for API responses and computed data
  */
 
+import { CacheService as RedisCacheService } from "./redis";
+import { logger } from "./logger";
+
 interface CacheEntry<T> {
   value: T;
   expiresAt: number;
@@ -188,17 +191,39 @@ class MemoryCache {
 }
 
 export const cache = new MemoryCache();
+const redisEnabled = !!process.env.REDIS_URL;
+
+if (redisEnabled) {
+  logger.info({ type: "cache_backend", message: "Redis cache enabled" });
+}
 
 /**
  * Static cache service for convenient access
  */
 export class CacheService {
   static async get<T>(key: string): Promise<T | null> {
-    return cache.get<T>(key);
+    const l1 = await cache.get<T>(key);
+    if (l1 !== null) {
+      return l1;
+    }
+    if (!redisEnabled) {
+      return null;
+    }
+    const l2 = await RedisCacheService.get<T>(key);
+    if (l2 !== null) {
+      // Short L1 cache to reduce Redis round-trips
+      await cache.set(key, l2, CacheTTL.SHORT);
+    }
+    return l2;
   }
 
   static async set<T>(key: string, value: T, ttl: number = CacheTTL.MEDIUM): Promise<boolean> {
-    return cache.set(key, value, ttl);
+    const l1Ok = await cache.set(key, value, ttl);
+    if (!redisEnabled) {
+      return l1Ok;
+    }
+    await RedisCacheService.set(key, value, ttl);
+    return l1Ok;
   }
 
   static async getOrSet<T>(
@@ -206,22 +231,28 @@ export class CacheService {
     fetchFn: () => Promise<T>,
     ttl: number = CacheTTL.MEDIUM
   ): Promise<T> {
-    const cached = await cache.get<T>(key);
-    if (cached !== null) {
-      return cached;
-    }
+    const cached = await CacheService.get<T>(key);
+    if (cached !== null) return cached;
 
     const value = await fetchFn();
-    await cache.set(key, value, ttl);
+    await CacheService.set(key, value, ttl);
     return value;
   }
 
   static async invalidate(key: string): Promise<boolean> {
-    return cache.delete(key);
+    const l1Ok = await cache.delete(key);
+    if (redisEnabled) {
+      await RedisCacheService.delete(key);
+    }
+    return l1Ok;
   }
 
   static async invalidatePattern(pattern: string): Promise<number> {
-    return cache.deletePattern(pattern);
+    const l1 = await cache.deletePattern(pattern);
+    if (redisEnabled) {
+      await RedisCacheService.invalidatePattern(pattern);
+    }
+    return l1;
   }
 
   static getStats(): { hits: number; misses: number; hitRate: string; size: number } {

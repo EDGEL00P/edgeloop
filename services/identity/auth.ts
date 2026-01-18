@@ -18,7 +18,9 @@ export interface AuthUser {
   profileImageUrl: string | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: AuthUser;
@@ -104,7 +106,8 @@ export function registerAuthRoutes(app: Express): void {
       }
       res.json(user);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user" });
+      const message = error instanceof Error ? error.message : "Failed to fetch user";
+      res.status(500).json({ message });
     }
   });
 
@@ -128,7 +131,8 @@ export function registerAuthRoutes(app: Express): void {
       req.session.userId = user.id;
       res.json(user);
     } catch (error) {
-      res.status(500).json({ message: "Login failed" });
+      const message = error instanceof Error ? error.message : "Login failed";
+      res.status(500).json({ message });
     }
   });
 

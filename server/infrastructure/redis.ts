@@ -1,4 +1,5 @@
 import Redis, { RedisOptions } from "ioredis";
+import { logger } from "./logger";
 
 const createRedisClient = () => {
   const options: RedisOptions = {
@@ -25,11 +26,15 @@ const createRedisClient = () => {
 const redis = createRedisClient();
 
 redis.on("error", (err) => {
-  console.error("Redis connection error:", err);
+  logger.error({
+    type: "redis_error",
+    message: "Redis connection error",
+    error: err instanceof Error ? err.message : String(err),
+  });
 });
 
 redis.on("connect", () => {
-  console.log("Redis connected");
+  logger.info({ type: "redis_connected", message: "Redis connected" });
 });
 
 export interface CacheEntry<T> {
@@ -67,7 +72,11 @@ export const CacheService = {
       }
       return null;
     } catch (error) {
-      console.error(`Cache get error for ${key}:`, error);
+      logger.warn({
+        type: "cache_get_error",
+        message: `Cache get error for ${key}`,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return null;
     }
   },
@@ -81,7 +90,11 @@ export const CacheService = {
       };
       await redis.setex(key, ttlSeconds, JSON.stringify(entry));
     } catch (error) {
-      console.error(`Cache set error for ${key}:`, error);
+      logger.warn({
+        type: "cache_set_error",
+        message: `Cache set error for ${key}`,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 
@@ -89,7 +102,11 @@ export const CacheService = {
     try {
       await redis.del(key);
     } catch (error) {
-      console.error(`Cache delete error for ${key}:`, error);
+      logger.warn({
+        type: "cache_delete_error",
+        message: `Cache delete error for ${key}`,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 
@@ -100,7 +117,11 @@ export const CacheService = {
         await redis.del(...keys);
       }
     } catch (error) {
-      console.error(`Cache invalidate error for ${pattern}:`, error);
+      logger.warn({
+        type: "cache_invalidate_error",
+        message: `Cache invalidate error for ${pattern}`,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 

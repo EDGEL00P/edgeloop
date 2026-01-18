@@ -16,6 +16,8 @@ const REQUIRED_ENV_VARS = [
   'DATABASE_URL',
   'SESSION_SECRET',
   'BALLDONTLIE_API_KEY',
+  'ODDS_API_KEY',
+  'WEATHER_API_KEY',
 ];
 
 export function validateProduction(): ValidationResult {
@@ -58,6 +60,11 @@ export function validateProduction(): ValidationResult {
     }
   } catch (error) {
     result.warnings.push('Could not read vercel.json (may not be using Vercel)');
+  }
+
+  // Optional performance warnings
+  if (!process.env.REDIS_URL) {
+    result.warnings.push('REDIS_URL not set (cache will be memory-only)');
   }
 
   return result;

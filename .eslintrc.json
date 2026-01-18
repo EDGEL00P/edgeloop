@@ -1,9 +1,128 @@
 {
   "root": true,
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "extends": [
-    "next/core-web-vitals"
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
     "no-console": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "services/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../services/*", "../../services/*", "../../../services/*"],
+                "message": "Services cannot import other services. Use @edgeloop/sdk-ts instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../services/*", "../../services/*", "../../../services/*"],
+                "message": "Apps cannot import services directly. Use @edgeloop/sdk-ts instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "contracts/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../services/*", "../../services/*", "../domains/*", "../../domains/*"],
+                "message": "Contracts cannot import services or domains. Keep contracts dependency-clean."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "sdks/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../services/*", "../../services/*"],
+                "message": "SDKs can only import from contracts/. They are generated, not handwritten."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "server/**/*.{ts,tsx}",
+        "scripts/**/*.{ts,tsx}",
+        "script/**/*.{ts,tsx}",
+        "domains/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-namespace": "off",
+        "no-useless-catch": "off",
+        "prefer-const": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "sdks/**/*.{ts,tsx}",
+        "trigger/**/*.{ts,tsx}",
+        "trigger.config.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/ban-ts-comment": "off",
+        "no-console": "off"
+      }
+    }
+  ]
 }
