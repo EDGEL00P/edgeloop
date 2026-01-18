@@ -18,7 +18,6 @@ import { useTheme } from "next-themes";
 import type { ExploitSignal, HealthStatus, InjuryRecord, NewsItem } from "../page";
 
 type StatusCard = { title: string; value: string; detail: string };
-type IntegrationGroup = { title: string; items: string[] };
 type ScoreboardCard = {
   away: string;
   home: string;
@@ -36,7 +35,6 @@ const Charts = dynamic(() => import("./Charts"), {
 });
 
 type DashboardProps = {
-  integrations: IntegrationGroup[];
   statusCards: StatusCard[];
   health: { ok: boolean; data?: HealthStatus; error?: string };
   newsItems: NewsItem[];
@@ -88,7 +86,6 @@ const defaultEdgeRisk = [
 ];
 
 export default function DashboardClient({
-  integrations,
   statusCards,
   health,
   newsItems,
@@ -515,31 +512,6 @@ export default function DashboardClient({
             </div>
           </section>
 
-          <section className="mx-auto max-w-6xl px-6 pb-16">
-            <div className="studio-panel rounded-2xl p-8">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">Integration Checklist</h2>
-              </div>
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                {integrations.map((group) => (
-                  <div key={group.title} className="rounded-xl border border-border/60 p-5">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                      {group.title}
-                    </h3>
-                    <ul className="mt-3 space-y-2 text-sm text-foreground/80">
-                      {group.items.map((item) => (
-                        <li key={item} className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-primary"></span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
         </div>
       </div>
     </main>

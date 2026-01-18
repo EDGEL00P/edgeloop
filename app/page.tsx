@@ -1,29 +1,5 @@
 import DashboardClient from "./components/DashboardClient";
 
-const integrations = [
-  {
-    title: "Core Data",
-    items: ["BALLDONTLIE_API_KEY", "DATABASE_URL", "SESSION_SECRET"],
-  },
-  {
-    title: "Betting & Weather",
-    items: ["ODDS_API_KEY", "WEATHER_API_KEY"],
-  },
-  {
-    title: "Performance",
-    items: ["REDIS_URL", "AXIOM_TOKEN", "AXIOM_DATASET"],
-  },
-  {
-    title: "AI Providers",
-    items: [
-      "AI_INTEGRATIONS_OPENAI_API_KEY",
-      "AI_INTEGRATIONS_GEMINI_API_KEY",
-      "AI_INTEGRATIONS_ANTHROPIC_API_KEY",
-      "AI_INTEGRATIONS_OPENROUTER_API_KEY",
-    ],
-  },
-];
-
 const statusCards = [
   {
     title: "Health",
@@ -282,7 +258,6 @@ export default async function HomePage() {
 
   return (
     <DashboardClient
-      integrations={integrations}
       statusCards={statusCards}
       health={health}
       newsItems={newsItems}
