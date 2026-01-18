@@ -261,7 +261,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
               >
                 <Input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
                   placeholder="Ask about NFL matchups..."
                   disabled={isLoading || !apiBase}
                   className="flex-1"
