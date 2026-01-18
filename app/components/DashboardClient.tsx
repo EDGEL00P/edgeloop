@@ -270,13 +270,13 @@ export default function DashboardClient({
                 className="flex flex-col gap-6"
               >
                 <h1 id="hero-title" className="text-4xl font-bold tracking-tight sm:text-6xl">
-                  <span className="singularity-text">SINGULARITY</span>
+                  <span className="singularity-text">NFL Analytics</span>
                   <br />
-                  <span className="text-3xl sm:text-4xl font-semibold mt-2 block">NFL Analytics & Betting Intelligence</span>
+                  <span className="text-3xl sm:text-4xl font-semibold mt-2 block">Betting Intelligence Platform</span>
                 </h1>
                 <p className="max-w-2xl text-lg text-muted-foreground">
                   AI-powered real-time intelligence, exploit detection, and market
-                  surveillance for the singularity experience.
+                  surveillance for the 2027 experience.
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 border border-primary/20">
