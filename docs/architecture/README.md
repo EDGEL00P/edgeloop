@@ -22,7 +22,8 @@ Edgeloop follows the **Highest-Ceiling Architecture (2026)** pattern:
 
 ```
 edgeloop/
-├── apps/web/              # Next.js app
+├── app/                   # Next.js app (App Router)
+├── server/                # Backend services and routes
 ├── services/              # Deployable services (identity, oracle, engine, execution, notifications, audit)
 ├── contracts/http/        # REST API contracts (OpenAPI/Zod)
 ├── contracts/rpc/         # gRPC contracts (Protobuf) - optional
@@ -30,9 +31,8 @@ edgeloop/
 ├── sdks/ts/              # Generated TypeScript SDKs
 ├── sdks/rust/            # Generated Rust SDKs
 ├── sdks/python/          # Generated Python SDKs
-├── libs/                 # Shared infra libs ONLY (no domain logic)
-├── engine/               # Rust/Python engine service
-├── ml/                   # Python training/evaluation
+├── lib/                  # Shared infra libs ONLY (no domain logic)
+├── python_engine/        # Python ML engine
 ├── platform/             # Golden path templates + CI
 └── infra/                # Environments + IaC
 ```
