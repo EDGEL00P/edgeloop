@@ -49,12 +49,28 @@ export interface OddsGame {
  * Exploit signal from analytics engine
  */
 export interface ExploitSignal {
+  readonly id?: string;
   readonly gameId?: number;
+  readonly type?: string;
   readonly signal?: string;
+  readonly name?: string;
   readonly category?: string;
+  readonly confidence?: number;
+  readonly direction?: "home" | "away" | "over" | "under" | "neutral";
   readonly edge?: number;
   readonly risk?: number;
   readonly description?: string;
+}
+
+/**
+ * Exploit summary statistics
+ */
+export interface ExploitSummary {
+  readonly totalExploits: number;
+  readonly highConfidence: number;
+  readonly categories: Readonly<Record<string, number>>;
+  readonly primaryDirection: "home" | "away" | "over" | "under" | "neutral";
+  readonly combinedEdge: number;
 }
 
 /**
@@ -163,6 +179,7 @@ export interface DashboardProps {
   readonly oddsError?: string;
   readonly gamesError?: string;
   readonly exploits: ExploitSignal[];
+  readonly exploitSummary?: ExploitSummary;
   readonly injuries: InjuryRecord[];
   readonly oddsTrend?: ChartDataPoint[];
   readonly teamStats?: ChartDataPoint[];
