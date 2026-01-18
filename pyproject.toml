@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.28.1",
     "joblib>=1.5.3",
+    "nflverse>=0.2.0",
     "numpy>=2.4.1",
     "polars>=1.37.0",
     "pydantic-settings>=2.12.0",

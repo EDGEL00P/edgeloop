@@ -21,6 +21,7 @@ import {
 import { useTheme } from "next-themes";
 import type { DashboardProps } from "../types/dashboard.types";
 import ExploitCard from "./ExploitCard";
+import AIChat from "./AIChat";
 import { getTeamColors } from "../utils/nfl-team-colors";
 
 const Charts = dynamic(() => import("./Charts"), {
@@ -30,7 +31,7 @@ const Charts = dynamic(() => import("./Charts"), {
 
 const sidebarLinks = [
   { id: "scoreboard", label: "Scoreboard", icon: Gauge },
-  { id: "exploits", label: "Exploits", icon: Zap },
+  { id: "insights", label: "Matchup Insights", icon: Zap },
   { id: "markets", label: "Markets", icon: BarChart3 },
   { id: "news", label: "News", icon: Newspaper },
 ];
@@ -61,14 +62,14 @@ const defaultEdgeRisk = [
  * Dashboard Client Component
  * 
  * Main client-side dashboard component displaying NFL analytics, scoreboard,
- * exploits, injuries, and news feeds.
+ * matchup insights, injuries, and news feeds.
  * 
  * Features:
  * - Fixed sidebar navigation with mobile hamburger menu
  * - Live ticker for news updates
  * - Scoreboard with game data
  * - Analytics charts (odds trends, team stats, edge/risk)
- * - Exploit signals and injury watch
+ * - Matchup insights and injury watch
  * - News feed with pagination
  * - Theme toggle (dark/light/high-contrast)
  * 
@@ -122,7 +123,7 @@ export default function DashboardClient({
       toast.error(`Edgeloop Games Feed Error: ${gamesError}`, { duration: 4000 });
     }
     if (exploitsError) {
-      toast.error(`Edgeloop Exploit Engine Error: ${exploitsError}`, { duration: 4000 });
+      toast.error(`NFL Analytics Engine Error: ${exploitsError}`, { duration: 4000 });
     }
     if (injuriesError) {
       toast.error(`Edgeloop Injury Feed Error: ${injuriesError}`, { duration: 4000 });
@@ -149,24 +150,24 @@ export default function DashboardClient({
   const isNewsLoading = !!apiBase && newsItems.length === 0 && !newsError;
   const isScoreboardLive = !!apiBase && !gamesError;
   const isMarketsLoading = !!apiBase && oddsCount === 0 && !oddsError;
-  const exploitSignals = exploits.slice(0, 10);
+  const matchupInsights = exploits.slice(0, 10);
   const injurySignals = injuries.slice(0, 5);
   
-  // Calculate exploit summary
-  const exploitSummary = {
-    total: exploitSignals.length,
-    highConfidence: exploitSignals.filter((e) => (e.confidence ?? 0) >= 70).length,
-    highEdge: exploitSignals.filter((e) => (e.edge ?? 0) >= 60).length,
-    categories: exploitSignals.reduce<Record<string, number>>((acc, e) => {
+  // Calculate matchup insights summary
+  const insightsSummary = {
+    total: matchupInsights.length,
+    highConfidence: matchupInsights.filter((e) => (e.confidence ?? 0) >= 70).length,
+    highValue: matchupInsights.filter((e) => (e.edge ?? 0) >= 60).length,
+    categories: matchupInsights.reduce<Record<string, number>>((acc, e) => {
       const cat = e.category ?? "unknown";
       acc[cat] = (acc[cat] ?? 0) + 1;
       return acc;
     }, {}),
-    avgEdge: exploitSignals.length > 0
-      ? Math.round(exploitSignals.reduce((sum, e) => sum + (e.edge ?? 0), 0) / exploitSignals.length)
+    avgValue: matchupInsights.length > 0
+      ? Math.round(matchupInsights.reduce((sum, e) => sum + (e.edge ?? 0), 0) / matchupInsights.length)
       : 0,
-    avgRisk: exploitSignals.length > 0
-      ? Math.round(exploitSignals.reduce((sum, e) => sum + (e.risk ?? 0), 0) / exploitSignals.length)
+    avgRisk: matchupInsights.length > 0
+      ? Math.round(matchupInsights.reduce((sum, e) => sum + (e.risk ?? 0), 0) / matchupInsights.length)
       : 0,
   };
 
@@ -204,9 +205,9 @@ export default function DashboardClient({
             <div className="h-10 w-10 rounded-xl bg-primary/20" />
             <div>
               <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Edgeloop
+                NFL Analytics
               </div>
-              <div className="text-lg font-semibold">Edge Intelligence</div>
+              <div className="text-lg font-semibold">Matchup Intelligence</div>
             </div>
           </div>
           <nav className="space-y-2">
@@ -268,9 +269,9 @@ export default function DashboardClient({
                 </button>
                 <div>
                   <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    Edgeloop Active
+                    NFL Analytics Hub
                   </div>
-                  <div className="text-lg font-semibold">Edge Detection</div>
+                  <div className="text-lg font-semibold">Live Intelligence</div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -349,17 +350,17 @@ export default function DashboardClient({
                   <span className="text-3xl sm:text-4xl font-semibold mt-2 block">Edge Intelligence Platform</span>
                 </h1>
                 <p className="max-w-2xl text-lg text-muted-foreground">
-                  Real-time NFL exploit detection, market intelligence, and edge analysis
-                  powered by Edgeloop's advanced analytics engine.
+                  Real-time NFL matchup analysis, market intelligence, and value opportunities
+                  powered by advanced analytics and live data feeds.
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 border border-primary/20">
                     <Brain className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-foreground">Edgeloop Engine Active</span>
+                    <span className="font-semibold text-foreground">Analytics Engine Active</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-full bg-purple-500/10 px-4 py-2 border border-purple-500/20">
                     <Activity className="h-4 w-4 text-purple-400" />
-                    <span className="text-muted-foreground">{exploitSummary.total} Exploits Detected</span>
+                    <span className="text-muted-foreground">{insightsSummary.total} Matchup Insights</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 border border-blue-500/20">
                     <Cpu className="h-4 w-4 text-blue-400" />
@@ -466,7 +467,7 @@ export default function DashboardClient({
                     
                     <div className="pointer-events-none absolute bottom-4 right-4 hidden rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg group-hover:block" role="tooltip">
                       <Network className="h-3 w-3 inline mr-1" aria-hidden="true" />
-                      Edgeloop Analysis Active
+                      Live Analysis Active
                     </div>
                   </motion.div>
                 );
@@ -534,7 +535,7 @@ export default function DashboardClient({
             </div>
           </section>
 
-          <section id="exploits" className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="exploits-title">
+          <section id="insights" className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="insights-title">
             <div className="rounded-2xl p-8 glass-singularity neon-border scanline neural-network relative overflow-hidden">
               {/* Data stream effect */}
               <div className="data-stream absolute inset-0" />
@@ -546,30 +547,30 @@ export default function DashboardClient({
                       <Zap className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h2 id="exploits-title" className="text-2xl font-bold singularity-text">
-                        Edgeloop Exploits
+                      <h2 id="insights-title" className="text-2xl font-bold singularity-text">
+                        Matchup Insights
                       </h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Edgeloop-powered anomaly detection & edge opportunities
+                        Advanced analytics and value opportunities for this week's games
                       </p>
                     </div>
                   </div>
                   
-                  {/* Exploit summary stats */}
+                  {/* Insights summary stats */}
                   <div className="hidden md:flex items-center gap-4">
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">{exploitSummary.total}</div>
+                      <div className="text-2xl font-bold text-primary">{insightsSummary.total}</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
                     </div>
                     <div className="h-10 w-px bg-border" />
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-green-400">{exploitSummary.highConfidence}</div>
+                      <div className="text-2xl font-bold text-green-400">{insightsSummary.highConfidence}</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider">High Conf</div>
                     </div>
                     <div className="h-10 w-px bg-border" />
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-400">{exploitSummary.highEdge}</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wider">High Edge</div>
+                      <div className="text-2xl font-bold text-blue-400">{insightsSummary.highValue}</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider">High Value</div>
                     </div>
                   </div>
                 </div>
@@ -577,32 +578,32 @@ export default function DashboardClient({
                 {/* Stats cards */}
                 <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="rounded-lg bg-background/50 p-3 border border-border/50">
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Avg Edge</div>
-                    <div className="text-xl font-bold text-green-400">{exploitSummary.avgEdge}%</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Avg Value</div>
+                    <div className="text-xl font-bold text-green-400">{insightsSummary.avgValue}%</div>
                   </div>
                   <div className="rounded-lg bg-background/50 p-3 border border-border/50">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Avg Risk</div>
-                    <div className={`text-xl font-bold ${exploitSummary.avgRisk >= 60 ? "text-red-400" : exploitSummary.avgRisk >= 40 ? "text-yellow-400" : "text-green-400"}`}>
-                      {exploitSummary.avgRisk}%
+                    <div className={`text-xl font-bold ${insightsSummary.avgRisk >= 60 ? "text-red-400" : insightsSummary.avgRisk >= 40 ? "text-yellow-400" : "text-green-400"}`}>
+                      {insightsSummary.avgRisk}%
                     </div>
                   </div>
                   <div className="rounded-lg bg-background/50 p-3 border border-border/50">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Categories</div>
-                    <div className="text-xl font-bold text-purple-400">{Object.keys(exploitSummary.categories).length}</div>
+                    <div className="text-xl font-bold text-purple-400">{Object.keys(insightsSummary.categories).length}</div>
                   </div>
                   <div className="rounded-lg bg-background/50 p-3 border border-border/50">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Success Rate</div>
                     <div className="text-xl font-bold text-primary">
-                      {exploitSummary.total > 0 ? Math.round((exploitSummary.highConfidence / exploitSummary.total) * 100) : 0}%
+                      {insightsSummary.total > 0 ? Math.round((insightsSummary.highConfidence / insightsSummary.total) * 100) : 0}%
                     </div>
                   </div>
                 </div>
 
                 {/* Category badges */}
-                {Object.keys(exploitSummary.categories).length > 0 && (
+                {Object.keys(insightsSummary.categories).length > 0 && (
                   <div className="mb-6 flex flex-wrap items-center gap-2">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">Categories:</span>
-                    {Object.entries(exploitSummary.categories).slice(0, 8).map(([category, count]) => (
+                    {Object.entries(insightsSummary.categories).slice(0, 8).map(([category, count]) => (
                       <span
                         key={category}
                         className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-medium text-primary"
@@ -613,27 +614,27 @@ export default function DashboardClient({
                   </div>
                 )}
 
-                {/* Exploit cards grid */}
+                {/* Matchup insights cards grid */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {exploitsError ? (
                     <div className="col-span-full rounded-xl border border-red-500/20 bg-red-500/10 p-8 text-center" role="alert">
                       <Zap className="h-12 w-12 mx-auto mb-4 text-red-400 opacity-50" aria-hidden="true" />
-                      <div className="text-sm font-semibold text-red-400 mb-2">Unable to load exploit signals</div>
+                      <div className="text-sm font-semibold text-red-400 mb-2">Unable to load matchup insights</div>
                       <div className="text-xs text-muted-foreground">{exploitsError}</div>
                     </div>
-                  ) : exploitSignals.length > 0 ? (
-                    exploitSignals.map((signal, index) => {
-                      const exploitKey = signal.id ?? (signal.gameId ? `exploit-${signal.gameId}-${index}` : `exploit-${signal.name ?? index}`);
+                  ) : matchupInsights.length > 0 ? (
+                    matchupInsights.map((signal, index) => {
+                      const insightKey = signal.id ?? (signal.gameId ? `insight-${signal.gameId}-${index}` : `insight-${signal.name ?? index}`);
                       return (
-                        <ExploitCard key={exploitKey} signal={signal} index={index} />
+                        <ExploitCard key={insightKey} signal={signal} index={index} />
                       );
                     })
                   ) : (
                     <div className="col-span-full rounded-xl border border-border/60 p-8 text-center glass-panel">
                       <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50 animate-pulse" aria-hidden="true" />
-                      <div className="text-sm font-semibold text-foreground mb-2">No exploit signals detected</div>
+                      <div className="text-sm font-semibold text-foreground mb-2">No matchup insights available</div>
                       <div className="text-xs text-muted-foreground">
-                        {apiBase ? "Edgeloop engine is scanning for edge opportunities..." : "Configure NEXT_PUBLIC_API_URL to enable exploit detection"}
+                        {apiBase ? "Analytics engine is analyzing this week's matchups..." : "Configure NEXT_PUBLIC_API_URL to enable matchup analysis"}
                       </div>
                     </div>
                   )}
@@ -796,6 +797,7 @@ export default function DashboardClient({
 
         </div>
       </div>
+      <AIChat apiBase={apiBase} />
     </main>
   );
 }

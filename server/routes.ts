@@ -328,10 +328,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/exploits/:gameId", async (req, res) => {
+  app.get("/api/insights/:gameId", async (req, res) => {
     try {
       const { gameId } = req.params;
-      const cacheKey = CacheKeys.apiResponse("exploits", gameId);
+      const cacheKey = CacheKeys.apiResponse("insights", gameId);
       const cached = await CacheService.get<Record<string, unknown>>(cacheKey);
       if (cached) {
         return res.json(cached);
@@ -1098,17 +1098,77 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/exploits/:season/:week", async (req, res) => {
+  app.get("/api/insights/:season/:week", async (req, res) => {
     try {
       const { season, week } = req.params;
       const signals = await storage.getExploitSignals(Number(season), Number(week));
       res.json(signals);
     } catch (error) {
-      logger.error({ type: "exploit_signals_fetch_error", error: String(error) });
+      logger.error({ type: "insights_fetch_error", error: String(error) });
       res.status(500).json({ 
-        error: "Failed to fetch exploit signals",
+        error: "Failed to fetch matchup insights",
         message: (error as Error).message 
       });
+    }
+  });
+
+  // Quantitative betting system endpoints
+  app.get("/api/betting/signals/:gameId", async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      // This would generate signals using the quantitative system
+      // For now, return placeholder
+      res.json({ gameId, signals: [] });
+    } catch (error) {
+      logger.error({ type: "betting_signals_error", error: String(error) });
+      res.status(500).json({ error: "Failed to generate betting signals" });
+    }
+  });
+
+  // Radio streams
+  app.get("/api/radio/game/:gameId", async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      const { getGameRadioStreams } = await import("./services/nflRadioService");
+      const game = await storage.getNflGame(Number(gameId));
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+      const homeTeam = await storage.getNflTeam(game.homeTeamId);
+      const awayTeam = await storage.getNflTeam(game.visitorTeamId);
+      const streams = await getGameRadioStreams(
+        String(gameId),
+        homeTeam?.abbreviation || "",
+        awayTeam?.abbreviation || ""
+      );
+      res.json(streams);
+    } catch (error) {
+      logger.error({ type: "radio_streams_error", error: String(error) });
+      res.status(500).json({ error: "Failed to fetch radio streams" });
+    }
+  });
+
+  // Podcasts
+  app.get("/api/media/podcasts", async (req, res) => {
+    try {
+      const { getNflPodcasts } = await import("./services/nflMediaService");
+      const podcasts = await getNflPodcasts();
+      res.json(podcasts);
+    } catch (error) {
+      logger.error({ type: "podcasts_error", error: String(error) });
+      res.status(500).json({ error: "Failed to fetch podcasts" });
+    }
+  });
+
+  // Comprehensive news
+  app.get("/api/media/news", async (req, res) => {
+    try {
+      const { getComprehensiveNflNews } = await import("./services/nflMediaService");
+      const news = await getComprehensiveNflNews();
+      res.json(news);
+    } catch (error) {
+      logger.error({ type: "news_error", error: String(error) });
+      res.status(500).json({ error: "Failed to fetch news" });
     }
   });
 

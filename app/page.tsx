@@ -100,35 +100,7 @@ const InjuryRecordsSchema = z.array(InjuryRecordSchema).or(z.object({
   data: z.array(InjuryRecordSchema).optional(),
 }));
 
-/**
- * Fallback scoreboard data when live data is unavailable
- */
-const fallbackScoreboard: readonly ScoreboardCard[] = [
-  {
-    away: "BUF",
-    home: "KC",
-    status: "Preview",
-    time: "Sun 4:25 PM",
-    spread: "KC -2.5",
-    total: "O/U 48.5",
-  },
-  {
-    away: "PHI",
-    home: "DAL",
-    status: "Preview",
-    time: "Sun 8:20 PM",
-    spread: "PHI -1.0",
-    total: "O/U 46.0",
-  },
-  {
-    away: "SF",
-    home: "SEA",
-    status: "Preview",
-    time: "Mon 8:15 PM",
-    spread: "SF -3.5",
-    total: "O/U 44.0",
-  },
-];
+// No fallback data - using live API data only
 
 /**
  * Fetches JSON data from a URL with timeout and error handling.
@@ -229,7 +201,7 @@ export default async function HomePage() {
     ? await Promise.all([
         fetchJson<Team[]>(`${apiBase}/api/nfl/teams`, 5000, TeamsSchema),
         fetchJson<Game[]>(`${apiBase}/api/nfl/games?season=${season}&week=${week}`, 5000, GamesSchema),
-        fetchJson<unknown>(`${apiBase}/api/exploits/${season}/${week}`, 5000, ExploitSignalsSchema),
+        fetchJson<unknown>(`${apiBase}/api/insights/${season}/${week}`, 5000, ExploitSignalsSchema),
         fetchJson<unknown>(`${apiBase}/api/nfl/injuries`, 5000, InjuryRecordsSchema),
       ])
     : [
@@ -282,10 +254,11 @@ export default async function HomePage() {
     };
   }
 
+  // Always use live data - no fallback
   const liveScoreboard: readonly ScoreboardCard[] =
     games.ok && Array.isArray(games.data) && games.data.length > 0
-      ? games.data.slice(0, 3).map((game) => mapGameToScoreboard(game, teamMap))
-      : fallbackScoreboard;
+      ? games.data.slice(0, 10).map((game) => mapGameToScoreboard(game, teamMap))
+      : [];
 
   /**
    * Extracts odds trend data from odds games.

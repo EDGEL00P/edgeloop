@@ -30,8 +30,8 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  title: "Edgeloop - Edge Intelligence Platform",
-  description: "Edgeloop: Real-time NFL exploit detection, market intelligence, and edge analysis powered by advanced analytics.",
+  title: "NFL Analytics Hub - Matchup Intelligence & Live Data",
+  description: "Real-time NFL matchup analysis, market intelligence, and value opportunities powered by advanced analytics and live data feeds.",
 };
 
 interface RootLayoutProps {
