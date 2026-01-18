@@ -46,13 +46,13 @@ const ENV_VARIABLES: EnvConfig[] = [
   },
   {
     name: 'ODDS_API_KEY',
-    required: process.env.NODE_ENV === 'production',
-    description: 'The Odds API key for betting odds (required in production)',
+    required: true,
+    description: 'The Odds API key for betting odds',
   },
   {
     name: 'WEATHER_API_KEY',
-    required: process.env.NODE_ENV === 'production',
-    description: 'OpenWeatherMap API key for weather data (required in production)',
+    required: true,
+    description: 'OpenWeatherMap API key for weather data',
   },
   
   // AI Services (Optional)

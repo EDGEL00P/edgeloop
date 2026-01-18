@@ -1,7 +1,5 @@
 import { logger } from "../infrastructure/logger";
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 const THE_ODDS_API_URL = "https://api.the-odds-api.com/v4";
 
 type JsonRecord = Record<string, unknown>;
@@ -151,15 +149,9 @@ export async function getNflOdds(forceRefresh = false): Promise<OddsResponse> {
   const apiKey = process.env.ODDS_API_KEY;
 
   if (!apiKey) {
-    const errorMessage = "ODDS_API_KEY not configured - required for production";
+    const errorMessage = "ODDS_API_KEY not configured";
     logger.error({ type: "odds_api_missing_key", message: errorMessage });
-    
-    if (isProduction) {
-      throw new Error(errorMessage);
-    }
-    
-    // Only allow mocks in development
-    return getMockOdds();
+    throw new Error(errorMessage);
   }
 
   if (!forceRefresh && oddsCache && Date.now() - oddsCache.timestamp < CACHE_DURATION_MS) {
@@ -176,13 +168,7 @@ export async function getNflOdds(forceRefresh = false): Promise<OddsResponse> {
       const errorText = await response.text();
       const errorMessage = `Odds API returned status ${response.status}: ${errorText}`;
       logger.error({ type: "odds_api_error", status: response.status, error: errorText });
-      
-      if (isProduction) {
-        throw new Error(errorMessage);
-      }
-      
-      // Only allow mocks in development on API errors
-      return getMockOdds();
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -219,22 +205,8 @@ export async function getNflOdds(forceRefresh = false): Promise<OddsResponse> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error({ type: "odds_api_fetch_failed", error: errorMessage });
-    
-    if (isProduction) {
-      throw new Error(`Odds API fetch failed: ${errorMessage}`);
-    }
-    
-    // Only allow mocks in development on network errors
-    return getMockOdds();
+    throw new Error(`Odds API fetch failed: ${errorMessage}`);
   }
-}
-
-function getMockOdds(): OddsResponse {
-  return {
-    games: [],
-    remainingRequests: null,
-    usedRequests: null,
-  };
 }
 
 export async function getOddsForGame(homeTeam: string, awayTeam: string): Promise<GameOdds | null> {

@@ -111,84 +111,6 @@ const BALLDONTLIE_NFL_API_URL = "https://api.balldontlie.io/nfl/v1";
 
 const CACHE_DURATION_MS = 60 * 60 * 1000;
 
-function generateMockPlayerProps(gameId: string) {
-  const players = [
-    { id: 1, name: "Patrick Mahomes", team: "KC", position: "QB" },
-    { id: 2, name: "Travis Kelce", team: "KC", position: "TE" },
-    { id: 3, name: "Isiah Pacheco", team: "KC", position: "RB" },
-    { id: 4, name: "Rashee Rice", team: "KC", position: "WR" },
-    { id: 5, name: "Josh Allen", team: "BUF", position: "QB" },
-    { id: 6, name: "Stefon Diggs", team: "BUF", position: "WR" },
-    { id: 7, name: "James Cook", team: "BUF", position: "RB" },
-    { id: 8, name: "Dalton Kincaid", team: "BUF", position: "TE" },
-    { id: 9, name: "Jalen Hurts", team: "PHI", position: "QB" },
-    { id: 10, name: "A.J. Brown", team: "PHI", position: "WR" },
-    { id: 11, name: "Saquon Barkley", team: "PHI", position: "RB" },
-    { id: 12, name: "DeVonta Smith", team: "PHI", position: "WR" },
-    { id: 13, name: "Micah Parsons", team: "DAL", position: "LB" },
-    { id: 14, name: "Fred Warner", team: "SF", position: "LB" },
-    { id: 15, name: "T.J. Watt", team: "PIT", position: "LB" },
-    { id: 16, name: "Maxx Crosby", team: "LV", position: "DE" },
-  ];
-
-  const propTypes = [
-    { type: "passing_yards", category: "Passing", positions: ["QB"], lines: [225.5, 250.5, 275.5, 300.5] },
-    { type: "passing_tds", category: "Passing", positions: ["QB"], lines: [1.5, 2.5] },
-    { type: "completions", category: "Passing", positions: ["QB"], lines: [20.5, 22.5, 24.5] },
-    { type: "interceptions", category: "Passing", positions: ["QB"], lines: [0.5, 1.5] },
-    { type: "rushing_yards", category: "Rushing", positions: ["RB", "QB"], lines: [50.5, 65.5, 75.5, 85.5] },
-    { type: "rushing_tds", category: "Rushing", positions: ["RB", "QB"], lines: [0.5] },
-    { type: "receiving_yards", category: "Receiving", positions: ["WR", "TE", "RB"], lines: [45.5, 55.5, 65.5, 75.5] },
-    { type: "receptions", category: "Receiving", positions: ["WR", "TE", "RB"], lines: [4.5, 5.5, 6.5] },
-    { type: "receiving_tds", category: "Receiving", positions: ["WR", "TE"], lines: [0.5] },
-    { type: "touchdowns", category: "Touchdowns", positions: ["QB", "RB", "WR", "TE"], lines: [0.5, 1.5] },
-    { type: "tackles", category: "Defense", positions: ["LB", "DE", "S", "CB"], lines: [5.5, 6.5, 7.5] },
-    { type: "sacks", category: "Defense", positions: ["LB", "DE"], lines: [0.5, 1.5] },
-  ];
-
-  interface MockProp {
-    id: string;
-    gameId: number;
-    playerId: number;
-    playerName: string;
-    teamAbbreviation: string;
-    position: string;
-    propType: string;
-    line: number;
-    overOdds: number;
-    underOdds: number;
-    category: string;
-  }
-
-  const props: MockProp[] = [];
-  let propId = 1;
-
-  players.forEach(player => {
-    propTypes.forEach(propType => {
-      if (propType.positions.includes(player.position)) {
-        const line = propType.lines[Math.floor(Math.random() * propType.lines.length)];
-        const baseOdds = -110;
-        const variance = Math.floor(Math.random() * 30) - 15;
-        props.push({
-          id: `prop-${gameId}-${propId++}`,
-          gameId: parseInt(gameId) || 1,
-          playerId: player.id,
-          playerName: player.name,
-          teamAbbreviation: player.team,
-          position: player.position,
-          propType: propType.type,
-          line: line,
-          overOdds: baseOdds + variance,
-          underOdds: baseOdds - variance,
-          category: propType.category,
-        });
-      }
-    });
-  });
-
-  return props;
-}
-
 function normalizeDivision(division: string): string {
   if (!division) return "";
   return division.charAt(0).toUpperCase() + division.slice(1).toLowerCase();
@@ -302,24 +224,16 @@ export async function registerRoutes(
   app.get("/api/player-props/:gameId", async (req, res) => {
     try {
       const { gameId } = req.params;
-      const isProduction = process.env.NODE_ENV === 'production';
-      
-      // In production, require a real API integration
-      if (isProduction) {
-        logger.error({ 
-          type: "player_props_not_implemented", 
-          gameId,
-          message: "Player props API integration required for production" 
-        });
-        return res.status(501).json({ 
-          error: "Player props API not implemented",
-          message: "Real player props API integration is required for production. Please configure an odds provider API (e.g., The Odds API, SportRadar)."
-        });
-      }
-      
-      // Only allow mocks in development
-      const mockProps = generateMockPlayerProps(gameId);
-      res.json(mockProps);
+
+      logger.error({ 
+        type: "player_props_not_implemented", 
+        gameId,
+        message: "Player props API integration required" 
+      });
+      return res.status(501).json({ 
+        error: "Player props API not implemented",
+        message: "Real player props API integration is required. Please configure an odds provider API (e.g., The Odds API, SportRadar)."
+      });
     } catch (error) {
       logger.error({ type: "player_props_error", error: String(error) });
       res.status(500).json({ 
