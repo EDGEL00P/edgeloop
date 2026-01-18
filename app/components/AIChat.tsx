@@ -75,7 +75,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
       });
       const data = await res.json();
       return data.id;
-    } catch (error) {
+    } catch {
       // Failed to create conversation - return null
       return null;
     }
@@ -157,7 +157,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
           }
         }
       }
-    } catch (error) {
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: "assistant",
