@@ -1,7 +1,18 @@
 import "../styles/globals.css";
 import type { Metadata } from "next";
+import { Inter, Oswald } from "next/font/google";
 import { Toaster } from "sonner";
 import ThemeProvider from "./components/ThemeProvider";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "Edgeloop",
@@ -15,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${inter.variable} ${oswald.variable}`}>
         <ThemeProvider>
           {children}
           <Toaster richColors position="top-right" />

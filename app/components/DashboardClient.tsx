@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import type { HealthStatus, NewsItem } from "../page";
+import type { ExploitSignal, HealthStatus, InjuryRecord, NewsItem } from "../page";
 
 type StatusCard = { title: string; value: string; detail: string };
 type IntegrationGroup = { title: string; items: string[] };
@@ -49,6 +49,13 @@ type DashboardProps = {
   newsError?: string;
   oddsError?: string;
   gamesError?: string;
+  exploits: ExploitSignal[];
+  injuries: InjuryRecord[];
+  oddsTrend?: { label: string; value: number }[];
+  teamStats?: { label: string; value: number }[];
+  edgeRisk?: { label: string; edge: number; risk: number }[];
+  exploitsError?: string;
+  injuriesError?: string;
 };
 
 const sidebarLinks = [
@@ -64,7 +71,7 @@ const statusIcons: Record<string, typeof Gauge> = {
   Architecture: Zap,
 };
 
-const oddsTrend = [
+const defaultOddsTrend = [
   { label: "W1", value: 42 },
   { label: "W2", value: 48 },
   { label: "W3", value: 41 },
@@ -72,14 +79,14 @@ const oddsTrend = [
   { label: "W5", value: 47 },
 ];
 
-const teamStats = [
+const defaultTeamStats = [
   { label: "Off", value: 78 },
   { label: "Def", value: 65 },
   { label: "ST", value: 54 },
   { label: "Inj", value: 22 },
 ];
 
-const edgeRisk = [
+const defaultEdgeRisk = [
   { label: "Edge", edge: 70, risk: 45 },
   { label: "Risk", edge: 55, risk: 75 },
   { label: "Totals", edge: 64, risk: 40 },
@@ -99,6 +106,13 @@ export default function DashboardClient({
   newsError,
   oddsError,
   gamesError,
+  exploits,
+  injuries,
+  oddsTrend,
+  teamStats,
+  edgeRisk,
+  exploitsError,
+  injuriesError,
 }: DashboardProps) {
   const { theme, setTheme } = useTheme();
   const [navOpen, setNavOpen] = useState(false);
@@ -113,7 +127,9 @@ export default function DashboardClient({
     if (newsError) toast.error(`News feed error: ${newsError}`);
     if (oddsError) toast.error(`Odds feed error: ${oddsError}`);
     if (gamesError) toast.error(`Games feed error: ${gamesError}`);
-  }, [apiBase, newsError, oddsError, gamesError]);
+    if (exploitsError) toast.error(`Exploit feed error: ${exploitsError}`);
+    if (injuriesError) toast.error(`Injury feed error: ${injuriesError}`);
+  }, [apiBase, newsError, oddsError, gamesError, exploitsError, injuriesError]);
 
   const pagedNews = useMemo(() => {
     const start = newsPage * 4;
@@ -124,6 +140,8 @@ export default function DashboardClient({
   const isNewsLoading = !!apiBase && newsItems.length === 0 && !newsError;
   const isScoreboardLive = !!apiBase && !gamesError;
   const isMarketsLoading = !!apiBase && oddsCount === 0 && !oddsError;
+  const exploitSignals = exploits.slice(0, 5);
+  const injurySignals = injuries.slice(0, 5);
 
   const toggleTheme = () => {
     if (theme === "dark") return setTheme("light");
@@ -345,7 +363,11 @@ export default function DashboardClient({
                     ))}
                   </div>
                 ) : (
-                  <Charts oddsTrend={oddsTrend} teamStats={teamStats} edgeRisk={edgeRisk} />
+                  <Charts
+                    oddsTrend={oddsTrend && oddsTrend.length ? oddsTrend : defaultOddsTrend}
+                    teamStats={teamStats && teamStats.length ? teamStats : defaultTeamStats}
+                    edgeRisk={edgeRisk && edgeRisk.length ? edgeRisk : defaultEdgeRisk}
+                  />
                 )}
               </div>
             </div>
@@ -364,6 +386,55 @@ export default function DashboardClient({
               <div className="mt-4 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">Edge High</span>
                 <span className="rounded-full bg-red-500/20 px-3 py-1 text-red-200">Risk Alert</span>
+              </div>
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {exploitSignals.length > 0 ? (
+                  exploitSignals.map((signal, index) => (
+                    <div key={`${signal.gameId}-${index}`} className="rounded-xl border border-border/60 p-4">
+                      <div className="text-sm font-semibold">
+                        {signal.signal || signal.category || "Exploit Signal"}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Edge {signal.edge ?? "—"} · Risk {signal.risk ?? "—"}
+                      </div>
+                      {signal.description && (
+                        <div className="mt-2 text-xs text-muted-foreground">{signal.description}</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-border/60 p-4 text-sm text-muted-foreground">
+                    No exploit signals available yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="injuries-title">
+            <div className="studio-panel rounded-2xl p-8">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+                <h2 id="injuries-title" className="text-xl font-semibold">Injury Watch</h2>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Live player injury updates from BallDontLie endpoints.
+              </p>
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {injurySignals.length > 0 ? (
+                  injurySignals.map((item, index) => (
+                    <div key={`${item.player}-${index}`} className="rounded-xl border border-border/60 p-4">
+                      <div className="text-sm font-semibold">{item.player || "Player"}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {item.team || "Team"} · {item.position || "Pos"} · {item.status || "Status"}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-border/60 p-4 text-sm text-muted-foreground">
+                    No injuries available yet.
+                  </div>
+                )}
               </div>
             </div>
           </section>

@@ -85,6 +85,32 @@ export type OddsResponse = {
   games?: unknown[];
 };
 
+type OddsGame = {
+  commenceTime?: string;
+  consensus?: {
+    total?: number;
+    spread?: number;
+    homeMoneyline?: number;
+    awayMoneyline?: number;
+  } | null;
+};
+
+export type ExploitSignal = {
+  gameId?: number;
+  signal?: string;
+  category?: string;
+  edge?: number;
+  risk?: number;
+  description?: string;
+};
+
+export type InjuryRecord = {
+  player?: string;
+  team?: string;
+  position?: string;
+  status?: string;
+};
+
 export type Team = {
   id: number;
   abbreviation?: string;
@@ -150,18 +176,27 @@ export default async function HomePage() {
       : Promise.resolve(apiUnavailable as FetchResult<OddsResponse>),
   ]);
 
-  const [teams, games] = apiBase
+  const [teams, games, exploits, injuries] = apiBase
     ? await Promise.all([
         fetchJson<Team[]>(`${apiBase}/api/nfl/teams`),
         fetchJson<Game[]>(`${apiBase}/api/nfl/games?season=${season}&week=${week}`),
+        fetchJson<unknown>(`${apiBase}/api/exploits/${season}/${week}`),
+        fetchJson<unknown>(`${apiBase}/api/nfl/injuries`),
       ])
-    : [apiUnavailable as FetchResult<Team[]>, apiUnavailable as FetchResult<Game[]>];
+    : [
+        apiUnavailable as FetchResult<Team[]>,
+        apiUnavailable as FetchResult<Game[]>,
+        apiUnavailable as FetchResult<unknown>,
+        apiUnavailable as FetchResult<unknown>,
+      ];
 
   const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 8) : [];
   const oddsCount = odds.ok && odds.data?.games ? odds.data.games.length : 0;
   const newsError = !news.ok ? news.error : undefined;
   const oddsError = !odds.ok ? odds.error : undefined;
   const gamesError = !games.ok ? games.error : undefined;
+  const exploitsError = !exploits.ok ? exploits.error : undefined;
+  const injuriesError = !injuries.ok ? injuries.error : undefined;
   const tickerItems =
     newsItems.length > 0
       ? newsItems.map((item) => item.title || "Breaking NFL Update")
@@ -195,6 +230,56 @@ export default async function HomePage() {
         })
       : fallbackScoreboard;
 
+  const oddsGames = odds.ok && Array.isArray(odds.data?.games)
+    ? (odds.data?.games as OddsGame[])
+    : [];
+  const oddsTrend = oddsGames.slice(0, 5).map((game, index) => ({
+    label: `G${index + 1}`,
+    value: game.consensus?.total ?? 0,
+  }));
+
+  const exploitArray = Array.isArray(exploits.data)
+    ? (exploits.data as ExploitSignal[])
+    : Array.isArray((exploits.data as { data?: unknown })?.data)
+      ? ((exploits.data as { data: ExploitSignal[] }).data ?? [])
+      : [];
+
+  const injuriesPayload = injuries.data as { data?: unknown } | undefined;
+  const injuryArray = Array.isArray(injuriesPayload?.data)
+    ? (injuriesPayload?.data as InjuryRecord[])
+    : Array.isArray(injuries.data)
+      ? (injuries.data as InjuryRecord[])
+      : [];
+
+  const statusCounts = injuryArray.reduce<Record<string, number>>((acc, item) => {
+    const status = (item.status || "Unknown").toString();
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const teamStats = Object.entries(statusCounts)
+    .slice(0, 4)
+    .map(([label, value]) => ({ label, value }));
+
+  const edgeValues = exploitArray
+    .map((signal) => Number(signal.edge))
+    .filter((value) => !Number.isNaN(value));
+  const riskValues = exploitArray
+    .map((signal) => Number(signal.risk))
+    .filter((value) => !Number.isNaN(value));
+  const edgeAvg = edgeValues.length
+    ? Math.round(edgeValues.reduce((a, b) => a + b, 0) / edgeValues.length)
+    : 0;
+  const riskAvg = riskValues.length
+    ? Math.round(riskValues.reduce((a, b) => a + b, 0) / riskValues.length)
+    : 0;
+
+  const edgeRisk = [
+    { label: "Edge", edge: edgeAvg || 60, risk: riskAvg || 40 },
+    { label: "Risk", edge: Math.max(20, edgeAvg - 15) || 45, risk: Math.max(20, riskAvg + 15) || 65 },
+    { label: "Totals", edge: Math.max(20, edgeAvg - 5) || 55, risk: Math.max(20, riskAvg - 5) || 35 },
+  ];
+
   return (
     <DashboardClient
       integrations={integrations}
@@ -210,6 +295,13 @@ export default async function HomePage() {
       newsError={newsError}
       oddsError={oddsError}
       gamesError={gamesError}
+      exploits={exploitArray}
+      injuries={injuryArray}
+      oddsTrend={oddsTrend.length ? oddsTrend : undefined}
+      teamStats={teamStats.length ? teamStats : undefined}
+      edgeRisk={edgeRisk}
+      exploitsError={exploitsError}
+      injuriesError={injuriesError}
     />
   );
 }
