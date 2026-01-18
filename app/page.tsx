@@ -134,11 +134,11 @@ export default async function HomePage() {
   const injuriesError = !injuries.ok ? injuries.error : undefined;
   const tickerItems =
     newsItems.length > 0
-      ? newsItems.map((item) => item.title || "Breaking NFL Update")
+      ? newsItems.map((item) => item.title || "Edgeloop: Breaking NFL Update")
       : [
-          "Live feed ready — connect your data sources to stream headlines.",
-          "Edge-grade analytics platform is online.",
-          "Configure odds + weather APIs for full exploit engine.",
+          "Edgeloop active — connect your data sources to stream headlines.",
+          "Edgeloop analytics platform is online.",
+          "Configure odds + weather APIs for full Edgeloop exploit engine.",
         ];
   const teamMap = new Map<number, Team>();
   if (teams.ok && Array.isArray(teams.data)) {

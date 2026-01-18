@@ -164,9 +164,9 @@ export default function DashboardClient({
             <div className="h-10 w-10 rounded-xl bg-primary/20" />
             <div>
               <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                NFL Analytics
+                Edgeloop
               </div>
-              <div className="text-lg font-semibold">Edgeloop Studio</div>
+              <div className="text-lg font-semibold">Edge Intelligence</div>
             </div>
           </div>
           <nav className="space-y-2">
@@ -207,9 +207,9 @@ export default function DashboardClient({
                 </button>
                 <div>
                   <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    Live Ready
+                    Edgeloop Active
                   </div>
-                  <div className="text-lg font-semibold">Edgeloop Control Room</div>
+                  <div className="text-lg font-semibold">Edge Detection</div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -270,18 +270,18 @@ export default function DashboardClient({
                 className="flex flex-col gap-6"
               >
                 <h1 id="hero-title" className="text-4xl font-bold tracking-tight sm:text-6xl">
-                  <span className="singularity-text">NFL Analytics</span>
+                  <span className="singularity-text">Edgeloop</span>
                   <br />
-                  <span className="text-3xl sm:text-4xl font-semibold mt-2 block">Betting Intelligence Platform</span>
+                  <span className="text-3xl sm:text-4xl font-semibold mt-2 block">Edge Intelligence Platform</span>
                 </h1>
                 <p className="max-w-2xl text-lg text-muted-foreground">
-                  AI-powered real-time intelligence, exploit detection, and market
-                  surveillance for the 2027 experience.
+                  Real-time NFL exploit detection, market intelligence, and edge analysis
+                  powered by Edgeloop's advanced analytics engine.
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 border border-primary/20">
                     <Brain className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-foreground">Neural Engine Active</span>
+                    <span className="font-semibold text-foreground">Edgeloop Engine Active</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-full bg-purple-500/10 px-4 py-2 border border-purple-500/20">
                     <Activity className="h-4 w-4 text-purple-400" />
@@ -405,10 +405,10 @@ export default function DashboardClient({
               <div className="relative z-10">
               <div className="flex items-center gap-3">
                 <BarChart3 className="h-5 w-5 text-primary" />
-                <h2 id="markets-title" className="text-xl font-semibold">Markets & Analytics</h2>
+                <h2 id="markets-title" className="text-xl font-semibold">Edgeloop Markets & Analytics</h2>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Odds, team stats, and edge/risk visualizations update in real time.
+                Edgeloop odds, team stats, and edge/risk visualizations update in real time.
               </p>
               <div className="mt-6">
                 {isMarketsLoading ? (
@@ -442,10 +442,10 @@ export default function DashboardClient({
                     </div>
                     <div>
                       <h2 id="exploits-title" className="text-2xl font-bold singularity-text">
-                        Exploit Signals
+                        Edgeloop Exploits
                       </h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        AI-powered anomaly detection & edge opportunities
+                        Edgeloop-powered anomaly detection & edge opportunities
                       </p>
                     </div>
                   </div>
@@ -519,7 +519,7 @@ export default function DashboardClient({
                       <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                       <div className="text-sm font-semibold text-foreground mb-2">No exploit signals detected</div>
                       <div className="text-xs text-muted-foreground">
-                        Neural engine is scanning for opportunities...
+                        Edgeloop engine is scanning for edge opportunities...
                       </div>
                     </div>
                   )}
@@ -534,10 +534,10 @@ export default function DashboardClient({
               <div className="relative z-10">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-primary" />
-                <h2 id="injuries-title" className="text-xl font-semibold">Injury Watch</h2>
+                <h2 id="injuries-title" className="text-xl font-semibold">Edgeloop Injury Watch</h2>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Live player injury updates from BallDontLie endpoints.
+                Live player injury updates powered by Edgeloop data integration.
               </p>
               <div className="mt-6 grid gap-3 md:grid-cols-2">
                 {injurySignals.length > 0 ? (
@@ -565,12 +565,12 @@ export default function DashboardClient({
               <div className="relative z-10">
               <div className="flex items-center gap-3">
                 <Newspaper className="h-5 w-5 text-primary" />
-                <h2 id="news-title" className="text-xl font-semibold">Latest NFL News</h2>
+                <h2 id="news-title" className="text-xl font-semibold">Edgeloop News Feed</h2>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {newsItems.length > 0
-                  ? "Streaming top headlines from configured feeds."
-                  : "No news available yet. Ensure NEXT_PUBLIC_API_URL is set."}
+                  ? "Edgeloop streaming top NFL headlines from configured feeds."
+                  : "Edgeloop news feed ready. Ensure NEXT_PUBLIC_API_URL is set."}
               </p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {isNewsLoading ? (
