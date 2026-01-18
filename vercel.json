@@ -15,11 +15,9 @@
   },
   "functions": {
     "app/api/**/*.ts": {
-      "memory": 1024,
       "maxDuration": 30
     },
     "app/api/**/*.tsx": {
-      "memory": 1024,
       "maxDuration": 30
     }
   },
