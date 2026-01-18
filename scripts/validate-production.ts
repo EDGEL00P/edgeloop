@@ -5,6 +5,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { envRegistry } from '../infra/env/registry';
 
 interface ValidationResult {
   passed: boolean;
@@ -12,13 +13,18 @@ interface ValidationResult {
   warnings: string[];
 }
 
-const REQUIRED_ENV_VARS = [
-  'DATABASE_URL',
-  'SESSION_SECRET',
-  'BALLDONTLIE_API_KEY',
-  'ODDS_API_KEY',
-  'WEATHER_API_KEY',
-];
+const DEFAULT_SCOPES = new Set(['server', 'web', 'trigger']);
+
+function parseScopes(): Set<string> {
+  const raw = process.env.ENV_VALIDATE_SCOPES;
+  if (!raw) return DEFAULT_SCOPES;
+  return new Set(
+    raw
+      .split(',')
+      .map((scope) => scope.trim())
+      .filter(Boolean),
+  );
+}
 
 export function validateProduction(): ValidationResult {
   const result: ValidationResult = {
@@ -27,10 +33,18 @@ export function validateProduction(): ValidationResult {
     warnings: [],
   };
 
-  // Check environment variables
-  for (const envVar of REQUIRED_ENV_VARS) {
-    if (!process.env[envVar]) {
-      result.errors.push(`Missing required environment variable: ${envVar}`);
+  const scopes = parseScopes();
+  const requiredVars = envRegistry.filter((entry) => {
+    const isRequired =
+      entry.required ||
+      (!!entry.requiredInProduction && process.env.NODE_ENV === 'production');
+    if (!isRequired) return false;
+    return entry.scopes.some((scope) => scopes.has(scope));
+  });
+
+  for (const entry of requiredVars) {
+    if (!process.env[entry.name]) {
+      result.errors.push(`Missing required environment variable: ${entry.name}`);
       result.passed = false;
     }
   }

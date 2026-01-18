@@ -19,6 +19,21 @@ Each environment directory contains:
 - Kubernetes manifests (if using k8s)
 - Service discovery config
 
+## Registry + Doctor
+
+The repo centralizes environment variables in `infra/env/registry.ts`.
+Use the doctor to check coverage and missing required vars:
+
+```bash
+npm run env:doctor
+```
+
+For JSON output:
+
+```bash
+npm run env:doctor:json
+```
+
 ## Vercel Environments
 
 For Vercel deployments, environment variables are managed in the Vercel dashboard:
