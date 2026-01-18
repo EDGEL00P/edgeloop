@@ -145,7 +145,11 @@ export default function DashboardClient({
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="orbit absolute left-[-10%] top-[-8%] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+        <div className="orbit-delay absolute right-[-5%] top-[10%] h-80 w-80 rounded-full bg-purple-500/20 blur-3xl" />
+      </div>
       <div className="flex">
         <aside
           className={`fixed left-0 top-0 z-30 h-full w-64 border-r border-border/50 bg-secondary/20 p-6 transition-transform lg:translate-x-0 ${
@@ -188,7 +192,7 @@ export default function DashboardClient({
         )}
 
         <div className="flex-1 lg:ml-64">
-          <header className="sticky top-0 z-20 border-b border-border/50 bg-background/80 backdrop-blur">
+          <header className="sticky top-0 z-20 border-b border-border/50 bg-background/75 backdrop-blur">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
                 <button
@@ -206,7 +210,8 @@ export default function DashboardClient({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-primary">
+                <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-primary">
+                  <span className={`h-2 w-2 rounded-full ${health.ok ? "bg-emerald-400" : "bg-red-400"}`} />
                   {health.ok ? "Online" : "Offline"}
                 </span>
                 <button
@@ -231,21 +236,29 @@ export default function DashboardClient({
               <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
                 Ticker
               </span>
-              <div className="flex w-full gap-6 overflow-x-auto" aria-live="polite">
-                {tickerItems.map((item, index) => (
-                  <span key={`${item}-${index}`} className="whitespace-nowrap">
-                    {item}
-                  </span>
-                ))}
+              <div className="relative w-full overflow-hidden" aria-live="polite">
+                <div className="ticker-marquee whitespace-nowrap">
+                  {[...tickerItems, ...tickerItems].map((item, index) => (
+                    <span key={`${item}-${index}`} className="whitespace-nowrap">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
 
-          <section className="studio-desk studio-light-top" aria-labelledby="hero-title">
-            <div className="mx-auto max-w-6xl px-6 py-12">
-              <div className="flex flex-col gap-6">
+          <section className="studio-desk studio-light-top studio-grid scanline" aria-labelledby="hero-title">
+            <div className="relative mx-auto max-w-6xl px-6 py-12">
+              <div className="absolute right-6 top-10 hidden h-40 w-40 rounded-full bg-primary/20 blur-3xl lg:block" />
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="flex flex-col gap-6"
+              >
                 <h1 id="hero-title" className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                  NFL Analytics &amp; Betting Intelligence
+                  <span className="holo-text">NFL Analytics</span> &amp; Betting Intelligence
                 </h1>
                 <p className="max-w-2xl text-lg text-muted-foreground">
                   Real-time scoreboard intelligence, exploit detection, and market
@@ -256,7 +269,7 @@ export default function DashboardClient({
                   <span>Week {week}</span>
                   <span>Odds: {oddsCount}</span>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </section>
 
@@ -283,7 +296,7 @@ export default function DashboardClient({
                 <motion.div
                   key={`${game.away}-${game.home}`}
                   whileHover={{ scale: 1.02 }}
-                  className="group relative studio-panel rounded-2xl p-5 transition"
+                  className="group relative rounded-2xl p-5 transition glass-panel neon-border glow-ring"
                 >
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     <span>{game.status}</span>
@@ -326,7 +339,7 @@ export default function DashboardClient({
           </section>
 
           <section id="markets" className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="markets-title">
-            <div className="studio-panel rounded-2xl p-8">
+            <div className="rounded-2xl p-8 glass-panel neon-border scanline">
               <div className="flex items-center gap-3">
                 <BarChart3 className="h-5 w-5 text-primary" />
                 <h2 id="markets-title" className="text-xl font-semibold">Markets & Analytics</h2>
@@ -353,7 +366,7 @@ export default function DashboardClient({
           </section>
 
           <section id="exploits" className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="exploits-title">
-            <div className="studio-panel rounded-2xl p-8">
+            <div className="rounded-2xl p-8 glass-panel neon-border scanline">
               <div className="flex items-center gap-3">
                 <Zap className="h-5 w-5 text-primary" />
                 <h2 id="exploits-title" className="text-xl font-semibold">Exploit Signals</h2>
@@ -391,7 +404,7 @@ export default function DashboardClient({
           </section>
 
           <section className="mx-auto max-w-6xl px-6 pb-8" aria-labelledby="injuries-title">
-            <div className="studio-panel rounded-2xl p-8">
+            <div className="rounded-2xl p-8 glass-panel neon-border scanline">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-primary" />
                 <h2 id="injuries-title" className="text-xl font-semibold">Injury Watch</h2>

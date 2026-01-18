@@ -210,4 +210,134 @@
       inset 0 0 2px hsla(var(--light-rim) / 0.5),
       0 4px 6px -1px var(--shadow-soft);
   }
+
+  .glass-panel {
+    background: linear-gradient(
+      135deg,
+      hsla(220 50% 16% / 0.85),
+      hsla(240 55% 10% / 0.55)
+    );
+    border: 1px solid hsla(0 0% 100% / 0.08);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .neon-border {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .neon-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      120deg,
+      hsla(217 90% 62% / 0.7),
+      hsla(280 70% 64% / 0.6),
+      hsla(200 90% 60% / 0.6)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .holo-text {
+    background: linear-gradient(90deg, #e0f2fe, #93c5fd, #a78bfa, #f0abfc);
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  .studio-grid {
+    position: relative;
+  }
+
+  .studio-grid::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(transparent 97%, hsla(0 0% 100% / 0.05) 100%),
+      linear-gradient(90deg, transparent 97%, hsla(0 0% 100% / 0.05) 100%);
+    background-size: 26px 26px;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  .scanline {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scanline::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      hsla(0 0% 100% / 0.08),
+      transparent
+    );
+    animation: scanline 6s linear infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .glow-ring {
+    box-shadow:
+      0 0 0 1px hsla(0 0% 100% / 0.06),
+      0 0 24px hsla(217 90% 62% / 0.25),
+      0 0 60px hsla(280 70% 64% / 0.15);
+  }
+
+  .orbit {
+    animation: float 12s ease-in-out infinite;
+  }
+
+  .orbit-delay {
+    animation: float 12s ease-in-out infinite;
+    animation-delay: -6s;
+  }
+
+  .ticker-marquee {
+    display: inline-flex;
+    gap: 1.5rem;
+    animation: marquee 25s linear infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
