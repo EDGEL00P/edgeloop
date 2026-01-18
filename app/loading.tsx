@@ -1,4 +1,15 @@
-export default function Loading() {
+/**
+ * Loading Component
+ * 
+ * Displays loading skeleton UI while page data is being fetched.
+ * Uses mobile-first responsive design.
+ * 
+ * @module app/loading
+ */
+
+import type React from "react";
+
+export default function Loading(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-6 py-12">

@@ -15,44 +15,12 @@ import {
   Zap,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import type { ExploitSignal, HealthStatus, InjuryRecord, NewsItem } from "../page";
-
-type ScoreboardCard = {
-  away: string;
-  home: string;
-  status: string;
-  time: string;
-  spread: string;
-  total: string;
-  scoreAway?: number | null;
-  scoreHome?: number | null;
-};
+import type { DashboardProps } from "../types/dashboard.types";
 
 const Charts = dynamic(() => import("./Charts"), {
   ssr: false,
   loading: () => <div className="h-44 rounded-2xl border border-border/60 bg-secondary/30" />,
 });
-
-type DashboardProps = {
-  health: { ok: boolean; data?: HealthStatus; error?: string };
-  newsItems: NewsItem[];
-  oddsCount: number;
-  scoreboard: ScoreboardCard[];
-  tickerItems: string[];
-  apiBase: string;
-  season: number;
-  week: number;
-  newsError?: string;
-  oddsError?: string;
-  gamesError?: string;
-  exploits: ExploitSignal[];
-  injuries: InjuryRecord[];
-  oddsTrend?: { label: string; value: number }[];
-  teamStats?: { label: string; value: number }[];
-  edgeRisk?: { label: string; edge: number; risk: number }[];
-  exploitsError?: string;
-  injuriesError?: string;
-};
 
 const sidebarLinks = [
   { id: "scoreboard", label: "Scoreboard", icon: Gauge },
@@ -83,6 +51,26 @@ const defaultEdgeRisk = [
   { label: "Totals", edge: 64, risk: 40 },
 ];
 
+/**
+ * Dashboard Client Component
+ * 
+ * Main client-side dashboard component displaying NFL analytics, scoreboard,
+ * exploits, injuries, and news feeds.
+ * 
+ * Features:
+ * - Fixed sidebar navigation with mobile hamburger menu
+ * - Live ticker for news updates
+ * - Scoreboard with game data
+ * - Analytics charts (odds trends, team stats, edge/risk)
+ * - Exploit signals and injury watch
+ * - News feed with pagination
+ * - Theme toggle (dark/light/high-contrast)
+ * 
+ * @module app/components/DashboardClient
+ */
+
+import type React from "react";
+
 export default function DashboardClient({
   health,
   newsItems,
@@ -102,7 +90,7 @@ export default function DashboardClient({
   edgeRisk,
   exploitsError,
   injuriesError,
-}: DashboardProps) {
+}: DashboardProps): React.JSX.Element {
   const { theme, setTheme } = useTheme();
   const [navOpen, setNavOpen] = useState(false);
   const [expandedNews, setExpandedNews] = useState<number | null>(null);

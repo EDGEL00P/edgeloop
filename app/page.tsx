@@ -1,6 +1,32 @@
-import DashboardClient from "./components/DashboardClient";
+/**
+ * Home Page Component
+ * 
+ * Server-side component that fetches dashboard data and renders DashboardClient.
+ * Handles data fetching, error handling, and data transformation.
+ * 
+ * @module app/page
+ */
 
-const fallbackScoreboard = [
+import DashboardClient from "./components/DashboardClient";
+import type {
+  HealthStatus,
+  NewsItem,
+  OddsResponse,
+  OddsGame,
+  ExploitSignal,
+  InjuryRecord,
+  Team,
+  Game,
+  FetchResult,
+  ScoreboardCard,
+  ChartDataPoint,
+  EdgeRiskDataPoint,
+} from "./types/dashboard.types";
+
+/**
+ * Fallback scoreboard data when live data is unavailable
+ */
+const fallbackScoreboard: readonly ScoreboardCard[] = [
   {
     away: "BUF",
     home: "KC",
@@ -27,76 +53,13 @@ const fallbackScoreboard = [
   },
 ];
 
-export type HealthStatus = {
-  status?: string;
-  timestamp?: string;
-};
-
-export type NewsItem = {
-  title?: string;
-  source?: string;
-  pubDate?: string;
-  link?: string;
-};
-
-export type OddsResponse = {
-  games?: unknown[];
-};
-
-type OddsGame = {
-  commenceTime?: string;
-  consensus?: {
-    total?: number;
-    spread?: number;
-    homeMoneyline?: number;
-    awayMoneyline?: number;
-  } | null;
-};
-
-export type ExploitSignal = {
-  gameId?: number;
-  signal?: string;
-  category?: string;
-  edge?: number;
-  risk?: number;
-  description?: string;
-};
-
-export type InjuryRecord = {
-  player?: string;
-  team?: string;
-  position?: string;
-  status?: string;
-};
-
-export type Team = {
-  id: number;
-  abbreviation?: string;
-  name?: string;
-  fullName?: string;
-  location?: string;
-};
-
-export type Game = {
-  id: number;
-  date?: string;
-  season?: number;
-  week?: number;
-  status?: string | null;
-  homeTeamId?: number;
-  visitorTeamId?: number;
-  homeTeamScore?: number | null;
-  visitorTeamScore?: number | null;
-  venue?: string | null;
-  time?: string | null;
-};
-
-type FetchResult<T> = {
-  ok: boolean;
-  data?: T;
-  error?: string;
-};
-
+/**
+ * Fetches JSON data from a URL with timeout and error handling.
+ * 
+ * @param url - URL to fetch from
+ * @param timeoutMs - Timeout in milliseconds (default: 5000)
+ * @returns Promise resolving to FetchResult with data or error
+ */
 async function fetchJson<T>(url: string, timeoutMs = 5000): Promise<FetchResult<T>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -122,8 +85,22 @@ export default async function HomePage() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
 
   const apiUnavailable: FetchResult<unknown> = { ok: false, error: "API base not configured" };
-  const season = Number(process.env.NEXT_PUBLIC_NFL_SEASON || 2025);
-  const week = Number(process.env.NEXT_PUBLIC_NFL_WEEK || 1);
+  
+  // Validate and parse season/week from environment
+  const seasonRaw = process.env.NEXT_PUBLIC_NFL_SEASON ?? "2025";
+  const weekRaw = process.env.NEXT_PUBLIC_NFL_WEEK ?? "1";
+  
+  const season = Number.parseInt(seasonRaw, 10);
+  const week = Number.parseInt(weekRaw, 10);
+  
+  // Guard clause: validate parsed values
+  if (Number.isNaN(season) || season < 2020 || season > 2030) {
+    throw new Error(`Invalid season: ${seasonRaw}`);
+  }
+  
+  if (Number.isNaN(week) || week < 1 || week > 18) {
+    throw new Error(`Invalid week: ${weekRaw}`);
+  }
   const [health, news, odds] = await Promise.all([
     fetchJson<HealthStatus>(`${appUrl}/api/health`),
     apiBase
@@ -169,32 +146,47 @@ export default async function HomePage() {
       teamMap.set(team.id, team);
     });
   }
-  const liveScoreboard =
+  /**
+   * Maps games to scoreboard cards with team information.
+   */
+  function mapGameToScoreboard(game: Game, teamMap: ReadonlyMap<number, Team>): ScoreboardCard {
+    const home = teamMap.get(game.homeTeamId ?? 0);
+    const away = teamMap.get(game.visitorTeamId ?? 0);
+    
+    const hasScore = game.homeTeamScore !== null || game.visitorTeamScore !== null;
+    const status = game.status ?? (hasScore ? "Final" : "Preview");
+    
+    return {
+      away: away?.abbreviation ?? away?.name ?? "AWAY",
+      home: home?.abbreviation ?? home?.name ?? "HOME",
+      status,
+      time: game.time ?? game.date ?? "TBD",
+      scoreAway: game.visitorTeamScore ?? null,
+      scoreHome: game.homeTeamScore ?? null,
+      spread: "—",
+      total: "—",
+    };
+  }
+
+  const liveScoreboard: readonly ScoreboardCard[] =
     games.ok && Array.isArray(games.data) && games.data.length > 0
-      ? games.data.slice(0, 3).map((game) => {
-          const home = teamMap.get(game.homeTeamId || 0);
-          const away = teamMap.get(game.visitorTeamId || 0);
-          const status = game.status || (game.homeTeamScore || game.visitorTeamScore ? "Final" : "Preview");
-          return {
-            away: away?.abbreviation || away?.name || "AWAY",
-            home: home?.abbreviation || home?.name || "HOME",
-            status,
-            time: game.time || game.date || "TBD",
-            scoreAway: game.visitorTeamScore ?? null,
-            scoreHome: game.homeTeamScore ?? null,
-            spread: "—",
-            total: "—",
-          };
-        })
+      ? games.data.slice(0, 3).map((game) => mapGameToScoreboard(game, teamMap))
       : fallbackScoreboard;
 
-  const oddsGames = odds.ok && Array.isArray(odds.data?.games)
+  /**
+   * Extracts odds trend data from odds games.
+   */
+  function extractOddsTrend(oddsGames: readonly OddsGame[]): readonly ChartDataPoint[] {
+    return oddsGames.slice(0, 5).map((game, index) => ({
+      label: `G${index + 1}`,
+      value: game.consensus?.total ?? 0,
+    }));
+  }
+
+  const oddsGames: readonly OddsGame[] = odds.ok && Array.isArray(odds.data?.games)
     ? (odds.data?.games as OddsGame[])
     : [];
-  const oddsTrend = oddsGames.slice(0, 5).map((game, index) => ({
-    label: `G${index + 1}`,
-    value: game.consensus?.total ?? 0,
-  }));
+  const oddsTrend: readonly ChartDataPoint[] = extractOddsTrend(oddsGames);
 
   const exploitArray = Array.isArray(exploits.data)
     ? (exploits.data as ExploitSignal[])
@@ -219,32 +211,45 @@ export default async function HomePage() {
     .slice(0, 4)
     .map(([label, value]) => ({ label, value }));
 
-  const edgeValues = exploitArray
-    .map((signal) => Number(signal.edge))
-    .filter((value) => !Number.isNaN(value));
-  const riskValues = exploitArray
-    .map((signal) => Number(signal.risk))
-    .filter((value) => !Number.isNaN(value));
-  const edgeAvg = edgeValues.length
-    ? Math.round(edgeValues.reduce((a, b) => a + b, 0) / edgeValues.length)
-    : 0;
-  const riskAvg = riskValues.length
-    ? Math.round(riskValues.reduce((a, b) => a + b, 0) / riskValues.length)
-    : 0;
+  /**
+   * Calculates edge/risk averages from exploit signals.
+   */
+  function calculateEdgeRisk(exploits: readonly ExploitSignal[]): readonly EdgeRiskDataPoint[] {
+    const edgeValues = exploits
+      .map((signal) => Number(signal.edge))
+      .filter((value) => !Number.isNaN(value));
+    const riskValues = exploits
+      .map((signal) => Number(signal.risk))
+      .filter((value) => !Number.isNaN(value));
+    
+    const edgeAvg = edgeValues.length > 0
+      ? Math.round(edgeValues.reduce((a, b) => a + b, 0) / edgeValues.length)
+      : 60;
+    const riskAvg = riskValues.length > 0
+      ? Math.round(riskValues.reduce((a, b) => a + b, 0) / riskValues.length)
+      : 40;
 
-  const edgeRisk = [
-    { label: "Edge", edge: edgeAvg || 60, risk: riskAvg || 40 },
-    { label: "Risk", edge: Math.max(20, edgeAvg - 15) || 45, risk: Math.max(20, riskAvg + 15) || 65 },
-    { label: "Totals", edge: Math.max(20, edgeAvg - 5) || 55, risk: Math.max(20, riskAvg - 5) || 35 },
-  ];
+    return [
+      { label: "Edge", edge: edgeAvg, risk: riskAvg },
+      { label: "Risk", edge: Math.max(20, edgeAvg - 15), risk: Math.max(20, riskAvg + 15) },
+      { label: "Totals", edge: Math.max(20, edgeAvg - 5), risk: Math.max(20, riskAvg - 5) },
+    ];
+  }
+
+  const edgeRisk: readonly EdgeRiskDataPoint[] = calculateEdgeRisk(exploitArray);
+
+  // Convert readonly arrays to arrays for props (DashboardClient accepts readonly)
+  const oddsTrendProp = oddsTrend.length > 0 ? [...oddsTrend] : undefined;
+  const teamStatsProp = teamStats.length > 0 ? [...teamStats] : undefined;
+  const edgeRiskProp = [...edgeRisk];
 
   return (
     <DashboardClient
       health={health}
       newsItems={newsItems}
       oddsCount={oddsCount}
-      scoreboard={liveScoreboard}
-      tickerItems={tickerItems}
+      scoreboard={[...liveScoreboard]}
+      tickerItems={[...tickerItems]}
       apiBase={apiBase}
       season={season}
       week={week}
@@ -253,9 +258,9 @@ export default async function HomePage() {
       gamesError={gamesError}
       exploits={exploitArray}
       injuries={injuryArray}
-      oddsTrend={oddsTrend.length ? oddsTrend : undefined}
-      teamStats={teamStats.length ? teamStats : undefined}
-      edgeRisk={edgeRisk}
+      oddsTrend={oddsTrendProp}
+      teamStats={teamStatsProp}
+      edgeRisk={edgeRiskProp}
       exploitsError={exploitsError}
       injuriesError={injuriesError}
     />

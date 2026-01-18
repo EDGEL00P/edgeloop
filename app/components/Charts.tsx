@@ -1,5 +1,15 @@
+/**
+ * Charts Component
+ * 
+ * Displays analytics charts using Recharts: odds trends, team stats, and edge/risk heatmap.
+ * Lazy-loaded for performance optimization.
+ * 
+ * @module app/components/Charts
+ */
+
 "use client";
 
+import type React from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,14 +21,26 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import type { ChartProps } from "../types/dashboard.types";
 
-type ChartProps = {
-  oddsTrend: { label: string; value: number }[];
-  teamStats: { label: string; value: number }[];
-  edgeRisk: { label: string; edge: number; risk: number }[];
-};
+export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps): React.JSX.Element {
+  if (!oddsTrend || oddsTrend.length === 0) {
+    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+  }
 
-export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps) {
+  if (!teamStats || teamStats.length === 0) {
+    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+  }
+
+  if (!edgeRisk || edgeRisk.length === 0) {
+    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+  }
+
+  // Convert readonly arrays to mutable for Recharts (which expects mutable arrays)
+  const oddsTrendData = [...oddsTrend];
+  const teamStatsData = [...teamStats];
+  const edgeRiskData = [...edgeRisk];
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="rounded-2xl border border-border/60 p-5">
@@ -27,7 +49,7 @@ export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps) {
         </h3>
         <div className="mt-4 h-44">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={oddsTrend}>
+            <LineChart data={oddsTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -44,7 +66,7 @@ export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps) {
         </h3>
         <div className="mt-4 h-44">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={teamStats}>
+            <BarChart data={teamStatsData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -61,7 +83,7 @@ export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps) {
         </h3>
         <div className="mt-4 h-44">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={edgeRisk}>
+            <BarChart data={edgeRiskData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
