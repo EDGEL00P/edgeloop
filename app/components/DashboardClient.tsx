@@ -65,11 +65,6 @@ const sidebarLinks = [
   { id: "news", label: "News", icon: Newspaper },
 ];
 
-const statusIcons: Record<string, typeof Gauge> = {
-  Health: Gauge,
-  Deployment: BarChart3,
-  Architecture: Zap,
-};
 
 const defaultOddsTrend = [
   { label: "W1", value: 42 },
@@ -263,22 +258,6 @@ export default function DashboardClient({
                 </div>
               </div>
             </div>
-          </section>
-
-          <section className="mx-auto grid max-w-6xl gap-4 px-6 py-6 md:grid-cols-3">
-            {statusCards.map((card) => {
-              const Icon = statusIcons[card.title] || Gauge;
-              return (
-                <div key={card.title} className="studio-panel rounded-2xl p-5">
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                    {card.title}
-                  </div>
-                  <div className="mt-3 text-xl font-semibold">{card.value}</div>
-                  <div className="mt-2 text-sm text-muted-foreground">{card.detail}</div>
-                </div>
-              );
-            })}
           </section>
 
           <section id="scoreboard" className="mx-auto max-w-6xl px-6 py-10" aria-labelledby="scoreboard-title">
