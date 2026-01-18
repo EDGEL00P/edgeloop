@@ -1,3 +1,5 @@
+import DashboardClient from "./components/DashboardClient";
+
 const integrations = [
   {
     title: "Core Data",
@@ -40,7 +42,7 @@ const statusCards = [
   },
 ];
 
-const scoreboardGames = [
+const fallbackScoreboard = [
   {
     away: "BUF",
     home: "KC",
@@ -67,23 +69,23 @@ const scoreboardGames = [
   },
 ];
 
-type HealthStatus = {
+export type HealthStatus = {
   status?: string;
   timestamp?: string;
 };
 
-type NewsItem = {
+export type NewsItem = {
   title?: string;
   source?: string;
   pubDate?: string;
   link?: string;
 };
 
-type OddsResponse = {
+export type OddsResponse = {
   games?: unknown[];
 };
 
-type Team = {
+export type Team = {
   id: number;
   abbreviation?: string;
   name?: string;
@@ -91,7 +93,7 @@ type Team = {
   location?: string;
 };
 
-type Game = {
+export type Game = {
   id: number;
   date?: string;
   season?: number;
@@ -155,8 +157,11 @@ export default async function HomePage() {
       ])
     : [apiUnavailable as FetchResult<Team[]>, apiUnavailable as FetchResult<Game[]>];
 
-  const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 4) : [];
+  const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 8) : [];
   const oddsCount = odds.ok && odds.data?.games ? odds.data.games.length : 0;
+  const newsError = !news.ok ? news.error : undefined;
+  const oddsError = !odds.ok ? odds.error : undefined;
+  const gamesError = !games.ok ? games.error : undefined;
   const tickerItems =
     newsItems.length > 0
       ? newsItems.map((item) => item.title || "Breaking NFL Update")
@@ -188,238 +193,23 @@ export default async function HomePage() {
             total: "—",
           };
         })
-      : scoreboardGames;
+      : fallbackScoreboard;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/50 bg-secondary/30">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/20"></div>
-            <div>
-              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                NFL Analytics
-              </div>
-              <div className="text-lg font-semibold">Edgeloop Studio</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
-              Live
-            </span>
-            <span>Scoreboard</span>
-            <span>Exploits</span>
-            <span>Markets</span>
-          </div>
-        </div>
-      </header>
-
-      <section className="border-b border-border/50 bg-black/20">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
-            Ticker
-          </span>
-          <div className="flex w-full gap-6 overflow-x-auto">
-            {tickerItems.map((item, index) => (
-              <span key={`${item}-${index}`} className="whitespace-nowrap">
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="studio-desk studio-light-top">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <div className="flex flex-col gap-6">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              Live Ready
-            </span>
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Edgeloop
-            </h1>
-            <p className="max-w-2xl text-lg text-muted-foreground">
-              NFL Analytics &amp; Betting Intelligence Platform. High-velocity data,
-              exploit detection, and AI-driven forecasts—now built for production scale.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <a
-                className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-blue-500/20"
-                href="/api/health"
-              >
-                Check Health
-              </a>
-              <a
-                className="rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground/80"
-                href="https://vercel.com/dashboard"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Vercel
-              </a>
-              <a
-                className="rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground/80"
-                href="https://railway.app/dashboard"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Railway
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">ESPN-Style Scoreboard</h2>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Weekly Slate
-          </span>
-        </div>
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {(liveScoreboard as typeof scoreboardGames).map((game) => (
-            <div key={`${game.away}-${game.home}`} className="studio-panel rounded-2xl p-5">
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                <span>{game.status}</span>
-                <span>{game.time}</span>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xl font-semibold">{game.away}</div>
-                  <div className="text-xs text-muted-foreground">Away</div>
-                </div>
-                <div className="text-lg text-muted-foreground">
-                  {game.scoreAway !== null && game.scoreHome !== null ? (
-                    <span className="text-sm text-muted-foreground">
-                      {game.scoreAway} - {game.scoreHome}
-                    </span>
-                  ) : (
-                    "@"
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-semibold">{game.home}</div>
-                  <div className="text-xs text-muted-foreground">Home</div>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                <span>{game.spread}</span>
-                <span>{game.total}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 py-10 md:grid-cols-3">
-        {statusCards.map((card) => (
-          <div key={card.title} className="studio-panel rounded-2xl p-6">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {card.title}
-            </p>
-            <h3 className="mt-3 text-2xl font-semibold">{card.value}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{card.detail}</p>
-          </div>
-        ))}
-        <div className="studio-panel rounded-2xl p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Health
-          </p>
-          <h3 className="mt-3 text-2xl font-semibold">
-            {health.ok ? "Online" : "Offline"}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {health.ok && health.data?.timestamp
-              ? `Last check ${new Date(health.data.timestamp).toLocaleTimeString()}`
-              : health.error || "Health endpoint unavailable"}
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="studio-panel rounded-2xl p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Latest NFL News</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                {news.ok ? "Live" : "Offline"}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {news.ok
-                ? "Streaming top headlines from configured feeds."
-                : `Connect backend API to show live news (${news.error}).`}
-            </p>
-            <ul className="mt-4 space-y-3 text-sm text-foreground/80">
-              {newsItems.length > 0 ? (
-                newsItems.map((item) => (
-                  <li key={item.title} className="rounded-lg border border-border/60 p-3">
-                    <div className="text-sm font-semibold">{item.title}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {item.source || "Source"} · {item.pubDate || "Today"}
-                    </div>
-                  </li>
-                ))
-              ) : (
-                <li className="text-sm text-muted-foreground">
-                  No news available yet. Ensure `NEXT_PUBLIC_API_URL` is set.
-                </li>
-              )}
-            </ul>
-          </div>
-
-          <div className="studio-panel rounded-2xl p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Odds &amp; Markets</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                {odds.ok ? "Live" : "Offline"}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {odds.ok
-                ? `${oddsCount} games loaded from betting feeds.`
-                : `Connect backend API to show odds (${odds.error}).`}
-            </p>
-            <div className="mt-6 rounded-xl border border-border/60 p-4 text-sm text-muted-foreground">
-              Configure `ODDS_API_KEY` and `NEXT_PUBLIC_API_URL` to enable live odds.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="studio-panel rounded-2xl p-8">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold">Integration Checklist</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure these integrations to unlock full platform capabilities.
-              All required keys must be set for production.
-            </p>
-          </div>
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {integrations.map((group) => (
-              <div key={group.title} className="rounded-xl border border-border/60 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  {group.title}
-                </h3>
-                <ul className="mt-3 space-y-2 text-sm text-foreground/80">
-                  {group.items.map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-primary"></span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 rounded-xl bg-secondary/40 p-4 text-sm text-muted-foreground">
-            Need help? Open the Vercel or Railway dashboards and paste the env
-            list above. Once set, redeploy to activate all services.
-          </div>
-        </div>
-      </section>
-    </main>
+    <DashboardClient
+      integrations={integrations}
+      statusCards={statusCards}
+      health={health}
+      newsItems={newsItems}
+      oddsCount={oddsCount}
+      scoreboard={liveScoreboard}
+      tickerItems={tickerItems}
+      apiBase={apiBase}
+      season={season}
+      week={week}
+      newsError={newsError}
+      oddsError={oddsError}
+      gamesError={gamesError}
+    />
   );
 }

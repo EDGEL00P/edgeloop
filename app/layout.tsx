@@ -1,5 +1,7 @@
 import "../styles/globals.css";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
+import ThemeProvider from "./components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Edgeloop",
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -29,14 +29,14 @@
   --spacing-field: 0.5rem;
   
   /* Edge states */
-  --edge-high: 22 197 94;
-  --edge-medium: 34 197 94;
-  --edge-low: 59 197 94;
+  --edge-high: 34 255 112;
+  --edge-medium: 60 220 120;
+  --edge-low: 90 200 140;
   
   /* Risk states */
-  --risk-high: 0 84 60;
-  --risk-medium: 239 68 68;
-  --risk-low: 249 115 22;
+  --risk-high: 255 60 60;
+  --risk-medium: 255 120 60;
+  --risk-low: 255 180 80;
   
   /* 3D studio lighting */
   --light-top: 0 0 100%;
@@ -79,6 +79,16 @@
   --border: 217 33% 17%;
   --input: 217 33% 17%;
   --ring: 217 91% 60%;
+}
+
+.high-contrast {
+  --background: 220 60% 7%;
+  --foreground: 0 0% 100%;
+  --primary: 48 100% 60%;
+  --primary-foreground: 222 47% 11%;
+  --accent: 280 85% 70%;
+  --edge-high: 60 255 140;
+  --risk-high: 255 80 80;
 }
 
 @layer base {
