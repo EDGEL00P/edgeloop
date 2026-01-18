@@ -88,10 +88,15 @@ export default async function HomePage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
 
+  const apiUnavailable: FetchResult<unknown> = { ok: false, error: "API base not configured" };
   const [health, news, odds] = await Promise.all([
     fetchJson<HealthStatus>(`${appUrl}/api/health`),
-    apiBase ? fetchJson<NewsItem[]>(`${apiBase}/api/news/nfl`) : Promise.resolve({ ok: false, error: "API base not configured" }),
-    apiBase ? fetchJson<OddsResponse>(`${apiBase}/api/odds/nfl`) : Promise.resolve({ ok: false, error: "API base not configured" }),
+    apiBase
+      ? fetchJson<NewsItem[]>(`${apiBase}/api/news/nfl`)
+      : Promise.resolve(apiUnavailable as FetchResult<NewsItem[]>),
+    apiBase
+      ? fetchJson<OddsResponse>(`${apiBase}/api/odds/nfl`)
+      : Promise.resolve(apiUnavailable as FetchResult<OddsResponse>),
   ]);
 
   const newsItems = news.ok && Array.isArray(news.data) ? news.data.slice(0, 4) : [];
