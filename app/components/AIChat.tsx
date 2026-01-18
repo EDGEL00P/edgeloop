@@ -142,7 +142,7 @@ export default function AIChat({ apiBase }: AIChatProps) {
                     return updated;
                   });
                 }
-              } catch (e) {
+              } catch (e: unknown) {
                 // Ignore parse errors
               }
             }
