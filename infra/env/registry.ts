@@ -265,6 +265,30 @@ export const envRegistry: EnvVar[] = [
     scopes: ["web"],
     public: true,
   },
+  {
+    name: "NEXT_PUBLIC_CLERK_SIGN_IN_URL",
+    description: "Clerk sign-in page URL",
+    scopes: ["web"],
+    public: true,
+  },
+  {
+    name: "NEXT_PUBLIC_CLERK_SIGN_UP_URL",
+    description: "Clerk sign-up page URL",
+    scopes: ["web"],
+    public: true,
+  },
+  {
+    name: "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL",
+    description: "Clerk sign-in fallback redirect URL",
+    scopes: ["web"],
+    public: true,
+  },
+  {
+    name: "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL",
+    description: "Clerk sign-up fallback redirect URL",
+    scopes: ["web"],
+    public: true,
+  },
 
   // Data providers
   {

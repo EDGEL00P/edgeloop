@@ -1,26 +1,32 @@
+/**
+ * Root Layout Component
+ * 
+ * Provides the root HTML structure, fonts, and global providers
+ * (Clerk, Theme, Toaster) for the entire application.
+ * 
+ * @module app/layout
+ */
+
 import "../styles/globals.css";
 import type { Metadata } from "next";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Inter, Oswald } from "next/font/google";
 import { Toaster } from "sonner";
 import ThemeProvider from "./components/ThemeProvider";
+import AuthHeader from "./components/AuthHeader";
+import type React from "react";
 import type { ReactNode } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const oswald = Oswald({
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -28,32 +34,17 @@ export const metadata: Metadata = {
   description: "NFL Analytics & Betting Intelligence Platform",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+interface RootLayoutProps {
+  readonly children: ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps): React.JSX.Element {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.variable} ${oswald.variable}`}>
+        <body className={`${inter.variable} ${oswald.variable} antialiased`}>
           <ThemeProvider>
-            <header className="flex h-16 items-center justify-end gap-4 p-4">
-              <SignedOut>
-                <SignInButton />
-                <SignUpButton>
-                  <button
-                    className="cursor-pointer rounded-full bg-[#6c47ff] px-4 text-sm font-medium text-white sm:h-12 sm:px-5 sm:text-base"
-                    type="button"
-                  >
-                    Sign Up
-                  </button>
-                </SignUpButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-            </header>
+            <AuthHeader />
             {children}
             <Toaster richColors position="top-right" />
           </ThemeProvider>
