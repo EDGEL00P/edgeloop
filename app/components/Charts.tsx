@@ -24,16 +24,29 @@ import {
 import type { ChartProps } from "../types/dashboard.types";
 
 export default function Charts({ oddsTrend, teamStats, edgeRisk }: ChartProps): React.JSX.Element {
+  // Guard clauses: return empty state if no data
   if (!oddsTrend || oddsTrend.length === 0) {
-    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+    return (
+      <div className="col-span-full rounded-xl border border-border/60 bg-secondary/20 p-8 text-center" role="status">
+        <div className="text-sm text-muted-foreground">No odds trend data available</div>
+      </div>
+    );
   }
 
   if (!teamStats || teamStats.length === 0) {
-    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+    return (
+      <div className="col-span-full rounded-xl border border-border/60 bg-secondary/20 p-8 text-center" role="status">
+        <div className="text-sm text-muted-foreground">No team stats data available</div>
+      </div>
+    );
   }
 
   if (!edgeRisk || edgeRisk.length === 0) {
-    return <div className="text-sm text-muted-foreground">No chart data available</div>;
+    return (
+      <div className="col-span-full rounded-xl border border-border/60 bg-secondary/20 p-8 text-center" role="status">
+        <div className="text-sm text-muted-foreground">No edge/risk data available</div>
+      </div>
+    );
   }
 
   // Convert readonly arrays to mutable for Recharts (which expects mutable arrays)

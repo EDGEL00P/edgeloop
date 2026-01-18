@@ -7,15 +7,18 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   BarChart3,
+  Brain,
+  Activity,
+  Cpu,
   Gauge,
   Menu,
   Moon,
+  Network,
   Newspaper,
   Sun,
   Zap,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Brain, Activity, Cpu, Network } from "lucide-react";
 import type { DashboardProps } from "../types/dashboard.types";
 import ExploitCard from "./ExploitCard";
 import { getTeamColors } from "../utils/nfl-team-colors";
@@ -102,14 +105,40 @@ export default function DashboardClient({
 
   useEffect(() => {
     if (!apiBase) {
-      toast.error("API base is not configured. Live data is offline.");
+      toast.warning("Edgeloop API not configured. Live data is offline. Configure NEXT_PUBLIC_API_URL to enable real-time features.", {
+        duration: 5000,
+      });
     }
-    if (newsError) toast.error(`News feed error: ${newsError}`);
-    if (oddsError) toast.error(`Odds feed error: ${oddsError}`);
-    if (gamesError) toast.error(`Games feed error: ${gamesError}`);
-    if (exploitsError) toast.error(`Exploit feed error: ${exploitsError}`);
-    if (injuriesError) toast.error(`Injury feed error: ${injuriesError}`);
-  }, [apiBase, newsError, oddsError, gamesError, exploitsError, injuriesError]);
+  }, [apiBase]);
+
+  useEffect(() => {
+    if (newsError) {
+      toast.error(`Edgeloop News Feed Error: ${newsError}`, { duration: 4000 });
+    }
+    if (oddsError) {
+      toast.error(`Edgeloop Odds Feed Error: ${oddsError}`, { duration: 4000 });
+    }
+    if (gamesError) {
+      toast.error(`Edgeloop Games Feed Error: ${gamesError}`, { duration: 4000 });
+    }
+    if (exploitsError) {
+      toast.error(`Edgeloop Exploit Engine Error: ${exploitsError}`, { duration: 4000 });
+    }
+    if (injuriesError) {
+      toast.error(`Edgeloop Injury Feed Error: ${injuriesError}`, { duration: 4000 });
+    }
+  }, [newsError, oddsError, gamesError, exploitsError, injuriesError]);
+
+  // Handle mobile nav keyboard accessibility
+  useEffect(() => {
+    if (navOpen) {
+      // Focus trap: prevent body scroll when nav is open
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [navOpen]);
 
   const pagedNews = useMemo(() => {
     const start = newsPage * 4;
@@ -141,11 +170,20 @@ export default function DashboardClient({
       : 0,
   };
 
-  const toggleTheme = () => {
-    if (theme === "dark") return setTheme("light");
-    if (theme === "light") return setTheme("high-contrast");
-    return setTheme("dark");
-  };
+  /**
+   * Toggle theme between dark, light, and high-contrast
+   */
+  function toggleTheme(): void {
+    if (theme === "dark") {
+      setTheme("light");
+      return;
+    }
+    if (theme === "light") {
+      setTheme("high-contrast");
+      return;
+    }
+    setTheme("dark");
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -158,7 +196,9 @@ export default function DashboardClient({
           className={`fixed left-0 top-0 z-30 h-full w-64 border-r border-border/50 bg-secondary/20 p-6 transition-transform lg:translate-x-0 ${
             navOpen ? "translate-x-0" : "-translate-x-full"
           }`}
+          id="primary-navigation"
           aria-label="Primary navigation"
+          aria-hidden={navOpen ? false : undefined}
         >
           <div className="mb-8 flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/20" />
@@ -176,7 +216,19 @@ export default function DashboardClient({
                 <a
                   key={link.id}
                   href={`#${link.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const element = document.getElementById(link.id);
+                    if (element) {
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
+                      // Close mobile nav after navigation
+                      if (navOpen) {
+                        setNavOpen(false);
+                      }
+                    }
+                  }}
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  aria-label={`Navigate to ${link.label} section`}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   {link.label}
@@ -188,9 +240,15 @@ export default function DashboardClient({
 
         {navOpen && (
           <button
-            className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+            type="button"
+            className="fixed inset-0 z-20 bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={() => setNavOpen(false)}
-            aria-label="Close navigation"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setNavOpen(false);
+              }
+            }}
+            aria-label="Close navigation overlay"
           />
         )}
 
@@ -199,9 +257,12 @@ export default function DashboardClient({
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
                 <button
-                  className="rounded-lg border border-border/60 p-2 text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden"
+                  type="button"
+                  className="rounded-lg border border-border/60 p-2 text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden"
                   onClick={() => setNavOpen((prev) => !prev)}
-                  aria-label="Toggle navigation"
+                  aria-label={navOpen ? "Close navigation menu" : "Open navigation menu"}
+                  aria-expanded={navOpen}
+                  aria-controls="primary-navigation"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
@@ -213,14 +274,23 @@ export default function DashboardClient({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-primary">
-                  <span className={`h-2 w-2 rounded-full ${health.ok ? "bg-emerald-400" : "bg-red-400"}`} />
+                <span 
+                  className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-primary"
+                  role="status"
+                  aria-live="polite"
+                  aria-label={`Edgeloop status: ${health.ok ? "Online" : "Offline"}`}
+                >
+                  <span 
+                    className={`h-2 w-2 rounded-full animate-pulse ${health.ok ? "bg-emerald-400" : "bg-red-400"}`}
+                    aria-hidden="true"
+                  />
                   {health.ok ? "Online" : "Offline"}
                 </span>
                 <button
-                  className="rounded-lg border border-border/60 p-2 text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  type="button"
+                  className="rounded-lg border border-border/60 p-2 text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   onClick={toggleTheme}
-                  aria-label="Toggle theme (dark, light, high contrast)"
+                  aria-label={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "high contrast" : "dark"} theme`}
                 >
                   {theme === "dark" ? (
                     <Sun className="h-4 w-4" />
@@ -241,11 +311,15 @@ export default function DashboardClient({
               </span>
               <div className="relative w-full overflow-hidden" aria-live="polite">
                 <div className="ticker-marquee whitespace-nowrap">
-                  {[...tickerItems, ...tickerItems].map((item, index) => (
-                    <span key={`${item}-${index}`} className="whitespace-nowrap">
-                      {item}
-                    </span>
-                  ))}
+                  {tickerItems.length > 0 ? (
+                    [...tickerItems, ...tickerItems].map((item, index) => (
+                      <span key={`ticker-${index}-${item.slice(0, 20)}`} className="whitespace-nowrap">
+                        {item}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">Edgeloop ticker ready — waiting for updates</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -301,26 +375,32 @@ export default function DashboardClient({
               <h2 id="scoreboard-title" className="text-2xl font-semibold">Scoreboard</h2>
               <div className="flex items-center gap-2 rounded-full border border-border/60 p-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <button
-                  className={`rounded-full px-4 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${tab === "weekly" ? "bg-primary/20 text-primary" : ""}`}
+                  type="button"
+                  className={`rounded-full px-4 py-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${tab === "weekly" ? "bg-primary/20 text-primary font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setTab("weekly")}
+                  aria-label="View weekly scoreboard"
+                  aria-pressed={tab === "weekly"}
                 >
                   Weekly
                 </button>
                 <button
-                  className={`rounded-full px-4 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${tab === "monthly" ? "bg-primary/20 text-primary" : ""}`}
+                  type="button"
+                  className={`rounded-full px-4 py-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${tab === "monthly" ? "bg-primary/20 text-primary font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setTab("monthly")}
+                  aria-label="View monthly scoreboard"
+                  aria-pressed={tab === "monthly"}
                 >
                   Monthly
                 </button>
               </div>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {(tab === "weekly" ? scoreboard : scoreboard).map((game) => {
+              {scoreboard.map((game, gameIndex) => {
                 const awayColors = getTeamColors(game.away);
                 const homeColors = getTeamColors(game.home);
                 return (
                   <motion.div
-                    key={`${game.away}-${game.home}`}
+                    key={`${game.away}-${game.home}-${gameIndex}`}
                     whileHover={{ scale: 1.03, y: -4 }}
                     className="group relative rounded-2xl p-6 transition-all glass-singularity neon-border singularity-glow nfl-grid"
                   >
@@ -384,17 +464,31 @@ export default function DashboardClient({
                     {/* Neural network overlay */}
                     <div className="absolute inset-0 rounded-2xl neural-network opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     
-                    <div className="pointer-events-none absolute bottom-4 right-4 hidden rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg group-hover:block">
-                      <Network className="h-3 w-3 inline mr-1" />
-                      Live Analysis
+                    <div className="pointer-events-none absolute bottom-4 right-4 hidden rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg group-hover:block" role="tooltip">
+                      <Network className="h-3 w-3 inline mr-1" aria-hidden="true" />
+                      Edgeloop Analysis Active
                     </div>
                   </motion.div>
                 );
               })}
             </div>
-            {!isScoreboardLive && (
-              <div className="mt-4 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Live games offline — showing cached slate.
+            {!isScoreboardLive && scoreboard.length > 0 && (
+              <div className="mt-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-xs uppercase tracking-[0.2em] text-yellow-400" role="alert">
+                <span className="font-semibold">Note:</span> Live games offline — showing cached data. Configure NEXT_PUBLIC_API_URL for real-time updates.
+              </div>
+            )}
+            {gamesError && (
+              <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-400" role="alert">
+                <span className="font-semibold">Error:</span> Unable to load scoreboard data. {gamesError}
+              </div>
+            )}
+            {scoreboard.length === 0 && !gamesError && (
+              <div className="mt-6 rounded-lg border border-border/60 bg-secondary/20 p-8 text-center">
+                <Gauge className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50 animate-pulse" aria-hidden="true" />
+                <div className="text-sm font-semibold text-foreground mb-2">No scoreboard data available</div>
+                <div className="text-xs text-muted-foreground">
+                  {apiBase ? "Waiting for game data from Edgeloop API..." : "Configure NEXT_PUBLIC_API_URL to view live scores"}
+                </div>
               </div>
             )}
           </section>
@@ -411,13 +505,24 @@ export default function DashboardClient({
                 Edgeloop odds, team stats, and edge/risk visualizations update in real time.
               </p>
               <div className="mt-6">
-                {isMarketsLoading ? (
-                  <div className="grid gap-6 lg:grid-cols-3">
-                    {Array.from({ length: 3 }).map((_, idx) => (
-                      <div key={idx} className="h-44 rounded-2xl bg-secondary/20" />
-                    ))}
+                {isMarketsLoading && !oddsError && (
+                  <>
+                    <div className="grid gap-6 lg:grid-cols-3">
+                      {Array.from({ length: 3 }).map((_, idx) => (
+                        <div key={`market-loading-${idx}`} className="h-44 rounded-2xl bg-secondary/20 animate-pulse" aria-hidden="true" />
+                      ))}
+                    </div>
+                    <div className="sr-only" role="status" aria-live="polite">Loading market analytics</div>
+                  </>
+                )}
+                {oddsError && (
+                  <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-center" role="alert">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-red-400 opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-red-400 mb-2">Unable to load market data</div>
+                    <div className="text-xs text-muted-foreground">{oddsError}</div>
                   </div>
-                ) : (
+                )}
+                {!isMarketsLoading && !oddsError && (
                   <Charts
                     oddsTrend={oddsTrend && oddsTrend.length ? oddsTrend : defaultOddsTrend}
                     teamStats={teamStats && teamStats.length ? teamStats : defaultTeamStats}
@@ -510,16 +615,25 @@ export default function DashboardClient({
 
                 {/* Exploit cards grid */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {exploitSignals.length > 0 ? (
-                    exploitSignals.map((signal, index) => (
-                      <ExploitCard key={signal.id ?? `${signal.gameId}-${index}`} signal={signal} index={index} />
-                    ))
+                  {exploitsError ? (
+                    <div className="col-span-full rounded-xl border border-red-500/20 bg-red-500/10 p-8 text-center" role="alert">
+                      <Zap className="h-12 w-12 mx-auto mb-4 text-red-400 opacity-50" aria-hidden="true" />
+                      <div className="text-sm font-semibold text-red-400 mb-2">Unable to load exploit signals</div>
+                      <div className="text-xs text-muted-foreground">{exploitsError}</div>
+                    </div>
+                  ) : exploitSignals.length > 0 ? (
+                    exploitSignals.map((signal, index) => {
+                      const exploitKey = signal.id ?? (signal.gameId ? `exploit-${signal.gameId}-${index}` : `exploit-${signal.name ?? index}`);
+                      return (
+                        <ExploitCard key={exploitKey} signal={signal} index={index} />
+                      );
+                    })
                   ) : (
                     <div className="col-span-full rounded-xl border border-border/60 p-8 text-center glass-panel">
-                      <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50 animate-pulse" aria-hidden="true" />
                       <div className="text-sm font-semibold text-foreground mb-2">No exploit signals detected</div>
                       <div className="text-xs text-muted-foreground">
-                        Edgeloop engine is scanning for edge opportunities...
+                        {apiBase ? "Edgeloop engine is scanning for edge opportunities..." : "Configure NEXT_PUBLIC_API_URL to enable exploit detection"}
                       </div>
                     </div>
                   )}
@@ -540,18 +654,28 @@ export default function DashboardClient({
                 Live player injury updates powered by Edgeloop data integration.
               </p>
               <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {injurySignals.length > 0 ? (
+                {injuriesError ? (
+                  <div className="col-span-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center" role="alert">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-400 opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-red-400 mb-2">Unable to load injury data</div>
+                    <div className="text-xs text-muted-foreground">{injuriesError}</div>
+                  </div>
+                ) : injurySignals.length > 0 ? (
                   injurySignals.map((item, index) => (
-                    <div key={`${item.player}-${index}`} className="rounded-xl border border-border/60 p-4">
-                      <div className="text-sm font-semibold">{item.player || "Player"}</div>
+                    <div key={`${item.player}-${index}`} className="rounded-xl border border-border/60 bg-secondary/20 p-4 transition-colors hover:bg-secondary/40">
+                      <div className="text-sm font-semibold text-foreground">{item.player || "Player"}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {item.team || "Team"} · {item.position || "Pos"} · {item.status || "Status"}
+                        <span className="font-medium">{item.team || "Team"}</span> · <span>{item.position || "Pos"}</span> · <span className={`font-semibold ${item.status?.toLowerCase().includes("out") ? "text-red-400" : item.status?.toLowerCase().includes("questionable") ? "text-yellow-400" : "text-green-400"}`}>{item.status || "Status"}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-border/60 p-4 text-sm text-muted-foreground">
-                    No injuries available yet.
+                  <div className="col-span-full rounded-xl border border-border/60 bg-secondary/20 p-8 text-center" role="status" aria-live="polite">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-foreground mb-2">No injuries reported</div>
+                    <div className="text-xs text-muted-foreground">
+                      {apiBase ? "All clear — no injury updates available." : "Configure NEXT_PUBLIC_API_URL to view injury reports"}
+                    </div>
                   </div>
                 )}
               </div>
@@ -573,28 +697,42 @@ export default function DashboardClient({
                   : "Edgeloop news feed ready. Ensure NEXT_PUBLIC_API_URL is set."}
               </p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {isNewsLoading ? (
-                  Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={idx} className="h-28 rounded-xl bg-secondary/20" />
-                  ))
+                {newsError ? (
+                  <div className="col-span-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center" role="alert">
+                    <Newspaper className="h-12 w-12 mx-auto mb-4 text-red-400 opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-red-400 mb-2">Unable to load news feed</div>
+                    <div className="text-xs text-muted-foreground">{newsError}</div>
+                  </div>
+                ) : isNewsLoading ? (
+                  <>
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <div key={`news-loading-${idx}`} className="h-28 rounded-xl bg-secondary/20 animate-pulse" aria-hidden="true" />
+                    ))}
+                    <div className="sr-only" role="status" aria-live="polite">Loading news feed</div>
+                  </>
                 ) : pagedNews.length > 0 ? (
-                  pagedNews.map((item, index) => (
+                  pagedNews.map((item, index) => {
+                    const newsKey = item.link ? `news-${item.link.slice(-20)}` : `news-${item.title?.slice(0, 20) ?? index}`;
+                    return (
                     <motion.div
-                      key={`${item.title}-${index}`}
-                      className="rounded-xl border border-border/60 p-4"
+                      key={newsKey}
+                      className="rounded-xl border border-border/60 bg-secondary/20 p-4 transition-colors hover:bg-secondary/40"
                       whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold">{item.title}</div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-foreground">{item.title || "Untitled Article"}</div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {item.source || "Source"} · {item.pubDate || "Today"}
+                            <span className="font-medium">{item.source || "Source"}</span> · <span>{item.pubDate || "Today"}</span>
                           </div>
                         </div>
                         <button
-                          className="text-xs uppercase text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          type="button"
+                          className="shrink-0 text-xs uppercase text-primary transition-colors hover:text-primary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           onClick={() => setExpandedNews(expandedNews === index ? null : index)}
                           aria-expanded={expandedNews === index}
+                          aria-label={expandedNews === index ? "Collapse news article" : `Expand news article: ${item.title}`}
                         >
                           {expandedNews === index ? "Close" : "Read more"}
                         </button>
@@ -605,8 +743,9 @@ export default function DashboardClient({
                             <a
                               href={item.link}
                               target="_blank"
-                              rel="noreferrer"
-                              className="underline"
+                              rel="noreferrer noopener"
+                              className="underline transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                              aria-label={`Open full article: ${item.title} (opens in new tab)`}
                             >
                               Open full article
                             </a>
@@ -616,28 +755,37 @@ export default function DashboardClient({
                         </div>
                       )}
                     </motion.div>
-                  ))
+                    );
+                  })
                 ) : (
-                  <div className="rounded-xl border border-border/60 p-6 text-sm text-muted-foreground">
-                    Waiting for headlines…
+                  <div className="col-span-full rounded-xl border border-border/60 bg-secondary/20 p-8 text-center" role="status" aria-live="polite">
+                    <Newspaper className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" aria-hidden="true" />
+                    <div className="text-sm font-semibold text-foreground mb-2">No news available</div>
+                    <div className="text-xs text-muted-foreground">
+                      {apiBase ? "Waiting for headlines from Edgeloop news feed..." : "Configure NEXT_PUBLIC_API_URL to view news"}
+                    </div>
                   </div>
                 )}
               </div>
               <div className="mt-6 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <button
-                  className="rounded-full border border-border/60 px-4 py-1 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  type="button"
+                  className="rounded-full border border-border/60 px-4 py-1 transition-all hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   onClick={() => setNewsPage((page) => Math.max(page - 1, 0))}
                   disabled={newsPage === 0}
+                  aria-label="Previous news page"
                 >
                   Prev
                 </button>
-                <span>
+                <span aria-live="polite" aria-atomic="true">
                   Page {newsPage + 1} / {pageCount}
                 </span>
                 <button
-                  className="rounded-full border border-border/60 px-4 py-1 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  type="button"
+                  className="rounded-full border border-border/60 px-4 py-1 transition-all hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   onClick={() => setNewsPage((page) => Math.min(page + 1, pageCount - 1))}
                   disabled={newsPage >= pageCount - 1}
+                  aria-label="Next news page"
                 >
                   Next
                 </button>
