@@ -7,6 +7,7 @@
  * @module app/page
  */
 
+import { z } from "zod";
 import DashboardClient from "./components/DashboardClient";
 import type {
   HealthStatus,
@@ -22,6 +23,82 @@ import type {
   ChartDataPoint,
   EdgeRiskDataPoint,
 } from "./types/dashboard.types";
+
+/**
+ * API response schemas for validation (per godmode rule 5)
+ */
+const HealthStatusSchema = z.object({
+  status: z.string().optional(),
+  timestamp: z.string().optional(),
+});
+
+const NewsItemSchema = z.object({
+  title: z.string().optional(),
+  source: z.string().optional(),
+  pubDate: z.string().optional(),
+  link: z.string().url().optional(),
+});
+
+const NewsItemsSchema = z.array(NewsItemSchema);
+
+const TeamSchema = z.object({
+  id: z.number().int(),
+  abbreviation: z.string().optional(),
+  name: z.string().optional(),
+  fullName: z.string().optional(),
+  location: z.string().optional(),
+});
+
+const TeamsSchema = z.array(TeamSchema);
+
+const GameSchema = z.object({
+  id: z.number().int(),
+  date: z.string().optional(),
+  season: z.number().int().optional(),
+  week: z.number().int().optional(),
+  status: z.string().nullable().optional(),
+  homeTeamId: z.number().int().optional(),
+  visitorTeamId: z.number().int().optional(),
+  homeTeamScore: z.number().nullable().optional(),
+  visitorTeamScore: z.number().nullable().optional(),
+  venue: z.string().nullable().optional(),
+  time: z.string().nullable().optional(),
+});
+
+const GamesSchema = z.array(GameSchema);
+
+const OddsResponseSchema = z.object({
+  games: z.array(z.unknown()).optional(),
+});
+
+const ExploitSignalSchema = z.object({
+  id: z.string().optional(),
+  gameId: z.number().int().optional(),
+  type: z.string().optional(),
+  signal: z.string().optional(),
+  name: z.string().optional(),
+  category: z.string().optional(),
+  confidence: z.number().optional(),
+  direction: z.enum(["home", "away", "over", "under", "neutral"]).optional(),
+  edge: z.number().optional(),
+  risk: z.number().optional(),
+  description: z.string().optional(),
+});
+
+const ExploitSignalsSchema = z.array(ExploitSignalSchema).or(z.object({
+  data: z.array(ExploitSignalSchema).optional(),
+}));
+
+const InjuryRecordSchema = z.object({
+  player: z.string().optional(),
+  team: z.string().optional(),
+  position: z.string().optional(),
+  status: z.string().optional(),
+});
+
+const InjuryRecordsSchema = z.array(InjuryRecordSchema).or(z.object({
+  data: z.array(InjuryRecordSchema).optional(),
+}));
 
 /**
  * Fallback scoreboard data when live data is unavailable
@@ -56,25 +133,62 @@ const fallbackScoreboard: readonly ScoreboardCard[] = [
 /**
  * Fetches JSON data from a URL with timeout and error handling.
  * 
+ * Per godmode rule 5: All data at boundary layers must be schema-validated.
+ * Note: This function accepts optional schema for validation. When no schema
+ * is provided, it still returns typed data but cannot validate structure.
+ * 
  * @param url - URL to fetch from
  * @param timeoutMs - Timeout in milliseconds (default: 5000)
- * @returns Promise resolving to FetchResult with data or error
+ * @param schema - Optional Zod schema for runtime validation
+ * @returns Promise resolving to FetchResult with validated data or error
  */
-async function fetchJson<T>(url: string, timeoutMs = 5000): Promise<FetchResult<T>> {
+async function fetchJson<T>(
+  url: string, 
+  timeoutMs = 5000,
+  schema?: z.ZodSchema<T>
+): Promise<FetchResult<T>> {
+  // Guard clause: validate URL
+  if (!url || typeof url !== "string") {
+    return { ok: false, error: "Invalid URL" };
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  
   try {
     const res = await fetch(url, {
       signal: controller.signal,
       cache: "no-store",
     });
+    
+    // Guard clause: check response status
     if (!res.ok) {
       return { ok: false, error: `HTTP ${res.status}` };
     }
-    const data = (await res.json()) as T;
-    return { ok: true, data };
+    
+    const rawData = await res.json();
+    
+    // Validate with schema if provided (per godmode rule 5)
+    if (schema) {
+      const validated = schema.parse(rawData);
+      return { ok: true, data: validated };
+    }
+    
+    // No schema: return as-is (per godmode rule 5, schemas are optional but recommended)
+    
+    return { ok: true, data: rawData as T };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown error" };
+    // Guard clause: handle validation errors
+    if (error instanceof z.ZodError) {
+      return { ok: false, error: `Validation error: ${error.message}` };
+    }
+    
+    // Guard clause: handle network/timeout errors
+    if (error instanceof Error) {
+      return { ok: false, error: error.message };
+    }
+    
+    return { ok: false, error: "Unknown error" };
   } finally {
     clearTimeout(timeout);
   }
@@ -102,21 +216,21 @@ export default async function HomePage() {
     throw new Error(`Invalid week: ${weekRaw}`);
   }
   const [health, news, odds] = await Promise.all([
-    fetchJson<HealthStatus>(`${appUrl}/api/health`),
+    fetchJson<HealthStatus>(`${appUrl}/api/health`, 5000, HealthStatusSchema),
     apiBase
-      ? fetchJson<NewsItem[]>(`${apiBase}/api/news/nfl`)
+      ? fetchJson<NewsItem[]>(`${apiBase}/api/news/nfl`, 5000, NewsItemsSchema)
       : Promise.resolve(apiUnavailable as FetchResult<NewsItem[]>),
     apiBase
-      ? fetchJson<OddsResponse>(`${apiBase}/api/odds/nfl`)
+      ? fetchJson<OddsResponse>(`${apiBase}/api/odds/nfl`, 5000, OddsResponseSchema)
       : Promise.resolve(apiUnavailable as FetchResult<OddsResponse>),
   ]);
 
   const [teams, games, exploits, injuries] = apiBase
     ? await Promise.all([
-        fetchJson<Team[]>(`${apiBase}/api/nfl/teams`),
-        fetchJson<Game[]>(`${apiBase}/api/nfl/games?season=${season}&week=${week}`),
-        fetchJson<unknown>(`${apiBase}/api/exploits/${season}/${week}`),
-        fetchJson<unknown>(`${apiBase}/api/nfl/injuries`),
+        fetchJson<Team[]>(`${apiBase}/api/nfl/teams`, 5000, TeamsSchema),
+        fetchJson<Game[]>(`${apiBase}/api/nfl/games?season=${season}&week=${week}`, 5000, GamesSchema),
+        fetchJson<unknown>(`${apiBase}/api/exploits/${season}/${week}`, 5000, ExploitSignalsSchema),
+        fetchJson<unknown>(`${apiBase}/api/nfl/injuries`, 5000, InjuryRecordsSchema),
       ])
     : [
         apiUnavailable as FetchResult<Team[]>,
