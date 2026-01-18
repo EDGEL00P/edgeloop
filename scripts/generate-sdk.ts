@@ -8,6 +8,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
 
 const CONTRACTS_DIR = join(process.cwd(), 'contracts', 'http');
 const SDK_DIR = join(process.cwd(), 'sdks', 'ts');
@@ -61,7 +62,8 @@ export const executionClient = {
   console.log('⚠️  Full client implementation pending - contracts ready for use');
 }
 
-if (require.main === module) {
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
+if (isDirectRun) {
   generateSDKFromContracts();
 }
 
