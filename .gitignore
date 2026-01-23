@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.DS_Store
+
+# Local dev preview server artifacts
+control-room-server*.log
+control-room-server.pid

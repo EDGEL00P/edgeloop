@@ -1,0 +1,9 @@
+{
+  "name": "@edgeloop/control-room",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  }
+}
