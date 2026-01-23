@@ -2,8 +2,15 @@ node_modules/
 dist/
 *.tsbuildinfo
 .env
+.env*.local
 .DS_Store
 
-# Local dev preview server artifacts
-control-room-server*.log
-control-room-server.pid
+# Vercel
+.vercel/
+
+# Test coverage
+coverage/
+
+# Local dev artifacts
+*.log
+*.pid

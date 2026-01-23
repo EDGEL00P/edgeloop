@@ -1,0 +1,10 @@
+{
+  "name": "@edgeloop/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@edgeloop/server": "workspace:*",
+    "@edgeloop/shared": "workspace:*"
+  }
+}

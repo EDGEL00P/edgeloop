@@ -1,5 +1,7 @@
 import type { ServerResponse } from 'http'
 import { createServer } from 'http'
+import { readFileSync } from 'fs'
+import { extname, resolve } from 'path'
 import { URL } from 'url'
 
 import { errorEnvelope } from '@edgeloop/shared'
@@ -14,6 +16,10 @@ export type ServerContext = {
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue }
 
+const CONTROL_ROOM_CSP =
+  "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; img-src 'self' data:; " +
+  "style-src 'self'; script-src 'self'; connect-src 'self'"
+
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000
 }
@@ -22,6 +28,20 @@ function impliedProbFromAmericanOdds(odds: number): number {
   if (!Number.isFinite(odds) || odds === 0) return 0.5
   if (odds > 0) return 100 / (odds + 100)
   return -odds / (-odds + 100)
+}
+
+function setSecurityHeaders(res: ServerResponse): void {
+  res.setHeader('x-content-type-options', 'nosniff')
+  res.setHeader('referrer-policy', 'no-referrer')
+  res.setHeader('x-frame-options', 'DENY')
+  res.setHeader('permissions-policy', 'geolocation=(), microphone=(), camera=()')
+  res.setHeader('cross-origin-opener-policy', 'same-origin')
+  res.setHeader('cross-origin-resource-policy', 'same-origin')
+}
+
+function setHtmlSecurityHeaders(res: ServerResponse): void {
+  setSecurityHeaders(res)
+  res.setHeader('content-security-policy', CONTROL_ROOM_CSP)
 }
 
 function writeJson(
@@ -36,10 +56,101 @@ function writeJson(
   res.setHeader('content-type', 'application/json; charset=utf-8')
   res.setHeader('cache-control', 'no-store')
   res.setHeader('x-request-id', requestId)
+  setSecurityHeaders(res)
   res.end(payload)
 }
 
+function contentTypeForFilePath(filePath: string): string {
+  const ext = extname(filePath).toLowerCase()
+  if (ext === '.html') return 'text/html; charset=utf-8'
+  if (ext === '.css') return 'text/css; charset=utf-8'
+  if (ext === '.js') return 'text/javascript; charset=utf-8'
+  if (ext === '.map') return 'application/json; charset=utf-8'
+  return 'application/octet-stream'
+}
+
+function writeBytes(
+  res: ServerResponse,
+  statusCode: number,
+  body: Buffer,
+  contentType: string,
+  requestId: string,
+): void {
+  res.statusCode = statusCode
+  res.setHeader('content-type', contentType)
+  res.setHeader('cache-control', 'no-store')
+  res.setHeader('x-request-id', requestId)
+
+  if (contentType.startsWith('text/html')) {
+    setHtmlSecurityHeaders(res)
+  } else {
+    setSecurityHeaders(res)
+  }
+
+  res.end(body)
+}
+
+function writeRedirect(
+  res: ServerResponse,
+  statusCode: 307 | 308,
+  location: string,
+  requestId: string,
+): void {
+  res.statusCode = statusCode
+  res.setHeader('location', location)
+  res.setHeader('cache-control', 'no-store')
+  res.setHeader('x-request-id', requestId)
+  setSecurityHeaders(res)
+  res.end()
+}
+
 export function createBroadcastHttpServer(ctx: ServerContext) {
+  const repoRoot = resolve(__dirname, '../../..')
+  const controlRoomRoot = resolve(repoRoot, 'apps', 'control-room')
+  const controlRoomDistRoot = resolve(controlRoomRoot, 'dist')
+
+  function tryServeControlRoomAsset(
+    res: ServerResponse,
+    pathname: string,
+    method: string,
+    requestId: string,
+  ): boolean {
+    if (method !== 'GET') return false
+
+    // Avoid directory-base URL resolution changing relative asset paths.
+    if (pathname === '/control-room/') {
+      writeRedirect(res, 308, '/control-room', requestId)
+      return true
+    }
+
+    let filePath: string | null = null
+    if (pathname === '/' || pathname === '/index.html' || pathname === '/control-room') {
+      filePath = resolve(controlRoomRoot, 'index.html')
+    } else if (pathname === '/styles.css') {
+      filePath = resolve(controlRoomRoot, 'styles.css')
+    } else if (pathname === '/dist/index.js') {
+      filePath = resolve(controlRoomDistRoot, 'index.js')
+    } else if (pathname === '/dist/index.js.map') {
+      filePath = resolve(controlRoomDistRoot, 'index.js.map')
+    }
+
+    if (!filePath) return false
+
+    try {
+      const body = readFileSync(filePath)
+      writeBytes(res, 200, body, contentTypeForFilePath(filePath), requestId)
+    } catch {
+      writeJson(
+        res,
+        404,
+        errorEnvelope('not_found', 'Control Room asset not built (run pnpm run build)', requestId),
+        requestId,
+      )
+    }
+
+    return true
+  }
+
   const server = createServer((req, res) => {
     const requestId = getOrCreateRequestId(req.headers['x-request-id'])
     const start = Date.now()
@@ -49,6 +160,8 @@ export function createBroadcastHttpServer(ctx: ServerContext) {
     const path = url.pathname
 
     try {
+      if (tryServeControlRoomAsset(res, path, method, requestId)) return
+
       if (path === '/healthz') {
         if (method !== 'GET') {
           res.setHeader('allow', 'GET')
@@ -102,8 +215,8 @@ export function createBroadcastHttpServer(ctx: ServerContext) {
           return
         }
 
-        const t = Date.now()
-        const ps = round3(Math.abs(Math.sin(t / 8000)) * 0.22)
+        // No-drift mode: pin drift to zero.
+        const ps = 0
         writeJson(
           res,
           200,
@@ -193,26 +306,13 @@ export function createBroadcastHttpServer(ctx: ServerContext) {
           return
         }
 
-        const t = Date.now()
-        const seq = Math.floor(t / 8000)
-        const ps = round3(Math.abs(Math.sin(t / 8000)) * 0.22)
-        const sev = ps > 0.16 ? 'warn' : 'info'
-
+        // No-drift mode: do not emit drift-based alerts.
         writeJson(
           res,
           200,
           {
             asOfIso: new Date().toISOString(),
-            alerts: [
-              {
-                id: `a-${seq}`,
-                tsIso: new Date().toISOString(),
-                severity: sev,
-                title: 'Prediction distribution shift',
-                detail: `ps=${ps}`,
-                source: 'model',
-              },
-            ],
+            alerts: [],
           },
           requestId,
         )

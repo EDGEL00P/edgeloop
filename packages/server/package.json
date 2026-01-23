@@ -7,9 +7,15 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@edgeloop/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.0.18",
+    "ts-node": "^10.9.2",
+    "vitest": "^4.0.18"
   }
 }

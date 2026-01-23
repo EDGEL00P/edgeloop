@@ -3,6 +3,6 @@
   "references": [
     { "path": "packages/shared" },
     { "path": "packages/server" },
-    { "path": "apps/control-room" }
+    { "path": "api" }
   ]
 }

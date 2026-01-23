@@ -1,5 +1,8 @@
 import { randomBytes, randomUUID } from 'crypto'
 
+const MAX_LEN = 128
+const SAFE_RE = /^[a-zA-Z0-9._-]+$/
+
 function safeRandomId(): string {
   try {
     return randomUUID()
@@ -12,7 +15,7 @@ function safeRandomId(): string {
 export function getOrCreateRequestId(input: unknown): string {
   if (typeof input === 'string') {
     const trimmed = input.trim()
-    if (trimmed.length > 0 && trimmed.length <= 128) {
+    if (trimmed.length > 0 && trimmed.length <= MAX_LEN && SAFE_RE.test(trimmed)) {
       return trimmed
     }
   }
