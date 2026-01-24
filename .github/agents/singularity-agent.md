@@ -173,5 +173,4 @@ Stop after reporting results.
 - Verification steps
 - Checklist
 
-Stop after reporting.
- Keep di
+Stop after reporting. Keep diffs minimal and focused.

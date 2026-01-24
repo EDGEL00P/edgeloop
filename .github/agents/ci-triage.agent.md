@@ -75,4 +75,24 @@ When CI fails:
 ## Implementation Rules
 
 - Preserve existing workflow names and triggers
-- Mainta
+- Maintain existing job dependencies and parallelization
+- Keep changes minimal and scoped to the failure
+- Document why each change was needed
+- Test changes locally when possible
+- Verify CI passes after changes
+
+---
+
+## Final Output
+
+When finished, provide:
+- Summary of the CI failure and root cause
+- Explanation of the fix applied
+- Checklist:
+  - CI workflow passes
+  - No deployment logic changed
+  - No runtime/platform changes
+  - Changes are minimal and safe
+  - Tests still provide meaningful coverage
+
+Stop after reporting results.
