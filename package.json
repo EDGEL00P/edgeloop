@@ -17,9 +17,18 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "prepare": "command -v husky >/dev/null 2>&1 && husky || true"
+    "dev": "pnpm --filter @edgeloop/api dev",
+    "dev:server": "pnpm --filter @edgeloop/server-app dev",
+    "start": "pnpm --filter @edgeloop/server-app start",
+    "db:generate": "pnpm --filter @edgeloop/db db:generate",
+    "db:migrate": "pnpm --filter @edgeloop/db db:migrate",
+    "db:push": "pnpm --filter @edgeloop/db db:push",
+    "db:studio": "pnpm --filter @edgeloop/db db:studio",
+    "db:seed": "pnpm --filter @edgeloop/db db:seed",
+    "worker": "pnpm --filter @edgeloop/jobs worker"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.0",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
@@ -30,6 +39,11 @@
     "husky": "^9.0.0",
     "prettier": "^3.8.1",
     "typescript": "^5.6.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "@vitest/coverage-v8": "^1.0.4"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "dependencies": {
+    "drizzle-orm": "^0.38.4"
   }
 }

@@ -14,3 +14,11 @@ coverage/
 # Local dev artifacts
 *.log
 *.pid
+
+.vercel
+.env*.local
+
+# Playwright Test Results
+playwright-report/
+test-results/
+*.trace.zip
