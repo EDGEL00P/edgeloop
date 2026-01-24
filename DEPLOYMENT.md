@@ -104,12 +104,40 @@ railway domain
 
 ## 🔄 Continuous Deployment
 
+### GitHub Actions Setup
+
+**Required Secrets for Vercel Deployment:**
+
+To enable automated Vercel deployments via GitHub Actions, you need to configure the `VERCEL_TOKEN` secret:
+
+1. **Get Vercel Token**
+   ```bash
+   # Visit: https://vercel.com/account/tokens
+   # Click "Create Token"
+   # Name it: "GitHub Actions"
+   # Copy the token (you'll only see it once)
+   ```
+
+2. **Add to GitHub Secrets**
+   ```bash
+   # Visit: https://github.com/EDGEL00P/edgeloop/settings/secrets/actions
+   # Click "New repository secret"
+   # Name: VERCEL_TOKEN
+   # Value: [paste your token]
+   # Click "Add secret"
+   ```
+
+3. **Verify Workflow**
+   - The workflow will automatically skip deployment if the secret is not configured
+   - Once configured, deployments will run on every push to `main` and on pull requests
+
 ### Automatic Deployments
 
 **Vercel:**
-- Every push to `main` → Production deploy
-- Every push to feature branch → Preview deploy
-- PR opened → Preview deploy with URL in comment
+- Every push to `main` → Production deploy (requires `VERCEL_TOKEN` secret)
+- Every push to feature branch → Preview deploy (requires `VERCEL_TOKEN` secret)
+- PR opened → Preview deploy with URL in comment (requires `VERCEL_TOKEN` secret)
+- Without `VERCEL_TOKEN`: Workflow runs but skips deployment steps gracefully
 
 **Railway:**
 - Every push to `main` → Production deploy
