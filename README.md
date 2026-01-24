@@ -200,6 +200,7 @@ Vercel configuration (`vercel.json`):
 - **Linting**: ESLint with TypeScript plugin
 - **Formatting**: Prettier with consistent style
 - **Testing**: Vitest for unit and integration tests (36 tests, 70%+ coverage)
+- **Commit Messages**: Conventional Commits with automatic verification
 - **CI/CD**: GitHub Actions with automated quality checks
 - **Pre-commit Hooks**: Automatic validation before each commit
 
