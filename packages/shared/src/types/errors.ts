@@ -11,12 +11,15 @@ export const errorCodes = [
 
 export type ErrorCode = (typeof errorCodes)[number]
 
+type JsonPrimitive = string | number | boolean | null
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
+
 export type ErrorEnvelope = {
   error: {
     code: ErrorCode
     message: string
     requestId: string
-    details?: Record<string, unknown>
+    details?: Record<string, JsonValue>
   }
 }
 
@@ -24,7 +27,7 @@ export function errorEnvelope(
   code: ErrorCode,
   message: string,
   requestId: string,
-  details?: Record<string, unknown>
+  details?: Record<string, JsonValue>
 ): ErrorEnvelope {
   return {
     error: {
@@ -41,13 +44,13 @@ export class AppError extends Error {
     public readonly code: ErrorCode,
     message: string,
     public readonly statusCode: number = 500,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, JsonValue>
   ) {
     super(message)
     this.name = 'AppError'
   }
 
-  static badRequest(message: string, details?: Record<string, unknown>): AppError {
+  static badRequest(message: string, details?: Record<string, JsonValue>): AppError {
     return new AppError('bad_request', message, 400, details)
   }
 

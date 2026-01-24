@@ -63,15 +63,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages`n        run: pnpm run build`n        continue-on-error: true  # Temporary: allow build errors while fixing types
-
-      - name: Type check`n        run: pnpm run typecheck`n        continue-on-error: true  # Temporary: allow type errors while fixing
-
+      - name: Build packages`n        run: pnpm run build`n
+      - name: Type check`n        run: pnpm run typecheck`n
       - name: Lint
         run: pnpm run lint
 
-      - name: Run tests`n        run: pnpm run test`n        continue-on-error: true  # Don't fail if no tests exist yet
-
+      - name: Run tests`n        run: pnpm run test`n
       # Upload build artifacts
       - uses: actions/upload-artifact@v4
         if: success()
@@ -179,6 +176,7 @@ jobs:
 
       - name: Validate schema
         run: pnpm --filter @edgeloop/db db:generate
+
 
 
 

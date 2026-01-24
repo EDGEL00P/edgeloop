@@ -17,7 +17,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
 
   // Handle AppError
   if (err instanceof AppError) {
-    return c.json(errorEnvelope(err.code, err.message, requestId, err.details), err.statusCode as StatusCode)
+    return c.json(errorEnvelope(err.code, err.message, requestId, err.details), err.statusCode as any)
   }
 
   // Handle Zod validation errors
@@ -41,3 +41,4 @@ export const errorHandler: ErrorHandler = (err, c) => {
   const message = process.env['NODE_ENV'] === 'production' ? 'Internal server error' : err.message
   return c.json(errorEnvelope('internal_error', message, requestId), 500)
 }
+
