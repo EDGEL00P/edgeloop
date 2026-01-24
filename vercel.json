@@ -1,31 +1,29 @@
 {
-  "version": 2,
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm run build",
-  "builds": [
-    {
-      "src": "api/*.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/healthz", "destination": "/api/healthz" },
-    { "source": "/readyz", "destination": "/api/readyz" },
-    { "source": "/api/model-status", "destination": "/api/model-status" },
-    { "source": "/api/predictions", "destination": "/api/predictions" },
-    { "source": "/api/alerts", "destination": "/api/alerts" }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["iad1"],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=()" },
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
         { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": {
+      "type": "plain",
+      "value": "production"
+    },
+    "NEXT_TELEMETRY_DISABLED": {
+      "type": "plain",
+      "value": "1"
+    }
+  }
 }
