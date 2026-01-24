@@ -31,8 +31,7 @@ CHROMATIC_PROJECT_TOKEN  # If using visual regression tests
 ### 2. Enable GitHub Actions
 
 1. Go to **Settings → Actions → General**
-2. Set **Workflow permissions** to: 
-   - ✅ Read and write permissions
+2. Set **Workflow permissions** to:`n   - ✅ Read and write permissions
    - ✅ Allow GitHub Actions to create pull requests
 3. Click **Save**
 
