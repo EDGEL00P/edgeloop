@@ -74,10 +74,43 @@ Thank you for your interest in contributing to EdgeLoop! This guide will help yo
    pnpm run format
    ```
 
+### Commit Message Format
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. This ensures clear and consistent commit history.
+
+**Format**: `<type>(<scope>): <subject>`
+
+**Types**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, semicolons, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `build`: Build system changes
+- `ci`: CI/CD changes
+- `chore`: Other changes (dependencies, config, etc.)
+- `revert`: Revert a previous commit
+
+**Examples**:
+```bash
+feat(api): add new predictions endpoint
+fix(auth): resolve token expiration issue
+docs: update contributing guidelines
+chore(deps): update dependencies
+```
+
+**Rules**:
+- Type is required
+- Subject must be lowercase and not end with a period
+- Scope is optional but recommended (e.g., `api`, `auth`, `deps`)
+
 ### Pre-Commit Hooks
 
 We use Husky to run quality checks before each commit. These checks include:
 
+- ✅ Commit message format validation
 - ✅ TypeScript type checking
 - ✅ ESLint linting
 - ✅ Prettier formatting
