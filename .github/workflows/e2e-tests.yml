@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
 
       - name: Install dependencies
@@ -77,7 +77,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -87,3 +87,4 @@ jobs:
       #   with:
       #     projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
       #     buildScriptName: build-storybook
+

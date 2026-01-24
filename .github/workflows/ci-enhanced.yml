@@ -173,7 +173,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -185,4 +185,5 @@ jobs:
 
       - name: Validate schema
         run: pnpm --filter @edgeloop/db db:generate
+
 
