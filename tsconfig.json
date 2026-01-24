@@ -2,7 +2,15 @@
   "files": [],
   "references": [
     { "path": "packages/shared" },
+    { "path": "packages/db" },
+    { "path": "packages/core" },
+    { "path": "packages/integrations" },
+    { "path": "packages/api" },
+    { "path": "packages/ws" },
+    { "path": "packages/ml" },
+    { "path": "packages/jobs" },
     { "path": "packages/server" },
+    { "path": "apps/server" },
     { "path": "api" }
   ]
 }
