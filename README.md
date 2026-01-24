@@ -1,5 +1,8 @@
 # EdgeLoop
 
+[![CI](https://github.com/EDGEL00P/edgeloop/actions/workflows/ci.yml/badge.svg)](https://github.com/EDGEL00P/edgeloop/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/EDGEL00P/edgeloop/branch/main/graph/badge.svg)](https://codecov.io/gh/EDGEL00P/edgeloop)
+
 Production-grade NFL prediction platform built as a TypeScript monorepo with serverless API deployment.
 
 ## Architecture
@@ -31,6 +34,7 @@ edgeloop/
 - `GET /api/alerts` — Active alerts (drift-based, etc.)
 
 All endpoints return JSON with:
+
 - Security headers (CSP, CORS, frame protection)
 - Request correlation ID via `x-request-id`
 - Structured error envelopes
@@ -59,13 +63,44 @@ node packages/server/dist/cli.js
 
 ## Testing
 
+EdgeLoop has comprehensive test coverage across all API endpoints and core utilities.
+
+### Running Tests
+
 Run tests with Vitest:
 
 ```bash
-pnpm test              # Run tests once
-pnpm test:watch        # Watch mode
+pnpm test              # Run all tests once
+pnpm test:watch        # Watch mode for development
+pnpm test:coverage     # Generate coverage report
 pnpm test:ui           # Interactive UI
 ```
+
+### Test Coverage
+
+- **36 tests** across 6 test suites
+- Coverage requirements: 70% lines/functions, 65% branches
+- Automated testing in CI/CD pipeline
+
+### Test Structure
+
+```
+api/
+├── healthz.test.ts       # Health check endpoint tests (8 tests)
+├── readyz.test.ts        # Readiness check tests (4 tests)
+├── predictions.test.ts   # NFL predictions tests (10 tests)
+├── model-status.test.ts  # Model monitoring tests (7 tests)
+└── alerts.test.ts        # Alerts endpoint tests (6 tests)
+```
+
+### Testing Strategy
+
+- **Unit Tests**: Core utility functions and business logic
+- **Integration Tests**: API handlers with mocked HTTP requests/responses
+- **Edge Cases**: Error handling, invalid inputs, method validation
+- **Security**: Header validation, request ID tracking, error envelopes
+
+For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Deployment
 
@@ -85,6 +120,7 @@ vercel --prod
 ```
 
 Vercel configuration (`vercel.json`):
+
 - Builds TypeScript to JavaScript during deployment
 - Routes API endpoints to serverless functions
 - Applies security headers globally
@@ -94,8 +130,9 @@ Vercel configuration (`vercel.json`):
 - **TypeScript**: Strict mode with composite project references
 - **Linting**: ESLint with TypeScript plugin
 - **Formatting**: Prettier with consistent style
-- **Testing**: Vitest for unit and integration tests
-- **CI**: GitHub Actions runs typecheck, lint, format, and tests
+- **Testing**: Vitest for unit and integration tests (36 tests, 70%+ coverage)
+- **CI/CD**: GitHub Actions with automated quality checks
+- **Pre-commit Hooks**: Automatic validation before each commit
 
 Run quality checks:
 
@@ -103,7 +140,14 @@ Run quality checks:
 pnpm run typecheck     # TypeScript compilation check
 pnpm run lint          # ESLint
 pnpm run format:check  # Prettier validation
-pnpm test              # Test suite
+pnpm test              # Test suite with coverage
+```
+
+Auto-fix issues:
+
+```bash
+pnpm run lint:fix      # Auto-fix linting issues
+pnpm run format        # Auto-format code
 ```
 
 ## Design Principles

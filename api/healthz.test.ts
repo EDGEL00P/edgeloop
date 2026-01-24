@@ -69,7 +69,7 @@ describe('GET /healthz', () => {
     const req = {
       method: 'GET',
       headers: { 'x-request-id': requestId },
-    } as IncomingMessage
+    } as unknown as IncomingMessage
     const { res, getHeaders } = createMockResponse()
 
     handler(req, res)

@@ -106,14 +106,16 @@ describe('GET /api/predictions', () => {
     handler(req, res)
 
     const body = JSON.parse(getBody())
-    body.predictions.forEach((pred: any) => {
-      expect(pred.winProbHome).toBeGreaterThanOrEqual(0)
-      expect(pred.winProbHome).toBeLessThanOrEqual(1)
-      expect(pred.confidence).toBeGreaterThanOrEqual(0)
-      expect(pred.confidence).toBeLessThanOrEqual(1)
-      expect(pred.impliedProbHome).toBeGreaterThanOrEqual(0)
-      expect(pred.impliedProbHome).toBeLessThanOrEqual(1)
-    })
+    body.predictions.forEach(
+      (pred: { winProbHome: number; confidence: number; impliedProbHome: number }) => {
+        expect(pred.winProbHome).toBeGreaterThanOrEqual(0)
+        expect(pred.winProbHome).toBeLessThanOrEqual(1)
+        expect(pred.confidence).toBeGreaterThanOrEqual(0)
+        expect(pred.confidence).toBeLessThanOrEqual(1)
+        expect(pred.impliedProbHome).toBeGreaterThanOrEqual(0)
+        expect(pred.impliedProbHome).toBeLessThanOrEqual(1)
+      },
+    )
   })
 
   it('returns valid team codes (3-letter strings)', () => {
@@ -123,7 +125,7 @@ describe('GET /api/predictions', () => {
     handler(req, res)
 
     const body = JSON.parse(getBody())
-    body.predictions.forEach((pred: any) => {
+    body.predictions.forEach((pred: { away: string; home: string }) => {
       expect(typeof pred.away).toBe('string')
       expect(typeof pred.home).toBe('string')
       expect(pred.away.length).toBeGreaterThanOrEqual(2)
@@ -138,7 +140,7 @@ describe('GET /api/predictions', () => {
     handler(req, res)
 
     const body = JSON.parse(getBody())
-    body.predictions.forEach((pred: any) => {
+    body.predictions.forEach((pred: { kickoffIso: string }) => {
       expect(new Date(pred.kickoffIso).toISOString()).toBe(pred.kickoffIso)
     })
   })
@@ -150,11 +152,13 @@ describe('GET /api/predictions', () => {
     handler(req, res)
 
     const body = JSON.parse(getBody())
-    body.predictions.forEach((pred: any) => {
-      const expectedEdge = pred.winProbHome - pred.impliedProbHome
-      // Allow small rounding difference
-      expect(Math.abs(pred.edgeHome - expectedEdge)).toBeLessThan(0.001)
-    })
+    body.predictions.forEach(
+      (pred: { winProbHome: number; impliedProbHome: number; edgeHome: number }) => {
+        const expectedEdge = pred.winProbHome - pred.impliedProbHome
+        // Allow small rounding difference
+        expect(Math.abs(pred.edgeHome - expectedEdge)).toBeLessThan(0.001)
+      },
+    )
   })
 
   it('rejects non-GET methods with 405', () => {

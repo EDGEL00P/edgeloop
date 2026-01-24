@@ -11,6 +11,7 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 ## Step 1: Get Vercel Tokens
 
 1. **Get Vercel Token:**
+
    ```
    Visit: https://vercel.com/account/tokens
    Click: "Create Token"
@@ -20,6 +21,7 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
    ```
 
 2. **Get Vercel Project IDs:**
+
    ```bash
    # Install Vercel CLI
    npm i -g vercel
@@ -38,6 +40,7 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 ## Step 2: Get Railway Token
 
 1. **Get Railway Token:**
+
    ```
    Visit: https://railway.app/account/tokens
    Click: "Create Token"
@@ -54,6 +57,7 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 ## Step 3: Add GitHub Secrets
 
 1. **Go to Repository Settings:**
+
    ```
    https://github.com/EDGEL00P/edgeloop/settings/secrets/actions
    ```
@@ -61,22 +65,24 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 2. **Add Secrets:**
    Click "New repository secret" for each:
 
-   | Secret Name | Value | Where to get it |
-   |------------|-------|-----------------|
-   | `VERCEL_TOKEN` | Your Vercel token | Step 1 |
-   | `VERCEL_ORG_ID` | From .vercel/project.json | Step 1 |
-   | `VERCEL_PROJECT_ID` | From .vercel/project.json | Step 1 |
-   | `RAILWAY_TOKEN` | Your Railway token | Step 2 |
-   | `RAILWAY_PROJECT_ID` | From Railway project URL | Step 2 |
+   | Secret Name          | Value                     | Where to get it |
+   | -------------------- | ------------------------- | --------------- |
+   | `VERCEL_TOKEN`       | Your Vercel token         | Step 1          |
+   | `VERCEL_ORG_ID`      | From .vercel/project.json | Step 1          |
+   | `VERCEL_PROJECT_ID`  | From .vercel/project.json | Step 1          |
+   | `RAILWAY_TOKEN`      | Your Railway token        | Step 2          |
+   | `RAILWAY_PROJECT_ID` | From Railway project URL  | Step 2          |
 
 ## Step 4: Verify Setup
 
 1. **Push to main branch:**
+
    ```bash
    git push origin main
    ```
 
 2. **Check GitHub Actions:**
+
    ```
    Visit: https://github.com/EDGEL00P/edgeloop/actions
    ```
@@ -91,20 +97,24 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 ### Vercel Deployment Fails
 
 **Error: "No Vercel Token provided"**
+
 - Check `VERCEL_TOKEN` secret is set correctly
 - Token should have full account access
 
 **Error: "Project not found"**
+
 - Check `VERCEL_PROJECT_ID` matches your project
 - Run `vercel link` locally to get correct IDs
 
 ### Railway Deployment Fails
 
 **Error: "Invalid token"**
+
 - Check `RAILWAY_TOKEN` secret is set correctly
 - Generate a new token if needed
 
 **Error: "Service not found"**
+
 - Update service name in `deploy-railway.yml`
 - Or remove `--service` flag to use default
 
@@ -113,11 +123,13 @@ Follow these steps to enable automatic deployments to Vercel and Railway.
 If you prefer not to use GitHub Actions:
 
 ### Vercel
+
 1. Go to: https://vercel.com/new
 2. Import GitHub repository: EDGEL00P/edgeloop
 3. Deploy (automatic deployments enabled)
 
 ### Railway
+
 1. Go to: https://railway.app/new
 2. Deploy from GitHub repo: EDGEL00P/edgeloop
 3. Deploy (automatic deployments enabled)
@@ -125,12 +137,14 @@ If you prefer not to use GitHub Actions:
 ## Automatic Deployment Behavior
 
 ### On Push to Main:
+
 - ✅ Vercel deploys to production
 - ✅ Railway deploys to production
 - 🔗 URLs remain constant
 - ⚡ Takes 2-3 minutes
 
 ### On Pull Request:
+
 - ✅ Vercel creates preview deployment
 - 💬 URL posted as PR comment
 - 🧪 Test before merging
@@ -138,6 +152,7 @@ If you prefer not to use GitHub Actions:
 ## Monitoring Deployments
 
 ### View Deployment Status:
+
 ```
 GitHub Actions: https://github.com/EDGEL00P/edgeloop/actions
 Vercel Dashboard: https://vercel.com/EDGEL00P/edgeloop
@@ -145,6 +160,7 @@ Railway Dashboard: https://railway.app/project/[project-id]
 ```
 
 ### Get Deployment URLs:
+
 ```bash
 # Vercel
 vercel ls
@@ -163,6 +179,7 @@ railway status
 ## Next Steps
 
 After setup:
+
 1. ✅ Push code to trigger deployments
 2. ✅ Test API endpoints on both platforms
 3. ✅ Set up monitoring and alerts
