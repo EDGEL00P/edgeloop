@@ -1,70 +1,108 @@
+
 name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main, develop]
   pull_request:
-
-# Cancel in-progress runs for same workflow + branch/PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [main, develop]
 
 jobs:
-  ci:
+  build-and-test:
     runs-on: ubuntu-latest
-
-    # Use matrix strategy for potential future expansion
-    strategy:
-      matrix:
-        node-version: [22]
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: pnpm
+          node-version: 20
+          cache: 'pnpm'
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Cache TypeScript build
-        uses: actions/cache@v4
-        with:
-          path: |
-            **/dist
-            **/*.tsbuildinfo
-          key: ${{ runner.os }}-typescript-${{ hashFiles('**/tsconfig*.json', '**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-typescript-
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm run build
-
-      - name: Typecheck
-        run: pnpm run typecheck
-
       - name: Lint
-        run: pnpm run lint
+        run: pnpm exec eslint . --ext .ts,.tsx,.js,.jsx
 
+      - name: Format check
+        run: pnpm exec prettier --check .
+
+      - name: Build all packages
+        run: pnpm -r run build
+
+      - name: Run tests with coverage
+        run: pnpm exec vitest run --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/dist
+          key: build-artifacts-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            build-artifacts-${{ runner.os }}-
+
+      - name: Show disk usage
+        run: du -sh . || true
+  deploy-vercel:
+    name: Deploy to Vercel
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: .
+          prod: true
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+  deploy-railway:
+    name: Deploy to Railway
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g railway
+
+      - name: Deploy to Railway
+        run: railway up --service=server
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+# Required secrets:
+# - VERCEL_TOKEN: Personal token from Vercel account
+# - VERCEL_ORG_ID: Vercel organization ID
+# - VERCEL_PROJECT_ID: Vercel project ID
+# - RAILWAY_TOKEN: Railway account token

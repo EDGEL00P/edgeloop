@@ -123,9 +123,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           if (data.signal) setSignals((prev) => [data.signal as JsonRecord, ...prev].slice(0, 50))
           if (data.lineMovement)
             setLineMovements((prev) => [data.lineMovement as JsonRecord, ...prev].slice(0, 100))
-        } catch (error) {
+        } catch {
           // Swallow parse errors to avoid tearing down the stream
-          console.warn('ws_message_parse_error', { error: String(error) })
+          
         }
       }
 

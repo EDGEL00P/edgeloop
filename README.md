@@ -1,3 +1,4 @@
+
 # EdgeLoop
 
 [![CI](https://github.com/EDGEL00P/edgeloop/actions/workflows/ci.yml/badge.svg)](https://github.com/EDGEL00P/edgeloop/actions/workflows/ci.yml)
@@ -61,10 +62,78 @@ node packages/server/dist/cli.js
 - `HOST` (default: `0.0.0.0`) — Server bind address
 - `SHUTDOWN_GRACE_MS` (default: `5000`) — Graceful shutdown timeout (0-60000ms)
 
-## Testing
+> See [.env.example](.env.example) for all required environment variables.
 
-EdgeLoop has comprehensive test coverage across all API endpoints and core utilities.
+## CI/CD Secrets & Environment Variables
 
+The following secrets must be configured in your GitHub repository settings for CI/CD and deployment:
+
+- `VERCEL_TOKEN`: Vercel personal access token
+- `VERCEL_ORG_ID`: Vercel organization ID
+- `VERCEL_PROJECT_ID`: Vercel project ID
+- `RAILWAY_TOKEN`: Railway account token
+- `CODECOV_TOKEN`: Codecov upload token
+
+**Do not commit secrets to the repository.**  
+All environment variables required for local development and CI/CD are listed in [.env.example](.env.example).
+
+## Branch Protection & Code Review
+To maintain code quality and ensure safe releases, the following branch protection rules are recommended for the `main` branch:
+
+- **Require pull requests before merging:** All changes to `main` must be made via pull request.
+- **Require status checks to pass before merging:** All CI jobs (build, lint, test, coverage, deploy) must succeed before merging.
+- **Require at least one code review:** At least one approving review is required before merging.
+- **Prohibit direct pushes:** Direct pushes to `main` are not allowed.
+- **Require up-to-date branches:** Pull requests must be up-to-date with `main` before merging.
+
+> These rules can be configured in your repository's GitHub settings under "Branches" → "Branch protection rules".
+
+## CI/CD Workflow Overview
+
+EdgeLoop uses a fully automated CI/CD pipeline powered by GitHub Actions:
+
+- **Triggers:** On push or pull request to `main` or `develop` branches.
+- **Jobs:**
+  - **build-and-test:** Installs dependencies, lints, formats, builds all packages, runs tests with coverage, uploads coverage to Codecov, and caches build artifacts.
+  - **deploy-vercel:** Deploys to Vercel (production) on push to `main` after successful build and test.
+  - **deploy-railway:** Deploys to Railway on push to `main` after successful build and test.
+- **Secrets:** All deployment and coverage tokens are securely managed via GitHub Actions secrets.
+- **Status Checks:** All jobs must pass before merging to `main`.
+
+See [`.github/workflows/ci.yml`](.github/workflows/ci.yml) for the full workflow definition.
+
+## Developer Guidelines
+
+To contribute to EdgeLoop, please follow these guidelines:
+
+1. **Fork and clone the repository.**
+2. **Install dependencies:**  
+   ```bash
+   pnpm install
+   ```
+3. **Create a feature branch:**  
+   Use descriptive names, e.g. `feature/add-alerts-endpoint`.
+4. **Set up environment variables:**  
+   Copy `.env.example` to `.env` and fill in required values.
+5. **Run quality checks locally:**  
+   ```bash
+   pnpm run lint
+   pnpm run format:check
+   pnpm run typecheck
+   pnpm test
+   ```
+6. **Keep PRs focused:**  
+   Submit small, focused pull requests with clear descriptions.
+7. **Write and update tests:**  
+   Ensure new features and bugfixes are covered by tests.
+8. **Follow code style:**  
+   Use Prettier and ESLint to maintain consistent formatting.
+9. **Check CI/CD status:**  
+   All status checks must pass before merging.
+10. **Request review:**  
+    At least one approving review is required before merging.
+
+> For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
 ### Running Tests
 
 Run tests with Vitest:
