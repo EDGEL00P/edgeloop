@@ -13,7 +13,7 @@
     "test": "pnpm -r test",
     "test:watch": "pnpm -r --parallel test:watch",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint --ext .ts,.tsx components pages utils types",
+    "lint": "eslint api pages app --ext .ts,.tsx",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
