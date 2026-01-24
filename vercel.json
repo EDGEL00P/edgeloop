@@ -8,12 +8,12 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    { "src": "/healthz", "dest": "/api/healthz" },
-    { "src": "/readyz", "dest": "/api/readyz" },
-    { "src": "/api/model-status", "dest": "/api/model-status" },
-    { "src": "/api/predictions", "dest": "/api/predictions" },
-    { "src": "/api/alerts", "dest": "/api/alerts" }
+  "rewrites": [
+    { "source": "/healthz", "destination": "/api/healthz" },
+    { "source": "/readyz", "destination": "/api/readyz" },
+    { "source": "/api/model-status", "destination": "/api/model-status" },
+    { "source": "/api/predictions", "destination": "/api/predictions" },
+    { "source": "/api/alerts", "destination": "/api/alerts" }
   ],
   "headers": [
     {
