@@ -1,0 +1,24 @@
+{
+  "name": "@edgeloop/server-app",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@edgeloop/api": "workspace:*",
+    "@edgeloop/core": "workspace:*",
+    "@edgeloop/db": "workspace:*",
+    "@edgeloop/shared": "workspace:*",
+    "@edgeloop/ws": "workspace:*",
+    "@hono/node-server": "^1.13.8",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

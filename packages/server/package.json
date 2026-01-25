@@ -1,0 +1,22 @@
+{
+  "name": "@edgeloop/server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "start": "node dist/cli.js",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "@edgeloop/shared": "workspace:*",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.0.18",
+    "ts-node": "^10.9.2",
+    "vitest": "^4.0.18"
+  }
+}

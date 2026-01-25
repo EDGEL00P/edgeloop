@@ -1,0 +1,7 @@
+dist/
+node_modules/
+*.tsbuildinfo
+pnpm-lock.yaml
+
+control-room-server*.log
+control-room-server.pid
