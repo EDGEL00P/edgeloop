@@ -5,6 +5,10 @@ dist/
 .env*.local
 .DS_Store
 
+# Build caches
+.turbo/
+.next/
+
 # Vercel
 .vercel/
 

@@ -6,6 +6,7 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const sharedGlobals = {
   AbortController: "readonly",
   Buffer: "readonly",
@@ -26,20 +27,7 @@ export default [
     ignores: [
       "node_modules/**",
       ".next/**",
-      "**/.next/**",
-      ".venv/**",
-      "venv/**",
-      "packages/**",
-      "server/**",
-      "domains/**",
-      "contracts/**",
-      "sdks/**",
-      "engine/**",
-      "ml/**",
-      "python_engine/**",
-      "scripts/**",
-      "script/**",
-      "trigger/**",
+      "**/*.d.ts",
     ],
   },
   js.configs.recommended,
@@ -49,15 +37,7 @@ export default [
     },
   },
   {
-    files: [
-      "api/**/*.ts",
-      "pages/**/*.ts",
-      "pages/**/*.tsx",
-      "app/**/*.ts",
-      "app/**/*.tsx",
-      "apps/**/*.ts",
-      "apps/**/*.tsx",
-    ],
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -75,14 +55,11 @@ export default [
       "no-undef": "off",
       "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
     },
   },
   {
-    files: [
-      "pages/**/*.{js,jsx,ts,tsx}",
-      "app/**/*.{js,jsx,ts,tsx}",
-      "apps/**/*.{js,jsx,ts,tsx}",
-    ],
+    files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
       "@next/next": nextPlugin,
     },

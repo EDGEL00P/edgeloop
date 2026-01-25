@@ -64,7 +64,7 @@ const mockAnalystFactors: AnalystFactor[] = [
 ]
 
 export default function PredictionsPage() {
-  const [selectedGameId, _setSelectedGameId] = useState<string>('game-1')
+  const [selectedGameId] = useState<string>('game-1')
   const [showAnalyst, setShowAnalyst] = useState(false)
 
   const { data: prediction, isLoading: predLoading } = trpc.predictions.forGame.useQuery({

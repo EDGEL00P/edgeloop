@@ -19,8 +19,7 @@ const TeamSchema = z.object({
   secondaryColor: z.string(),
 })
 
-type Game = z.infer<typeof _GameSchema>;
-const _GameSchema = z.object({
+const GameSchema = z.object({
   id: z.string(),
   homeTeam: TeamSchema,
   awayTeam: TeamSchema,
@@ -32,8 +31,9 @@ const _GameSchema = z.object({
   startTime: z.string(),
 })
 
-type Prediction = z.infer<typeof _PredictionSchema>;
-const _PredictionSchema = z.object({
+type Game = z.infer<typeof GameSchema>;
+
+const PredictionSchema = z.object({
   id: z.string(),
   gameId: z.string(),
   predictedWinner: z.enum(['home', 'away']),
@@ -52,8 +52,9 @@ const _PredictionSchema = z.object({
   generatedAt: z.string(),
 })
 
-type WinProbabilityPoint = z.infer<typeof _WinProbabilityPointSchema>;
-const _WinProbabilityPointSchema = z.object({
+type Prediction = z.infer<typeof PredictionSchema>;
+
+const WinProbabilityPointSchema = z.object({
   timestamp: z.number(),
   homeWinProb: z.number(),
   awayWinProb: z.number(),
@@ -61,9 +62,11 @@ const _WinProbabilityPointSchema = z.object({
   event: z.string().optional(),
 })
 
+type WinProbabilityPoint = z.infer<typeof WinProbabilityPointSchema>;
+
 // Mock data generators
 function generateMockGames(): Game[] {
-  return [
+  return GameSchema.array().parse([
     {
       id: 'game-1',
       homeTeam: {
@@ -133,15 +136,15 @@ function generateMockGames(): Game[] {
       status: 'scheduled',
       startTime: new Date(Date.now() + 3600000).toISOString(),
     },
-  ]
+  ])
 }
 
-function generateMockPrediction(_gameId: string): Prediction {
+function generateMockPrediction(gameId: string): Prediction {
   const confidence = 0.65 + Math.random() * 0.25
   const homeWinProb = 0.4 + Math.random() * 0.3
-  return {
-    id: `pred-${_gameId}`,
-    gameId: _gameId,
+  const prediction = {
+    id: `pred-${gameId}`,
+    gameId,
     predictedWinner: homeWinProb > 0.5 ? 'home' : 'away',
     confidence,
     homeWinProbability: homeWinProb,
@@ -181,13 +184,14 @@ function generateMockPrediction(_gameId: string): Prediction {
     modelVersion: 'v2.4.1',
     generatedAt: new Date().toISOString(),
   }
+
+  return PredictionSchema.parse(prediction)
 }
 
-function generateMockWinProbability(
-  _gameId: string
-): WinProbabilityPoint[] {
+function generateMockWinProbability(gameId: string): WinProbabilityPoint[] {
   const points: WinProbabilityPoint[] = []
-  let homeProb = 0.5
+  const startingBias = gameId === 'game-1' ? 0.55 : 0.5
+  let homeProb = startingBias
 
   for (let i = 0; i <= 60; i++) {
     const variance = (Math.random() - 0.5) * 0.08
@@ -202,7 +206,7 @@ function generateMockWinProbability(
     })
   }
 
-  return points
+  return WinProbabilityPointSchema.array().parse(points)
 }
 
 // Router definition

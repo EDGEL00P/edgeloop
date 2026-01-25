@@ -29,6 +29,5 @@ export * from './pagination'
 export * from './dropdown-menu'
 
 // Overlay Components
-export * from './dialog'
 export * from './popover'
 export * from './tooltip'
