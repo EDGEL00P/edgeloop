@@ -1,5 +1,5 @@
 {
-  "name": "@edgeloop/api",
+  "name": "@edgeloop/vercel-functions",
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
