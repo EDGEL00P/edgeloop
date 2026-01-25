@@ -3,14 +3,7 @@
 import * as React from 'react'
 import { cn, formatScore, formatGameTime } from '../utils'
 
-export interface Team {
-  id: string
-  name: string
-  abbreviation: string
-  logoUrl?: string
-  primaryColor: string
-  secondaryColor: string
-}
+import type { Team } from '../types'
 
 export interface ScoreBugProps {
   homeTeam: Team

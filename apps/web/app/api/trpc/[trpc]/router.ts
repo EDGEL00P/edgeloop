@@ -140,8 +140,8 @@ function generateMockPrediction(_gameId: string): Prediction {
   const confidence = 0.65 + Math.random() * 0.25
   const homeWinProb = 0.4 + Math.random() * 0.3
   return {
-    id: `pred-${gameId}`,
-    _gameId,
+    id: `pred-${_gameId}`,
+    gameId: _gameId,
     predictedWinner: homeWinProb > 0.5 ? 'home' : 'away',
     confidence,
     homeWinProbability: homeWinProb,

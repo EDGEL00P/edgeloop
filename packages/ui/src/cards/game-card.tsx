@@ -5,13 +5,7 @@ import { cn, formatScore, formatGameTime, getConfidenceTier } from '../utils'
 import { Badge } from '../primitives/badge'
 import { ArrowRight } from 'lucide-react'
 
-export interface Team {
-  id: string
-  name: string
-  abbreviation: string
-  logoUrl?: string
-  primaryColor: string
-}
+import type { Team } from '../types'
 
 export interface GameCardProps {
   id: string
