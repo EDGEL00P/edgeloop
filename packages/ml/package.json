@@ -1,18 +1,29 @@
 {
   "name": "@edgeloop/ml",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./models/*": "./src/models/*.ts",
+    "./providers": "./src/providers/index.ts",
+    "./utils/*": "./src/utils/*.ts"
+  },
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@edgeloop/db": "workspace:*",
-    "@edgeloop/shared": "workspace:*",
-    "onnxruntime-node": "^1.20.1"
+    "@edgeloop/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^1.6.1"
   }
 }
