@@ -13,7 +13,7 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "dev": "tsx watch src/dev.ts",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest watch"
   },
   "dependencies": {
@@ -37,6 +37,7 @@
   "devDependencies": {
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19.0.0",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "vitest": "^1.6.1"
   }
 }

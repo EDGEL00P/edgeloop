@@ -7,12 +7,15 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest watch"
   },
   "dependencies": {
     "@edgeloop/db": "workspace:*",
     "@edgeloop/shared": "workspace:*",
     "drizzle-orm": "^0.38.3"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.1"
   }
 }

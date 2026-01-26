@@ -157,6 +157,9 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
   packages/core:
     dependencies:
@@ -169,6 +172,10 @@ importers:
       drizzle-orm:
         specifier: ^0.38.3
         version: 0.38.4(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6)(@types/react@19.2.9)(react@19.2.3)
+    devDependencies:
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
   packages/db:
     dependencies:
@@ -201,6 +208,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.7
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
   packages/jobs:
     dependencies:
@@ -226,6 +236,9 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
   packages/ml:
     dependencies:
@@ -294,6 +307,10 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
   packages/tokens:
     devDependencies:
@@ -452,6 +469,9 @@ importers:
       '@types/ws':
         specifier: ^8.5.14
         version: 8.18.1
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.7)(@vitest/ui@1.6.1)(jsdom@26.1.0)
 
 packages:
 

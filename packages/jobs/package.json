@@ -8,7 +8,7 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "worker": "tsx src/worker.ts",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest watch"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "ioredis": "^5.4.2"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "vitest": "^1.6.1"
   }
 }

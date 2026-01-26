@@ -174,13 +174,14 @@ describe('OddsDisplay', () => {
 describe('QuarterIndicator', () => {
   it('renders correct number of quarters', () => {
     const { container } = render(<QuarterIndicator quarter={2} />)
-    const indicators = container.querySelectorAll('div > div')
+    // Select only the quarter indicator dots (direct children of the flex container)
+    const indicators = container.querySelectorAll('.flex > div')
     expect(indicators).toHaveLength(4)
   })
 
   it('highlights completed quarters', () => {
     const { container } = render(<QuarterIndicator quarter={3} />)
-    const indicators = container.querySelectorAll('div > div')
+    const indicators = container.querySelectorAll('.flex > div')
     const activeIndicators = Array.from(indicators).filter((el) =>
       el.classList.contains('bg-broadcast-red')
     )
