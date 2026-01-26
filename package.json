@@ -1,0 +1,18 @@
+{
+  "name": "edgeloop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NFL predictions platform with model-driven forecasts and exploits",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm --filter web lint",
+    "type-check": "pnpm --filter web type-check"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=18.17.0",
+    "pnpm": ">=9.0.0"
+  }
+}
