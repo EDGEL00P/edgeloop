@@ -88,7 +88,8 @@
     "database_POSTGRES_HOST",
     "database_NEON_PROJECT_ID",
     "database_VITE_NEON_AUTH_URL",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "EXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
   ],
   "tasks": {
     "build": {
