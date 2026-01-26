@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { BacktestingUI } from '@edgeloop/ui/backtesting-ui'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Backtesting - Edgeloop',
   description: 'Test your edge detection strategy against historical data',
