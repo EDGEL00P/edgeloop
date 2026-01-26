@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Predictions Landing Page
  * Shows shortcuts to current week and popular views

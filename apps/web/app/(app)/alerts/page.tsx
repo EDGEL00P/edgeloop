@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { AlertRulesManager } from './rules-manager'
 import { AlertHistory } from './history'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Alerts - Edgeloop',
   description: 'Manage your trading alerts and notifications',
