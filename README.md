@@ -4,10 +4,10 @@ EdgeLoop is an NFL predictions platform that surfaces model-driven forecasts and
 
 ## Tech Stack
 
-- **Next.js 15** with App Router, SSR, and Partial Prerendering (PPR)
-- **React 19** with the new React Compiler
+- **Next.js 15** with App Router and Server-Side Rendering (SSR)
+- **React 19** for the latest React features
 - **TypeScript** for type safety
-- **Tailwind CSS 4** for styling
+- **Tailwind CSS 3** for utility-first styling
 - **Turbopack** for fast development builds
 - **pnpm** workspace for monorepo management
 
@@ -92,14 +92,25 @@ The development server will be available at `http://localhost:3000`.
 - **Predictions** (`/predictions`) - All NFL game predictions organized by confidence level
 - **Exploits** (`/exploits`) - All betting exploits organized by type
 
+## Screenshots
+
+### Dashboard
+![Dashboard](https://github.com/user-attachments/assets/f4367213-c033-4013-9aad-6e369b24e465)
+
+### Predictions
+![Predictions](https://github.com/user-attachments/assets/faeb2fff-88c9-427b-8170-39702d0f38b0)
+
+### Exploits
+![Exploits](https://github.com/user-attachments/assets/5139dd7b-4cdf-4ee1-84a4-2b565759c39a)
+
 ## Development
 
 This project uses:
 
 - **Turbopack** for faster development builds
-- **React 19** with the new compiler for optimized performance
-- **Partial Prerendering (PPR)** for optimal loading performance
-- **Tailwind CSS 4** with the new v4 syntax
+- **React 19** for the latest React features
+- **Next.js 15 App Router** for modern routing and layouts
+- **Tailwind CSS 3** for utility-first styling
 
 ## License
 

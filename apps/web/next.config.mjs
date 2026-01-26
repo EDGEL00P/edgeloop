@@ -2,8 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    ppr: true, // Enable Partial Prerendering
-    reactCompiler: true,
+    // PPR and React Compiler require additional setup/canary versions
+    // Can be enabled when upgrading to canary versions
   },
   transpilePackages: ['@edgeloop/ui'],
 }
