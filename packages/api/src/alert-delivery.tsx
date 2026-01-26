@@ -172,7 +172,7 @@ function formatSlackAlert(payload: AlertDeliveryPayload): Record<string, unknown
           },
           {
             type: 'mrkdwn',
-            text: `*Kelly (25%):*\n${((data.kelly as number | undefined) ?? 0 * 100).toFixed(1)}%`,
+            text: `*Kelly (25%):*\n${(((data.kelly as number | undefined) ?? 0) * 100).toFixed(1)}%`,
           },
           {
             type: 'mrkdwn',

@@ -4,9 +4,6 @@ const nextConfig = {
   poweredByHeader: false,
   transpilePackages: ['@edgeloop/ui', '@edgeloop/shared', '@edgeloop/core', '@edgeloop/db', '@edgeloop/tokens'],
   experimental: {
-    reactCompiler: true,
-    ppr: true,
-    viewTransition: true,
     optimizePackageImports: ['@edgeloop/ui', 'lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-popover'],
   },
   async headers() {
