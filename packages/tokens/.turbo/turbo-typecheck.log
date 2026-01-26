@@ -1,0 +1,5 @@
+
+
+> @edgeloop/tokens@0.1.0 typecheck /home/runner/work/edgeloop/edgeloop/packages/tokens
+> tsc --noEmit
+

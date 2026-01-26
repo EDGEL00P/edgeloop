@@ -1,0 +1,5 @@
+
+
+> @edgeloop/ml@0.1.0 typecheck /home/runner/work/edgeloop/edgeloop/packages/ml
+> tsc --noEmit
+
