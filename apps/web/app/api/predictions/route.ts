@@ -1,4 +1,4 @@
-﻿import { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@edgeloop/db'
 import { games } from '@edgeloop/db/schema'
 import { desc } from 'drizzle-orm'
@@ -65,3 +65,4 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Failed to create prediction' }, { status: 500 })
   }
 }
+

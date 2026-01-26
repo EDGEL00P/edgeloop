@@ -1,4 +1,4 @@
-﻿import { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getInjuries } from '@edgeloop/integrations'
 
 export const runtime = 'edge'
@@ -32,3 +32,4 @@ export async function GET(req: NextRequest) {
     )
   }
 }
+
