@@ -1,4 +1,6 @@
-import { Suspense } from 'react'
+"use client";
+
+export const dynamic = 'force-dynamic'
 
 export default function Home() {
   return (
@@ -6,11 +8,9 @@ export default function Home() {
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
         <h1 className="text-4xl font-bold mb-4">Welcome to EdgeLoop</h1>
         <p className="text-lg">NFL Predictions Platform</p>
-        <Suspense fallback={<div className="h-24 animate-pulse rounded bg-muted mt-4" />}>
-          <div className="mt-4 text-sm opacity-80">
-            Top edges, next games, and alerts summary coming soon...
-          </div>
-        </Suspense>
+        <div className="mt-4 text-sm opacity-80">
+          Top edges, next games, and alerts summary coming soon...
+        </div>
       </div>
     </main>
   )

@@ -12,17 +12,18 @@ async function getJSON(path: string, tags: string[]) {
 export default async function TeamPage({
   params,
 }: {
-  params: { code: string }
+  params: Promise<{ code: string }>
 }) {
-  const tag = `team:${params.code}`
+  const { code } = await params
+  const tag = `team:${code}`
   const [inj, roster] = await Promise.all([
-    getJSON(`/api/injuries?team=${params.code}`, [tag]),
-    getJSON(`/api/roster?team=${params.code}&season=${new Date().getFullYear()}`, [tag]),
+    getJSON(`/api/injuries?team=${code}`, [tag]),
+    getJSON(`/api/roster?team=${code}&season=${new Date().getFullYear()}`, [tag]),
   ])
 
   return (
     <div className="p-4 grid gap-4">
-      <h1 className="text-xl font-semibold">Team {params.code}</h1>
+      <h1 className="text-xl font-semibold">Team {code}</h1>
       <Suspense
         fallback={
           <div className="h-10 bg-[var(--color-muted)] animate-pulse rounded" />

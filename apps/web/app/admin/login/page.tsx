@@ -1,16 +1,15 @@
-import * as React from "react";
+"use client";
+
 import { SignIn } from "@clerk/nextjs";
 
-export const dynamic = "force-dynamic";
-
-export default function SignInPage() {
+export default function AdminSignInPage() {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">
-          <h1 className="text-xl font-semibold">Sign-in unavailable</h1>
+          <h1 className="text-xl font-semibold">Admin sign-in unavailable</h1>
           <p className="mt-2 text-sm opacity-70">
             Configure NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY to enable authentication.
           </p>
@@ -21,16 +20,17 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--bg)] to-[var(--bg)]/80 p-4">
-      <SignIn 
+      <SignIn
         appearance={{
           elements: {
             rootBox: "mx-auto",
-            card: "bg-[var(--card)] border border-[var(--border)]"
-          }
+            card: "bg-[var(--card)] border border-[var(--border)]",
+          },
         }}
         routing="path"
-        path="/auth/signin"
+        path="/admin/login"
+        afterSignInUrl="/admin"
       />
     </div>
-  )
+  );
 }

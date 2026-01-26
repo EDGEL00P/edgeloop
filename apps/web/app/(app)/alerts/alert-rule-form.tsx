@@ -10,7 +10,9 @@ const ALERT_TYPES = [
   { value: 'middle', label: 'Middle', description: 'Alert on middle opportunities (two-way edges)' },
   { value: 'line_movement', label: 'Line Movement', description: 'Alert on significant line moves' },
   { value: 'injury', label: 'Injury Report', description: 'Alert on key player injuries' },
-]
+] as const
+
+type AlertType = (typeof ALERT_TYPES)[number]['value']
 
 const NFL_TEAMS = [
   'ARI',
@@ -133,10 +135,10 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
                 name="alertType"
                 value={type.value}
                 checked={(formData.config as Record<string, unknown>).type === type.value}
-                onChange={(e) =>
+                onChange={() =>
                   setFormData({
                     ...formData,
-                    config: { ...formData.config, type: e.target.value as any },
+                    config: { ...formData.config, type: type.value as AlertType },
                   })
                 }
                 className="mt-1"

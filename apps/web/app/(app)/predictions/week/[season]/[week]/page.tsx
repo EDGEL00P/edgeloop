@@ -15,11 +15,12 @@ async function getSlate(season: string, week: string) {
 export default async function Page({
   params,
 }: {
-  params: { season: string; week: string }
+  params: Promise<{ season: string; week: string }>
 }) {
-  const season = Number(params.season)
-  const week = Number(params.week)
-  const slate = await getSlate(params.season, params.week)
+  const { season: seasonStr, week: weekStr } = await params
+  const season = Number(seasonStr)
+  const week = Number(weekStr)
+  const slate = await getSlate(seasonStr, weekStr)
 
   return (
     <div className="p-4" data-tag={`games:${season}:${week}`}>

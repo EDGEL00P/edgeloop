@@ -4,7 +4,14 @@
   "private": true,
   "main": "./theme.css",
   "exports": {
-    ".": "./theme.css",
+    ".": {
+      "style": "./theme.css",
+      "default": "./theme.css"
+    },
+    "./theme.css": {
+      "style": "./theme.css",
+      "default": "./theme.css"
+    },
     "./tailwind.preset": "./tailwind.preset.ts",
     "./nfl-teams.json": "./nfl-teams.json"
   },
