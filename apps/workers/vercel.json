@@ -1,0 +1,18 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/odds",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/backfill",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/injuries",
+      "schedule": "*/15 * * * *"
+    }
+  ],
+  "regions": ["iad1"],
+  "framework": "nextjs"
+}

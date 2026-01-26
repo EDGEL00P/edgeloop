@@ -1,0 +1,228 @@
+@theme {
+  /* Brand Colors */
+  --color-brand: #2c6ff7;
+  --color-accent: #8b5cf6;
+  --color-success: #18a957;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Background & Foreground */
+  --color-bg: #0b0c10;
+  --color-fg: #e5e7eb;
+  --color-muted: #9ca3af;
+
+  /* Sports-specific Colors */
+  --color-team-home: #1f2937;
+  --color-team-away: #111827;
+  --color-market-spread: #1d4ed8;
+  --color-market-total: #f97316;
+
+  /* Broadcast Colors (from UI package) */
+  --color-broadcast-red: #E63946;
+  --color-broadcast-gold: #F1C40F;
+  --color-broadcast-navy: #1A1F2E;
+  --color-broadcast-steel: #2C3E50;
+  --color-broadcast-white: #FFFFFF;
+  --color-broadcast-darkRed: #C1121F;
+
+  /* Confidence Colors */
+  --color-confidence-high: #10B981;
+  --color-confidence-medium: #F59E0B;
+  --color-confidence-low: #EF4444;
+
+  /* Light Theme */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #0f172a;
+  --color-primary-foreground: #f8fafc;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #0f172a;
+  --radius: 0.5rem;
+}
+
+:root[data-theme="dark"] {
+  --color-background: #0b0c10;
+  --color-foreground: #e5e7eb;
+  --color-card: #1a1f2e;
+  --color-card-foreground: #e5e7eb;
+  --color-popover: #1a1f2e;
+  --color-popover-foreground: #e5e7eb;
+  --color-primary: #e5e7eb;
+  --color-primary-foreground: #0b0c10;
+  --color-secondary: #1a1f2e;
+  --color-secondary-foreground: #e5e7eb;
+  --color-muted: #1a1f2e;
+  --color-muted-foreground: #9ca3af;
+  --color-accent: #1a1f2e;
+  --color-accent-foreground: #e5e7eb;
+  --color-destructive: #991b1b;
+  --color-destructive-foreground: #e5e7eb;
+  --color-border: #1a1f2e;
+  --color-input: #1a1f2e;
+  --color-ring: #e5e7eb;
+}
+
+:root[data-theme="contrast"] {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-muted: #aaaaaa;
+}
+
+:root[data-theme="broadcast"] {
+  --color-background: #0a0a0a;
+  --color-foreground: #d1d5db;
+  --color-muted: #6b7280;
+}
+
+/* 3D Effects & Shadows */
+@layer utilities {
+  /* Depth shadows */
+  .shadow-3xl {
+    box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* 3D Transform utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .perspective-2000 {
+    perspective: 2000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Neon glow effects */
+  .neon-glow-brand {
+    box-shadow: 0 0 10px var(--color-brand),
+                0 0 20px var(--color-brand),
+                0 0 30px var(--color-brand);
+  }
+
+  .neon-glow-success {
+    box-shadow: 0 0 10px var(--color-confidence-high),
+                0 0 20px var(--color-confidence-high),
+                0 0 30px var(--color-confidence-high);
+  }
+
+  .neon-glow-gold {
+    box-shadow: 0 0 10px var(--color-broadcast-gold),
+                0 0 20px var(--color-broadcast-gold),
+                0 0 30px var(--color-broadcast-gold);
+  }
+
+  /* Animated borders */
+  @keyframes pulse-border {
+    0%, 100% {
+      border-color: var(--color-broadcast-red);
+      box-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+    }
+    50% {
+      border-color: var(--color-broadcast-gold);
+      box-shadow: 0 0 30px rgba(241, 196, 15, 0.7);
+    }
+  }
+
+  .animate-pulse-border {
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  /* Gradient animations */
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+
+  .animate-gradient-slow {
+    background-size: 200% 200%;
+    animation: gradient 6s ease infinite;
+  }
+
+  .animate-gradient-fast {
+    background-size: 200% 200%;
+    animation: gradient 1.5s ease infinite;
+  }
+
+  /* Holographic shimmer */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s infinite;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+  }
+
+  /* Floating animation */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}

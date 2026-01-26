@@ -1,0 +1,624 @@
+{
+  "rootFolder": "c:\\Users\\Administrator\\Edgeloop\\edgeloop",
+  "analyzedAt": "2026-01-26T02:39:42.805Z",
+  "rootStructure": [
+    {
+      "name": ".github",
+      "type": "dir"
+    },
+    {
+      "name": ".gitignore",
+      "type": "file",
+      "size": 14,
+      "lines": 2
+    },
+    {
+      "name": "3D_COMPONENTS.md",
+      "type": "file",
+      "size": 9309,
+      "lines": 380
+    },
+    {
+      "name": "api",
+      "type": "dir"
+    },
+    {
+      "name": "apps",
+      "type": "dir"
+    },
+    {
+      "name": "DEPLOYMENT.md",
+      "type": "file",
+      "size": 7317,
+      "lines": 340
+    },
+    {
+      "name": "DEPLOYMENT_CHECKLIST.md",
+      "type": "file",
+      "size": 6142,
+      "lines": 247
+    },
+    {
+      "name": "DESIGN_SYSTEM.md",
+      "type": "file",
+      "size": 7228,
+      "lines": 208
+    },
+    {
+      "name": "IMPLEMENTATION.md",
+      "type": "file",
+      "size": 8134,
+      "lines": 345
+    },
+    {
+      "name": "IMPLEMENTATION_COMPLETE.md",
+      "type": "file",
+      "size": 10651,
+      "lines": 368
+    },
+    {
+      "name": "node_modules",
+      "type": "dir"
+    },
+    {
+      "name": "overview.json",
+      "type": "file",
+      "size": 9409,
+      "lines": 381
+    },
+    {
+      "name": "overview_architecture.puml",
+      "type": "file",
+      "size": 246,
+      "lines": 7
+    },
+    {
+      "name": "package.json",
+      "type": "file",
+      "size": 712,
+      "lines": 29
+    },
+    {
+      "name": "packages",
+      "type": "dir"
+    },
+    {
+      "name": "pnpm-workspace.yaml",
+      "type": "file",
+      "size": 54,
+      "lines": 5
+    },
+    {
+      "name": "QUICK_REFERENCE.md",
+      "type": "file",
+      "size": 9147,
+      "lines": 306
+    },
+    {
+      "name": "README.md",
+      "type": "file",
+      "size": 1320,
+      "lines": 59
+    },
+    {
+      "name": "README_IMPLEMENTATION.md",
+      "type": "file",
+      "size": 14941,
+      "lines": 546
+    },
+    {
+      "name": "tsconfig.base.json",
+      "type": "file",
+      "size": 507,
+      "lines": 21
+    },
+    {
+      "name": "turbo.json",
+      "type": "file",
+      "size": 569,
+      "lines": 29
+    },
+    {
+      "name": "UX_ENHANCEMENTS.md",
+      "type": "file",
+      "size": 7150,
+      "lines": 222
+    }
+  ],
+  "rootFileSnippets": {
+    "3D_COMPONENTS.md": [
+      "# 3D Advanced UX Components",
+      "",
+      "## 🎯 Overview",
+      "",
+      "Complete suite of advanced 3D UX components with glassmorphism, depth effects, animations, and holographic displays for the Edgeloop platform.",
+      "",
+      "## 📦 Components Created",
+      "",
+      "### 1. **GlassCard** - Glassmorphism Cards",
+      "Premium frosted glass effect cards with multiple variants."
+    ],
+    "DEPLOYMENT.md": [
+      "# Deployment Guide - Vercel Setup",
+      "",
+      "## Prerequisites",
+      "",
+      "- GitHub repository connected",
+      "- Vercel account",
+      "- Environment variables ready",
+      "",
+      "## Step 1: Install Vercel GitHub App",
+      ""
+    ],
+    "DEPLOYMENT_CHECKLIST.md": [
+      "# Production Deployment Checklist",
+      "",
+      "## Pre-Deployment (1 week before)",
+      "",
+      "### Code Quality",
+      "- [ ] All tests passing (unit, integration, e2e)",
+      "- [ ] No console.error/console.warn in production builds",
+      "- [ ] TypeScript strict mode enabled, 0 errors",
+      "- [ ] ESLint clean build",
+      "- [ ] Code review completed"
+    ],
+    "DESIGN_SYSTEM.md": [
+      "# Edgeloop Design System",
+      "",
+      "## Overview",
+      "",
+      "Edgeloop uses a comprehensive design token system optimized for sports betting analytics. The design system supports 4 theme variants and includes specialized color schemes for sports, betting markets, and confidence indicators.",
+      "",
+      "## Theme Variants",
+      "",
+      "### 1. Light Theme (Default)",
+      "- **Use Case**: Daytime usage, general browsing"
+    ],
+    "IMPLEMENTATION.md": [
+      "# Implementation Guide - NFL Predictions Platform",
+      "",
+      "## Table of Contents",
+      "1. [Architecture Overview](#architecture-overview)",
+      "2. [BallDontLie Integration](#balldontlie-integration)",
+      "3. [Real-Time Features](#real-time-features)",
+      "4. [Caching Strategy](#caching-strategy)",
+      "5. [Deployment](#deployment)",
+      "",
+      "## Architecture Overview"
+    ],
+    "IMPLEMENTATION_COMPLETE.md": [
+      "# Implementation Summary: NFL Predictions Platform",
+      "",
+      "## ✅ Completed Features (All 5)",
+      "",
+      "### 1. Authentication & RBAC (100%)",
+      "**Status**: Production-ready",
+      "**Files**: `packages/api/src/auth.ts`, `apps/web/app/api/auth/[...nextauth]/route.ts`, `apps/web/middleware.ts`",
+      "",
+      "**Components**:",
+      "- NextAuth v5 with JWT strategy"
+    ],
+    "overview.json": [
+      "{",
+      "\"rootFolder\": \"c:\\\\Users\\\\Administrator\\\\Edgeloop\\\\edgeloop\",",
+      "\"analyzedAt\": \"2026-01-26T01:00:05.418Z\",",
+      "\"rootStructure\": [",
+      "{",
+      "\"name\": \"api\",",
+      "\"type\": \"dir\"",
+      "},",
+      "{",
+      "\"name\": \"apps\","
+    ],
+    "overview_architecture.puml": [
+      "@startuml",
+      "' Generated by SASVA Maria on 2026-01-26T01:00:15.602Z",
+      "' ERROR: Diagram generation failed",
+      "",
+      "note \"Architecture Diagram Generation Failed\\n\\nError: No chat model configured\\n\\nPlease check the logs for more details.\" as ErrorNote",
+      "",
+      "@enduml"
+    ],
+    "package.json": [
+      "{",
+      "\"name\": \"edgeloop\",",
+      "\"version\": \"0.1.0\",",
+      "\"private\": true,",
+      "\"type\": \"module\",",
+      "\"scripts\": {",
+      "\"dev\": \"turbo run dev\",",
+      "\"build\": \"turbo run build\",",
+      "\"typecheck\": \"turbo run typecheck\",",
+      "\"lint\": \"turbo run lint\","
+    ],
+    "pnpm-workspace.yaml": [
+      "packages:",
+      "- 'packages/*'",
+      "- 'apps/*'",
+      "- 'api'",
+      ""
+    ],
+    "QUICK_REFERENCE.md": [
+      "# Quick Reference - Edgeloop Platform",
+      "",
+      "## 🎯 Key Features Implemented",
+      "",
+      "### 1. Advanced Next.js 15 Setup ✅",
+      "- **React Compiler 1.0**: Automatic memoization enabled",
+      "- **Partial Prerendering (PPR)**: Static shell + dynamic data",
+      "- **View Transitions**: Smooth navigation animations",
+      "- **Security Headers**: CSP, HSTS, X-Frame-Options configured",
+      ""
+    ],
+    "README.md": [
+      "# EdgeLoop",
+      "",
+      "A monorepo application built with Next.js, React, TypeScript, and Tailwind CSS.",
+      "",
+      "## Structure",
+      "",
+      "- `apps/web` - Next.js 15 web application",
+      "- `packages/ui` - Shared UI components library",
+      "- `packages/api` - API package",
+      "- `packages/core` - Core business logic"
+    ],
+    "README_IMPLEMENTATION.md": [
+      "# 🎯 Edgeloop: Complete Implementation Summary",
+      "",
+      "## All 5 Features Delivered ✅",
+      "",
+      "### 📊 Project Completion Status",
+      "| Feature | Status | Files | LOC |",
+      "|---------|--------|-------|-----|",
+      "| **1. Authentication & RBAC** | ✅ Complete | 4 | ~400 |",
+      "| **2. Model Integration** | ✅ Complete | 2 | ~500 |",
+      "| **3. Alert System** | ✅ Complete | 6 | ~1200 |"
+    ],
+    "tsconfig.base.json": [
+      "{",
+      "\"compilerOptions\": {",
+      "\"target\": \"ES2022\",",
+      "\"lib\": [\"ES2022\"],",
+      "\"module\": \"ESNext\",",
+      "\"moduleResolution\": \"bundler\",",
+      "\"resolveJsonModule\": true,",
+      "\"allowJs\": true,",
+      "\"strict\": true,",
+      "\"esModuleInterop\": true,"
+    ],
+    "turbo.json": [
+      "{",
+      "\"$schema\": \"https://turbo.build/schema.json\",",
+      "\"globalDependencies\": [\"**/.env.*local\"],",
+      "\"pipeline\": {",
+      "\"build\": {",
+      "\"dependsOn\": [\"^build\"],",
+      "\"outputs\": [\".next/**\", \"!.next/cache/**\", \"dist/**\"]",
+      "},",
+      "\"dev\": {",
+      "\"cache\": false,"
+    ],
+    "UX_ENHANCEMENTS.md": [
+      "# UX Design System - Quick Reference",
+      "",
+      "## 🎨 Complete UX Enhancement Summary",
+      "",
+      "Successfully systematized and enhanced the Edgeloop design system across all features.",
+      "",
+      "## ✅ Completed Tasks",
+      "",
+      "### 1. **Design System Documentation** ✓",
+      "- Created comprehensive [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)"
+    ]
+  },
+  "importantFolders": [
+    {
+      "path": "api",
+      "category": "backend",
+      "fileCount": 12,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps",
+      "category": "frontend",
+      "fileCount": 36,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\server",
+      "category": "backend",
+      "fileCount": 2,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web",
+      "category": "frontend",
+      "fileCount": 33,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web\\app",
+      "category": "frontend",
+      "fileCount": 24,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web\\app\\(app)",
+      "category": "frontend",
+      "fileCount": 11,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web\\app\\(app)\\backtesting",
+      "category": "tests",
+      "fileCount": 1,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web\\app\\api",
+      "category": "backend",
+      "fileCount": 9,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "apps\\web\\app\\api\\backtesting",
+      "category": "tests",
+      "fileCount": 1,
+      "primaryLanguage": "TypeScript"
+    }
+  ],
+  "readmeParagraphs": {
+    "root": "# EdgeLoop\r\n\r\nA monorepo application built with Next.js, React, TypeScript, and Tailwind CSS.\r"
+  },
+  "totals": {
+    "numFiles": 68,
+    "numDirs": 40,
+    "totalSizeBytes": 182463,
+    "totalLinesOfCode": 2674
+  },
+  "fileCategories": {
+    "config": 13,
+    "other": 6,
+    "documentation": 10,
+    "source": 39
+  },
+  "linesOfCodePerLanguage": {
+    "TypeScript": 2616,
+    "JavaScript": 58
+  },
+  "filesPerLanguage": {
+    "TypeScript": 37,
+    "JavaScript": 2
+  },
+  "projectTypes": [
+    "JavaScript/Node.js"
+  ],
+  "frameworks": [
+    "React",
+    "Next.js"
+  ],
+  "entryPoints": [],
+  "ciCdTools": [
+    "GitHub Actions"
+  ],
+  "packageManagers": [
+    "npm/yarn"
+  ],
+  "topLevelDirectories": [
+    {
+      "name": "apps",
+      "numFiles": 36,
+      "totalLoc": 1801,
+      "dominantLanguage": "TypeScript"
+    },
+    {
+      "name": "api",
+      "numFiles": 12,
+      "totalLoc": 873,
+      "dominantLanguage": "TypeScript"
+    }
+  ],
+  "detailedDirectories": [
+    {
+      "path": "apps",
+      "name": "apps",
+      "level": 1,
+      "numFiles": 36,
+      "totalLoc": 1801,
+      "dominantLanguage": "TypeScript",
+      "category": "Application",
+      "description": "Application module with 36 files (TypeScript)",
+      "subdirectories": [
+        {
+          "path": "apps\\web",
+          "name": "web",
+          "level": 2,
+          "numFiles": 33,
+          "totalLoc": 1709,
+          "dominantLanguage": "TypeScript",
+          "category": "Web/UI",
+          "description": "Web/UI module with 33 files (TypeScript)",
+          "subdirectories": [
+            {
+              "path": "apps\\web\\app",
+              "name": "app",
+              "level": 3,
+              "numFiles": 24,
+              "totalLoc": 1543,
+              "dominantLanguage": "TypeScript",
+              "category": "Application",
+              "description": "Application module with 24 files (TypeScript)",
+              "subdirectories": []
+            }
+          ]
+        },
+        {
+          "path": "apps\\server",
+          "name": "server",
+          "level": 2,
+          "numFiles": 2,
+          "totalLoc": 92,
+          "dominantLanguage": "TypeScript",
+          "category": "General",
+          "description": "General module with 2 files (TypeScript)",
+          "subdirectories": [
+            {
+              "path": "apps\\server\\src",
+              "name": "src",
+              "level": 3,
+              "numFiles": 1,
+              "totalLoc": 92,
+              "dominantLanguage": "TypeScript",
+              "category": "General",
+              "description": "General module with 1 files (TypeScript)",
+              "subdirectories": []
+            }
+          ]
+        },
+        {
+          "path": "apps\\workers",
+          "name": "workers",
+          "level": 2,
+          "numFiles": 1,
+          "totalLoc": 0,
+          "category": "General",
+          "description": "General module with 1 files",
+          "subdirectories": []
+        }
+      ]
+    },
+    {
+      "path": "api",
+      "name": "api",
+      "level": 1,
+      "numFiles": 12,
+      "totalLoc": 873,
+      "dominantLanguage": "TypeScript",
+      "category": "Service",
+      "description": "Service module with 12 files (TypeScript)",
+      "subdirectories": []
+    }
+  ],
+  "architecturalInsights": {
+    "coreApplications": [
+      {
+        "path": "apps",
+        "name": "apps",
+        "level": 1,
+        "numFiles": 36,
+        "totalLoc": 1801,
+        "dominantLanguage": "TypeScript",
+        "category": "Application",
+        "description": "Application module with 36 files (TypeScript)",
+        "subdirectories": [
+          {
+            "path": "apps\\web",
+            "name": "web",
+            "level": 2,
+            "numFiles": 33,
+            "totalLoc": 1709,
+            "dominantLanguage": "TypeScript",
+            "category": "Web/UI",
+            "description": "Web/UI module with 33 files (TypeScript)",
+            "subdirectories": [
+              {
+                "path": "apps\\web\\app",
+                "name": "app",
+                "level": 3,
+                "numFiles": 24,
+                "totalLoc": 1543,
+                "dominantLanguage": "TypeScript",
+                "category": "Application",
+                "description": "Application module with 24 files (TypeScript)",
+                "subdirectories": []
+              }
+            ]
+          },
+          {
+            "path": "apps\\server",
+            "name": "server",
+            "level": 2,
+            "numFiles": 2,
+            "totalLoc": 92,
+            "dominantLanguage": "TypeScript",
+            "category": "General",
+            "description": "General module with 2 files (TypeScript)",
+            "subdirectories": [
+              {
+                "path": "apps\\server\\src",
+                "name": "src",
+                "level": 3,
+                "numFiles": 1,
+                "totalLoc": 92,
+                "dominantLanguage": "TypeScript",
+                "category": "General",
+                "description": "General module with 1 files (TypeScript)",
+                "subdirectories": []
+              }
+            ]
+          },
+          {
+            "path": "apps\\workers",
+            "name": "workers",
+            "level": 2,
+            "numFiles": 1,
+            "totalLoc": 0,
+            "category": "General",
+            "description": "General module with 1 files",
+            "subdirectories": []
+          }
+        ]
+      },
+      {
+        "path": "api",
+        "name": "api",
+        "level": 1,
+        "numFiles": 12,
+        "totalLoc": 873,
+        "dominantLanguage": "TypeScript",
+        "category": "Service",
+        "description": "Service module with 12 files (TypeScript)",
+        "subdirectories": []
+      }
+    ],
+    "entryPointDetails": [],
+    "serviceArchitecture": {
+      "microservices": [
+        "api"
+      ],
+      "monoliths": [],
+      "libraries": []
+    },
+    "layeredArchitecture": {
+      "presentation": [],
+      "business": [],
+      "data": [],
+      "infrastructure": []
+    }
+  },
+  "largeFiles": [],
+  "dependencies": {
+    "production": [],
+    "development": [
+      "turbo",
+      "typescript",
+      "tsx"
+    ],
+    "total": 3
+  },
+  "complexity": {
+    "averageFileSize": 39.3235294117647,
+    "maxFileSize": 0,
+    "nestedDepth": 0,
+    "estimatedComplexity": "low"
+  },
+  "gitRepo": {
+    "firstCommitDate": "2026-01-26",
+    "totalCommits": 84,
+    "numContributors": 0,
+    "currentBranch": "main",
+    "remoteUrls": [
+      "https://github.com/EDGEL00P/edgeloop.git"
+    ]
+  }
+}

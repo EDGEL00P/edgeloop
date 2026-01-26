@@ -1,0 +1,16 @@
+{
+  "name": "@edgeloop/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./theme.css",
+  "exports": {
+    ".": "./theme.css",
+    "./tailwind.preset": "./tailwind.preset.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
