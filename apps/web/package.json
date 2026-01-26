@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next build && node ./scripts/ensure-client-manifest.mjs",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -12,13 +12,13 @@
   "dependencies": {
     "@clerk/nextjs": "^6.14.5",
     "@edgeloop/api": "workspace:*",
-    "@edgeloop/integrations": "workspace:*",
-    "@edgeloop/ml": "workspace:*",
-    "@edgeloop/ui": "workspace:*",
-    "@edgeloop/shared": "workspace:*",
     "@edgeloop/core": "workspace:*",
     "@edgeloop/db": "workspace:*",
+    "@edgeloop/integrations": "workspace:*",
+    "@edgeloop/ml": "workspace:*",
+    "@edgeloop/shared": "workspace:*",
     "@edgeloop/tokens": "workspace:*",
+    "@edgeloop/ui": "workspace:*",
     "@tanstack/react-query": "^5.62.11",
     "drizzle-orm": "^0.38.3",
     "next": "^15.1.6",
