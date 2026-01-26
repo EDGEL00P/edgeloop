@@ -32,7 +32,7 @@ export async function sendEdgeAlert(payload: AlertDeliveryPayload) {
 
   if (delivery.email && userEmail) {
     try {
-      const emailHtml = render(
+      const emailHtml = await render(
         <EdgeAlertEmail
           userName={userName}
           edgeType={type as 'ev' | 'arbitrage' | 'middle'}
@@ -86,7 +86,7 @@ export async function sendLineMovementAlert(payload: AlertDeliveryPayload) {
 
   if (delivery.email && userEmail) {
     try {
-      const emailHtml = render(
+      const emailHtml = await render(
         <LineMovementAlertEmail
           userName={userName}
           game={{

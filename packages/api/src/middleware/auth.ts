@@ -1,9 +1,8 @@
 import { createMiddleware } from 'hono/factory'
 import { verifyToken } from '@clerk/backend'
 import { AppError } from '@edgeloop/shared'
-import { getDb, apiKeys, users } from '@edgeloop/db'
+import { getDb, users } from '@edgeloop/db'
 import { eq } from 'drizzle-orm'
-import { createHash } from 'crypto'
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -20,7 +19,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
   c.set('userEmail', null)
   c.set('isAuthenticated', false)
 
-  // Try Bearer token first (Clerk JWT)
+  // Try Bearer token (Clerk JWT)
   const authHeader = c.req.header('authorization')
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7)
@@ -35,9 +34,10 @@ export const authMiddleware = createMiddleware(async (c, next) => {
           c.set('isAuthenticated', true)
 
           // Try to get user email from DB
+          // The user ID in Clerk is stored directly as the user's ID in our database
           const db = getDb()
           const user = await db.query.users.findFirst({
-            where: eq(users.clerkId, payload.sub),
+            where: eq(users.id, payload.sub),
             columns: { email: true },
           })
           if (user) {
@@ -47,25 +47,6 @@ export const authMiddleware = createMiddleware(async (c, next) => {
       } catch {
         // Invalid token, continue as unauthenticated
       }
-    }
-  }
-
-  // Try API key
-  const apiKey = c.req.header('x-api-key')
-  if (apiKey && !c.get('isAuthenticated')) {
-    const keyHash = createHash('sha256').update(apiKey).digest('hex')
-
-    const db = getDb()
-    const key = await db.query.apiKeys.findFirst({
-      where: eq(apiKeys.keyHash, keyHash),
-    })
-
-    if (key && (!key.expiresAt || key.expiresAt > new Date())) {
-      c.set('userId', key.userId)
-      c.set('isAuthenticated', true)
-
-      // Update last used
-      await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, key.id))
     }
   }
 

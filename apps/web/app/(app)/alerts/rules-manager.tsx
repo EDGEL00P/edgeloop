@@ -149,7 +149,7 @@ export function AlertRulesManager() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Type</p>
-                    <p className="font-medium capitalize">{(rule.config as Record<string, unknown>).type}</p>
+                    <p className="font-medium capitalize">{String((rule.config as Record<string, unknown>).type)}</p>
                   </div>
                   {((rule.config as Record<string, unknown>).minEV as number) && (
                     <div>
