@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm turbo run build --filter=@edgeloop/web",
+  "buildCommand": "pnpm turbo run build --filter=@edgeloop/web --filter=@edgeloop/server",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "installCommand": "pnpm install"
