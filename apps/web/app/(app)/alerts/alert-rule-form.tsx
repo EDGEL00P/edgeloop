@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { CreateAlertRuleInput } from '@edgeloop/api'
+import type { CreateAlertRuleInput } from '@edgeloop/api/alerts'
 import { Button } from '@edgeloop/ui/primitives'
 
 const ALERT_TYPES = [
@@ -158,7 +158,7 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
             type="number"
             step="0.1"
             min="0"
-            value={(formData.config as Record<string, unknown>).minEV || ''}
+            value={((formData.config as Record<string, unknown>).minEV as number | undefined) ?? ''}
             onChange={(e) =>
               setFormData({
                 ...formData,
@@ -180,7 +180,7 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
             type="number"
             step="0.1"
             min="0"
-            value={(formData.config as Record<string, unknown>).lineMovementThreshold || ''}
+            value={((formData.config as Record<string, unknown>).lineMovementThreshold as number | undefined) ?? ''}
             onChange={(e) =>
               setFormData({
                 ...formData,
@@ -256,7 +256,7 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={(formData.delivery as Record<string, unknown>).email || false}
+              checked={!!((formData.delivery as Record<string, unknown>).email as boolean | undefined)}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -271,7 +271,7 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={(formData.delivery as Record<string, unknown>).slack || false}
+              checked={!!((formData.delivery as Record<string, unknown>).slack as boolean | undefined)}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -283,11 +283,11 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
             <span className="text-sm">Slack webhook</span>
           </label>
 
-          {(formData.delivery as Record<string, unknown>).slack && (
+          {!!((formData.delivery as Record<string, unknown>).slack as boolean | undefined) && (
             <input
               type="url"
               placeholder="https://hooks.slack.com/services/..."
-              value={(formData.delivery as Record<string, unknown>).webhook || ''}
+              value={((formData.delivery as Record<string, unknown>).webhook as string | undefined) ?? ''}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -295,7 +295,7 @@ export function AlertRuleForm({ onSubmit, onCancel, isLoading }: AlertRuleFormPr
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              required={!!(formData.delivery as Record<string, unknown>).slack}
+              required={!!((formData.delivery as Record<string, unknown>).slack as boolean | undefined)}
             />
           )}
         </div>

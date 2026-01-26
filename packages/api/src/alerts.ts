@@ -1,9 +1,9 @@
 'use server'
 
-import { db } from '@edgeloop/db'
-import { alertRules, alertHistory } from '@edgeloop/db/schema/alerts'
+import { getDb } from '@edgeloop/db'
+import { alertRules, alertHistory } from '@edgeloop/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
-import type { AlertRule, AlertRuleConfig, AlertDelivery, NewAlertRule } from '@edgeloop/db/schema/alerts'
+import type { AlertRule, AlertRuleConfig, AlertDelivery, NewAlertRule } from '@edgeloop/db/schema'
 import { z } from 'zod'
 
 const AlertRuleConfigSchema = z.object({
@@ -35,7 +35,7 @@ export type CreateAlertRuleInput = z.infer<typeof CreateAlertRuleSchema>
 export async function createAlertRule(userId: string, input: CreateAlertRuleInput): Promise<AlertRule> {
   const parsed = CreateAlertRuleSchema.parse(input)
 
-  const result = await db
+  const result = await getDb()
     .insert(alertRules)
     .values({
       userId,
@@ -51,7 +51,7 @@ export async function createAlertRule(userId: string, input: CreateAlertRuleInpu
 }
 
 export async function getAlertRules(userId: string): Promise<AlertRule[]> {
-  return db
+  return getDb()
     .select()
     .from(alertRules)
     .where(and(eq(alertRules.userId, userId), eq(alertRules.archived, false)))
@@ -59,7 +59,7 @@ export async function getAlertRules(userId: string): Promise<AlertRule[]> {
 }
 
 export async function getAlertRule(userId: string, ruleId: string): Promise<AlertRule | undefined> {
-  const result = await db
+  const result = await getDb()
     .select()
     .from(alertRules)
     .where(and(eq(alertRules.id, ruleId), eq(alertRules.userId, userId)))
@@ -75,7 +75,7 @@ export async function updateAlertRule(
 ): Promise<AlertRule> {
   const parsed = CreateAlertRuleSchema.partial().parse(input)
 
-  const result = await db
+  const result = await getDb()
     .update(alertRules)
     .set({
       ...parsed,
@@ -93,7 +93,7 @@ export async function toggleAlertRule(userId: string, ruleId: string): Promise<A
   const rule = await getAlertRule(userId, ruleId)
   if (!rule) throw new Error('Alert rule not found')
 
-  const result = await db
+  const result = await getDb()
     .update(alertRules)
     .set({
       enabled: !rule.enabled,
@@ -106,7 +106,7 @@ export async function toggleAlertRule(userId: string, ruleId: string): Promise<A
 }
 
 export async function archiveAlertRule(userId: string, ruleId: string): Promise<AlertRule> {
-  const result = await db
+  const result = await getDb()
     .update(alertRules)
     .set({
       archived: true,
@@ -119,11 +119,11 @@ export async function archiveAlertRule(userId: string, ruleId: string): Promise<
 }
 
 export async function deleteAlertRule(userId: string, ruleId: string): Promise<void> {
-  await db.delete(alertRules).where(and(eq(alertRules.id, ruleId), eq(alertRules.userId, userId)))
+  await getDb().delete(alertRules).where(and(eq(alertRules.id, ruleId), eq(alertRules.userId, userId)))
 }
 
 export async function getAlertHistory(userId: string, limit: number = 50): Promise<typeof alertHistory.$inferSelect[]> {
-  return db
+  return getDb()
     .select()
     .from(alertHistory)
     .where(eq(alertHistory.userId, userId))
@@ -139,7 +139,7 @@ export async function logAlert(
   edgeId?: string,
   gameId?: string
 ): Promise<typeof alertHistory.$inferSelect> {
-  const result = await db
+  const result = await getDb()
     .insert(alertHistory)
     .values({
       userId,
@@ -160,7 +160,7 @@ export async function updateAlertDeliveryStatus(
   status: 'sent' | 'failed',
   errorMessage?: string
 ): Promise<void> {
-  await db
+  await getDb()
     .update(alertHistory)
     .set({
       deliveryStatus: status,

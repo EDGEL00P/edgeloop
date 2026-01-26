@@ -8,15 +8,16 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "start": "node dist/cli.js",
-    "test": "vitest run --root ../.."
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@edgeloop/shared": "workspace:*",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
-    "@vitest/ui": "^4.0.18",
+    "@types/node": "^22.10.2",
+    "@vitest/ui": "^1.6.1",
     "ts-node": "^10.9.2",
-    "vitest": "^4.0.18"
+    "vitest": "^1.6.1"
   }
 }

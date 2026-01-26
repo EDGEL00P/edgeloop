@@ -5,13 +5,11 @@ const preset: Config = {
     extend: {
       colors: {
         brand: 'var(--color-brand)',
-        accent: 'var(--color-accent)',
         success: 'var(--color-success)',
         warning: 'var(--color-warning)',
         danger: 'var(--color-danger)',
         bg: 'var(--color-bg)',
         fg: 'var(--color-fg)',
-        muted: 'var(--color-muted)',
         'team-home': 'var(--color-team-home)',
         'team-away': 'var(--color-team-away)',
         'market-spread': 'var(--color-market-spread)',

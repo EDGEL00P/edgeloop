@@ -1,160 +1,108 @@
-import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import EmailProvider from 'next-auth/providers/email'
-import GoogleProvider from 'next-auth/providers/google'
-import { DrizzleAdapter } from '@auth/drizzle-adapter'
-import { db } from '@/lib/db'
-import { users, accounts, sessions, verificationTokens } from '@acme/db/schema'
-import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
-
 /**
- * NextAuth v5 Configuration
- * - Email/magic link authentication
- * - OAuth (Google)
- * - Role-based access control
- * - Drizzle ORM adapter
+ * Clerk Authentication Helpers
+ * 
+ * The project uses Clerk for authentication. This module provides
+ * helper functions for working with Clerk in API routes.
+ * 
+ * @see https://clerk.com/docs
  */
 
-export const authOptions: NextAuthOptions = {
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+import { getDb } from '@edgeloop/db'
+import { users } from '@edgeloop/db/schema'
+import { eq } from 'drizzle-orm'
+import type { User, UserRole } from '@edgeloop/db/schema'
+
+/**
+ * Get user by their Clerk ID
+ */
+export async function getUserByClerkId(clerkId: string): Promise<User | undefined> {
+  const db = getDb()
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, clerkId))
+    .limit(1)
   
-  providers: [
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM,
-      maxAge: 24 * 60 * 60, // 24 hours
-    }),
+  return result[0]
+}
+
+/**
+ * Create or update user from Clerk webhook
+ */
+export async function upsertUserFromClerk(userData: {
+  clerkId: string
+  email: string
+  name?: string
+  image?: string
+}): Promise<User> {
+  const db = getDb()
+  const { clerkId, email, name, image } = userData
+  
+  const existingUser = await getUserByClerkId(clerkId)
+  
+  if (existingUser) {
+    const result = await db
+      .update(users)
+      .set({
+        email,
+        name,
+        image,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, clerkId))
+      .returning()
     
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password required')
-        }
+    return result[0]
+  }
+  
+  const result = await db
+    .insert(users)
+    .values({
+      id: clerkId,
+      email,
+      name,
+      image,
+      role: 'user',
+      tier: 'free',
+    })
+    .returning()
+  
+  return result[0]
+}
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email),
-        })
+/**
+ * Delete user by Clerk ID (for Clerk webhook)
+ */
+export async function deleteUserByClerkId(clerkId: string): Promise<void> {
+  const db = getDb()
+  await db.delete(users).where(eq(users.id, clerkId))
+}
 
-        if (!user || !user.passwordHash) {
-          throw new Error('Invalid credentials')
-        }
+/**
+ * Check if user has a specific role
+ */
+export function hasRole(user: User | undefined, requiredRole: UserRole): boolean {
+  if (!user) return false
+  
+  const roleHierarchy: Record<UserRole, number> = {
+    user: 0,
+    analyst: 1,
+    admin: 2,
+  }
+  
+  return roleHierarchy[user.role] >= roleHierarchy[requiredRole]
+}
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        )
+/**
+ * Check if user is admin
+ */
+export function isAdmin(user: User | undefined): boolean {
+  return hasRole(user, 'admin')
+}
 
-        if (!passwordMatch) {
-          throw new Error('Invalid credentials')
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        }
-      },
-    }),
-  ],
-
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
-    verifyRequest: '/auth/verify-request',
-  },
-
-  callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-
-        // Fetch user role from database
-        const dbUser = await db.query.users.findFirst({
-          where: eq(users.id, user.id),
-        })
-        
-        if (dbUser) {
-          token.role = dbUser.role
-        }
-      }
-
-      return token
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as 'user' | 'analyst' | 'admin'
-      }
-
-      return session
-    },
-
-    async signIn({ user, account, profile, email, credentials }) {
-      // Email verification (optional)
-      if (email?.verificationRequest) {
-        return true
-      }
-
-      // OAuth auto-signup
-      if (account && (account.provider === 'google')) {
-        return true
-      }
-
-      // Credentials signup (create new user if doesn't exist)
-      if (credentials) {
-        return true
-      }
-
-      return true
-    },
-  },
-
-  events: {
-    async signIn({ user }) {
-      console.log(`[Auth] User signed in: ${user.email}`)
-    },
-    async signOut({ token }) {
-      console.log(`[Auth] User signed out`)
-    },
-  },
-
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
-  },
-
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-
-  secret: process.env.NEXTAUTH_SECRET,
+/**
+ * Check if user is analyst or higher
+ */
+export function isAnalyst(user: User | undefined): boolean {
+  return hasRole(user, 'analyst')
 }

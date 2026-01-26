@@ -32,7 +32,7 @@ export async function sendEdgeAlert(payload: AlertDeliveryPayload) {
 
   if (delivery.email && userEmail) {
     try {
-      const emailHtml = render(
+      const emailHtml = await render(
         <EdgeAlertEmail
           userName={userName}
           edgeType={type as 'ev' | 'arbitrage' | 'middle'}
@@ -86,7 +86,7 @@ export async function sendLineMovementAlert(payload: AlertDeliveryPayload) {
 
   if (delivery.email && userEmail) {
     try {
-      const emailHtml = render(
+      const emailHtml = await render(
         <LineMovementAlertEmail
           userName={userName}
           game={{
@@ -172,7 +172,7 @@ function formatSlackAlert(payload: AlertDeliveryPayload): Record<string, unknown
           },
           {
             type: 'mrkdwn',
-            text: `*Kelly (25%):*\n${((data.kelly as number | undefined) ?? 0 * 100).toFixed(1)}%`,
+            text: `*Kelly (25%):*\n${(((data.kelly as number | undefined) ?? 0) * 100).toFixed(1)}%`,
           },
           {
             type: 'mrkdwn',

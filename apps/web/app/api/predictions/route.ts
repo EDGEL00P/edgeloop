@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server'
-import { db } from '@/lib/db'
-import { games, predictions, edges } from '@acme/db/schema'
-import { eq, desc, limit } from 'drizzle-orm'
-import { calculateEV, calculateKelly, scoreEdge, baselinePrediction } from '@acme/ml/models'
+import { getDb } from '@edgeloop/db'
+import { games } from '@edgeloop/db/schema'
+import { desc } from 'drizzle-orm'
 
 export const runtime = 'edge'
 
@@ -13,45 +12,10 @@ export const runtime = 'edge'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const season = searchParams.get('season')
-    const week = searchParams.get('week')
     const limit_ = parseInt(searchParams.get('limit') || '50')
 
-    // Fetch recent games
-    let query = db.query.games.findMany({
-      limit: limit_,
-      orderBy: desc(games.id),
-      with: {
-        predictions: {
-          columns: {
-            winProbHome: true,
-            winProbAway: true,
-            confidence: true,
-            modelVersion: true,
-            createdAt: true,
-          },
-        },
-      },
-    })
-
-    if (season) {
-      query = db.query.games.findMany({
-        where: eq(games.season, parseInt(season)),
-        limit: limit_,
-        orderBy: desc(games.week),
-      })
-    }
-
-    if (week && season) {
-      query = db.query.games.findMany({
-        where: (g) =>
-          eq(g.season, parseInt(season)) && eq(g.week, parseInt(week)),
-        with: {
-          predictions: true,
-        },
-      })
-    }
-
+    const db = getDb()
+    
     // This is a simplified query - in production, we'd use proper filtering
     const data = await db.query.games.findMany({
       limit: limit_,

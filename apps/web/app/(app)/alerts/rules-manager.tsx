@@ -2,20 +2,20 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useSession } from 'next-auth/react'
-import type { CreateAlertRuleInput } from '@edgeloop/api'
-import { getAlertRules, createAlertRule, updateAlertRule, toggleAlertRule, archiveAlertRule } from '@edgeloop/api'
+import { useUser } from '@clerk/nextjs'
+import type { CreateAlertRuleInput } from '@edgeloop/api/alerts'
+import { getAlertRules, createAlertRule, updateAlertRule, toggleAlertRule, archiveAlertRule } from '@edgeloop/api/alerts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@edgeloop/ui/cards'
 import { Button } from '@edgeloop/ui/primitives'
 import { AlertRuleForm } from './alert-rule-form'
 
 export function AlertRulesManager() {
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [showForm, setShowForm] = useState(false)
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
-  const userId = session?.user?.id
+  const userId = user?.id
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ['alertRules', userId],
     queryFn: () => (userId ? getAlertRules(userId) : Promise.resolve([])),
@@ -149,7 +149,7 @@ export function AlertRulesManager() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Type</p>
-                    <p className="font-medium capitalize">{(rule.config as Record<string, unknown>).type}</p>
+                    <p className="font-medium capitalize">{String((rule.config as Record<string, unknown>).type)}</p>
                   </div>
                   {((rule.config as Record<string, unknown>).minEV as number) && (
                     <div>

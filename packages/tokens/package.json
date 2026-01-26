@@ -5,12 +5,14 @@
   "main": "./theme.css",
   "exports": {
     ".": "./theme.css",
-    "./tailwind.preset": "./tailwind.preset.ts"
+    "./tailwind.preset": "./tailwind.preset.ts",
+    "./nfl-teams.json": "./nfl-teams.json"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   }
 }
