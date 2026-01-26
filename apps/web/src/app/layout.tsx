@@ -44,7 +44,7 @@ export default function RootLayout({
           <footer className="border-t border-border-default mt-16">
             <div className="container mx-auto px-4 py-6">
               <p className="text-center text-text-tertiary text-sm">
-                © 2026 EdgeLoop. Model-driven NFL predictions and betting analytics.
+                © {new Date().getFullYear()} EdgeLoop. Model-driven NFL predictions and betting analytics.
               </p>
             </div>
           </footer>

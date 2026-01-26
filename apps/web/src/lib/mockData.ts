@@ -1,5 +1,13 @@
 import type { Team, Prediction, Exploit, Stats } from '@/types';
 
+// Helper function to create dates relative to today
+function getDaysFromNow(days: number, hour: number = 18): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+}
+
 export const teams: Record<string, Team> = {
   KC: { id: 'KC', name: 'Kansas City Chiefs', abbreviation: 'KC', color: '#E31837' },
   PHI: { id: 'PHI', name: 'Philadelphia Eagles', abbreviation: 'PHI', color: '#004C54' },
@@ -24,7 +32,7 @@ export const mockPredictions: Prediction[] = [
       home: 62.5,
       away: 37.5,
     },
-    gameTime: '2026-01-26T18:00:00Z',
+    gameTime: getDaysFromNow(0, 18), // Today at 6 PM
   },
   {
     id: '2',
@@ -38,7 +46,7 @@ export const mockPredictions: Prediction[] = [
       home: 68.2,
       away: 31.8,
     },
-    gameTime: '2026-01-26T21:30:00Z',
+    gameTime: getDaysFromNow(0, 21), // Today at 9 PM
   },
   {
     id: '3',
@@ -52,7 +60,7 @@ export const mockPredictions: Prediction[] = [
       home: 55.3,
       away: 44.7,
     },
-    gameTime: '2026-01-27T13:00:00Z',
+    gameTime: getDaysFromNow(1, 13), // Tomorrow at 1 PM
   },
   {
     id: '4',
@@ -66,7 +74,7 @@ export const mockPredictions: Prediction[] = [
       home: 52.1,
       away: 47.9,
     },
-    gameTime: '2026-01-27T16:25:00Z',
+    gameTime: getDaysFromNow(1, 16), // Tomorrow at 4 PM
   },
 ];
 
