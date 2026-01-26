@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { getDb } from '@edgeloop/db'
 import { games } from '@edgeloop/db/schema'
 import { desc } from 'drizzle-orm'

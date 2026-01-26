@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { getAllTeams } from '@edgeloop/integrations'
 
 export const runtime = 'edge'
