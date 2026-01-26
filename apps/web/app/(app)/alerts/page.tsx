@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@edgeloop/api/auth'
+import { auth } from '@clerk/nextjs/server'
 import { AlertRulesManager } from './rules-manager'
 import { AlertHistory } from './history'
 
@@ -10,9 +9,9 @@ export const metadata = {
 }
 
 export default async function AlertsPage() {
-  const session = await getServerSession(authOptions)
+  const { userId } = await auth()
 
-  if (!session) {
+  if (!userId) {
     redirect('/auth/signin')
   }
 

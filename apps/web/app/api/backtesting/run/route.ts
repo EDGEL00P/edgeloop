@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@edgeloop/db'
-import { edges, games, teams } from '@edgeloop/db/schema'
-import { desc, and, eq, gte, lte } from 'drizzle-orm'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@edgeloop/api/auth'
-import { calculateKelly, calculateEV } from '@edgeloop/ml'
+import { getDb } from '@edgeloop/db'
+import { edges, games } from '@edgeloop/db/schema'
+import { desc, and, eq, gte, lte, asc } from 'drizzle-orm'
+import { auth } from '@clerk/nextjs/server'
+import { calculateKelly } from '@edgeloop/ml'
 
 interface BacktestQuery {
   season: number
@@ -33,8 +32,8 @@ interface BacktestResult {
 
 export async function POST(request: NextRequest): Promise<NextResponse<BacktestResult | { error: string }>> {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const { userId } = await auth()
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -45,6 +44,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BacktestR
       return NextResponse.json({ error: 'Invalid week range' }, { status: 400 })
     }
 
+    const db = getDb()
+    
     // Fetch historical edges for the specified season and weeks
     const historicalEdges = await db
       .select()
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BacktestR
           lte(games.week, query.endWeek)
         )
       )
-      .orderBy(asc(games.date))
+      .orderBy(asc(games.startTime))
 
     // Filter by edge type and minimum thresholds
     const filteredEdges = historicalEdges.filter((row) => {

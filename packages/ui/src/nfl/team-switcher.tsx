@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import nflTeams from '../../tokens/nfl-teams.json'
+import nflTeams from '@edgeloop/tokens/nfl-teams.json'
 
 type TeamCode = keyof typeof nflTeams.teams
 

@@ -1,1 +1,0 @@
-{"version":3,"file":"newsService.d.ts","sourceRoot":"","sources":["../../src/services/newsService.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,QAAQ;IACvB,KAAK,CAAC,EAAE,MAAM,CAAA;IACd,MAAM,CAAC,EAAE,MAAM,CAAA;IACf,OAAO,CAAC,EAAE,MAAM,CAAA;IAChB,IAAI,CAAC,EAAE,MAAM,CAAA;CACd;AAgGD,wBAAsB,UAAU,CAAC,KAAK,SAAK,GAAG,OAAO,CAAC,QAAQ,EAAE,CAAC,CAwBhE"}

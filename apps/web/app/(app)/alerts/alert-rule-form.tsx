@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { CreateAlertRuleInput } from '@edgeloop/api'
+import type { CreateAlertRuleInput } from '@edgeloop/api/alerts'
 import { Button } from '@edgeloop/ui/primitives'
 
 const ALERT_TYPES = [

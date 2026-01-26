@@ -1,5 +1,0 @@
-
-
-> @edgeloop/server@0.0.0 build /home/runner/work/edgeloop/edgeloop/packages/server
-> tsc -b
-

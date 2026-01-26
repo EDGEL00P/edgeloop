@@ -1,2 +1,2 @@
-export { getDb, createFreshDb, type Database } from './client'
+export { getDb, getDb as db, createFreshDb, type Database } from './client'
 export * from './schema'

@@ -1,13 +1,13 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { useSession } from 'next-auth/react'
-import { getAlertHistory } from '@edgeloop/api'
+import { useUser } from '@clerk/nextjs'
+import { getAlertHistory } from '@edgeloop/api/alerts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@edgeloop/ui/cards'
 
 export function AlertHistory() {
-  const { data: session } = useSession()
-  const userId = session?.user?.id
+  const { user } = useUser()
+  const userId = user?.id
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['alertHistory', userId],

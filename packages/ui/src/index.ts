@@ -34,5 +34,17 @@ export * from './theme-switcher'
 // 3D Components
 export * from './3d'
 
-// NFL Components
-export * from './nfl'
+// NFL Components - exclude conflicting exports
+export { TeamSwitcher } from './nfl/team-switcher'
+export type { TeamSwitcherProps } from './nfl/team-switcher'
+export { PlayClock } from './nfl/play-clock'
+export type { PlayClockProps } from './nfl/play-clock'
+export { DriveTimeline3D } from './nfl/drive-timeline'
+export type { DrivePlay, DriveTimelineProps } from './nfl/drive-timeline'
+export { StadiumLights, PulsatingLight } from './nfl/stadium-lights'
+export type { StadiumLightsProps, LightingPreset, PulsatingLightProps } from './nfl/stadium-lights'
+export { TeamReflectiveCard, ReflectiveCardScene } from './nfl/reflective-card'
+export type { ReflectiveCardSceneProps, TeamReflectiveCardProps } from './nfl/reflective-card'
+// NFL ScoreBug is different from Broadcast ScoreBug - export with alias
+export { ScoreBug as NFLScoreBug } from './nfl/score-bug'
+export type { ScoreBugProps as NFLScoreBugProps, Team as NFLTeam } from './nfl/score-bug'
