@@ -16,6 +16,8 @@
     "./nfl": "./src/nfl/index.ts"
   },
   "scripts": {
+    "vercel:logs": "vercel logs edgeloop.vercel.app",
+    "vercel:build-logs": "vercel inspect edgeloop.vercel.app --logs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch",
