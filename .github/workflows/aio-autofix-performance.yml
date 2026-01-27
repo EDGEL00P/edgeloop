@@ -139,8 +139,8 @@ jobs:
           set -euo pipefail
 
           # Prefer repo scripts if present
-          if pnpm run --silent 2>&1 | grep -qE 'lint:fix'; then pnpm run lint:fix || true; fi
-          if pnpm run --silent 2>&1 | grep -qE 'format'; then pnpm run format || true; fi
+          if pnpm run --silent 2>&1 | grep -qE '\blint:fix\b'; then pnpm run lint:fix || true; fi
+          if pnpm run --silent 2>&1 | grep -qE '\bformat\b'; then pnpm run format || true; fi
 
           # Biome (fast, high-ceiling) if config exists
           if [[ -f biome.json || -f biome.jsonc ]]; then
@@ -157,10 +157,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          if pnpm run --silent 2>&1 | grep -qE 'test'; then pnpm run test || true; fi
+          if pnpm run --silent 2>&1 | grep -qE '\btest\b'; then pnpm run test || true; fi
 
           # Build time as a regression signal (does not fail by default)
-          if pnpm run --silent 2>&1 | grep -qE 'build'; then
+          if pnpm run --silent 2>&1 | grep -qE '\bbuild\b'; then
             /usr/bin/time -f "node_build_seconds=%e" pnpm run build 2> /tmp/node_build_time.txt || true
             cat /tmp/node_build_time.txt || true
           fi
