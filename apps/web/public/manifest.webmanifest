@@ -1,0 +1,42 @@
+{
+  "name": "EdgeLoop",
+  "short_name": "EdgeLoop",
+  "description": "NFL Predictions & Edge Detection Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "entertainment", "finance"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Predictions",
+      "short_name": "Predictions",
+      "description": "View NFL predictions",
+      "url": "/predictions",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Edge Detection",
+      "short_name": "Edges",
+      "description": "Find betting edges",
+      "url": "/edges",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
