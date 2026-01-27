@@ -1,6 +1,9 @@
 import { Server as SocketIOServer } from 'socket.io'
 import type { Server as HttpServer } from 'http'
 import type { ClientMessage, ServerMessage, Channel } from '@edgeloop/shared'
+import { verifyToken } from '@clerk/backend'
+
+const clerkSecretKey = process.env['CLERK_SECRET_KEY']
 
 export type WebSocketServerOptions = {
   httpServer: HttpServer
@@ -22,18 +25,36 @@ export function createWebSocketServer(options: WebSocketServerOptions): SocketIO
     // Handle authentication
     socket.on('auth', async (data: { token: string }) => {
       try {
-        // TODO: Validate token with Clerk or API key
-        const userId = 'anonymous' // For now, allow anonymous connections
+        let userId = 'anonymous'
+        let permissions: string[] = ['read']
+
+        // Validate token with Clerk if secret key is available
+        if (data.token && clerkSecretKey) {
+          try {
+            const payload = await verifyToken(data.token, {
+              secretKey: clerkSecretKey,
+            })
+            if (payload.sub) {
+              userId = payload.sub
+              permissions = ['read', 'write']
+            }
+          } catch (err) {
+            console.warn(`WebSocket auth validation failed: ${err instanceof Error ? err.message : String(err)}`)
+            // Fall through to anonymous access
+          }
+        }
+
         socket.data.userId = userId
-        socket.data.authenticated = true
+        socket.data.authenticated = userId !== 'anonymous'
 
         const response: ServerMessage = {
           type: 'auth_success',
           userId,
-          permissions: ['read'],
+          permissions,
         }
         socket.emit('message', response)
       } catch (error) {
+        console.error(`WebSocket auth error: ${error instanceof Error ? error.message : String(error)}`)
         const response: ServerMessage = {
           type: 'auth_error',
           code: 'invalid_token',

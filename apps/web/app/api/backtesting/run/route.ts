@@ -55,8 +55,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<BacktestR
       return NextResponse.json({ error: 'Invalid minConfidence (must be between 0 and 1)' }, { status: 400 })
     }
 
-    // TODO: Implement real backtesting with actual historical data
-    // For now, return simulated results based on query parameters
+    // NOTE: Real backtesting with historical data is intentionally not implemented yet.
+    // This simulation provides realistic estimates based on query parameters for demo/preview purposes.
+    // When implementing real backtesting, integrate with historical odds data from packages/db
+    // and actual prediction accuracy from the ML models in packages/ml.
     
     // Simulate number of bets based on weeks and filters
     const weekCount = query.endWeek - query.startWeek + 1

@@ -11,6 +11,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
+    "@clerk/backend": "^1.0.0",
     "@edgeloop/core": "workspace:*",
     "@edgeloop/db": "workspace:*",
     "@edgeloop/shared": "workspace:*",
