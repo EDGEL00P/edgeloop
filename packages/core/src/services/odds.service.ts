@@ -21,6 +21,42 @@ export async function getLatestOddsForGame(gameId: string): Promise<OddsSnapshot
   return Array.from(latestByProvider.values())
 }
 
+/**
+ * Efficiently fetch latest odds for multiple games in a single query
+ * Returns a Map of gameId -> odds snapshots
+ */
+export async function getLatestOddsForGames(gameIds: string[]): Promise<Map<string, OddsSnapshot[]>> {
+  if (gameIds.length === 0) {
+    return new Map()
+  }
+
+  const db = getDb()
+
+  // Fetch all odds for the given games
+  const allOdds = await db.query.oddsSnapshots.findMany({
+    where: (oddsSnapshots, { inArray }) => inArray(oddsSnapshots.gameId, gameIds),
+    orderBy: [desc(oddsSnapshots.fetchedAt)],
+  })
+
+  // Group by gameId and deduplicate per provider
+  const oddsMap = new Map<string, OddsSnapshot[]>()
+
+  for (const gameId of gameIds) {
+    const gameOdds = allOdds.filter(o => o.gameId === gameId)
+    const latestByProvider = new Map<string, OddsSnapshot>()
+    
+    for (const odds of gameOdds) {
+      if (!latestByProvider.has(odds.provider)) {
+        latestByProvider.set(odds.provider, odds)
+      }
+    }
+
+    oddsMap.set(gameId, Array.from(latestByProvider.values()))
+  }
+
+  return oddsMap
+}
+
 export async function getOddsHistory(
   gameId: string,
   provider?: string,

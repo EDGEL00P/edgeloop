@@ -5,9 +5,11 @@ import {
   getUpcomingPredictions,
   getLatestPredictionForGame,
   getActiveModelVersion,
+  getLatestOddsForGame,
+  getLatestOddsForGames,
   type PredictionWithGame,
 } from '@edgeloop/core'
-import { getLatestOddsForGame } from '@edgeloop/core'
+import type { OddsSnapshot } from '@edgeloop/db'
 import {
   nowIso,
   AppError,
@@ -23,12 +25,10 @@ import {
 
 export const predictionRoutes = new Hono()
 
-async function mapPredictionToApi(pred: PredictionWithGame): Promise<ApiPrediction> {
+function buildPredictionResponse(pred: PredictionWithGame, odds: OddsSnapshot[] | undefined): ApiPrediction {
   const gameInfo = mapGameToApi(pred.game)
 
-  // Get latest odds for this game
-  const odds = await getLatestOddsForGame(pred.game.id)
-  const primaryOdds = odds[0] // Use first provider as primary
+  const primaryOdds = odds?.[0] // Use first provider as primary
 
   let marketOdds: MarketOdds | undefined
   let edges: PredictionEdges | undefined
@@ -71,7 +71,14 @@ predictionRoutes.get('/', async (c) => {
   const predictions = await getUpcomingPredictions()
   const modelVersion = (await getActiveModelVersion()) ?? 'v1.0.0'
 
-  const apiPredictions = await Promise.all(predictions.map(mapPredictionToApi))
+  // Batch fetch odds for all games (performance optimization)
+  const gameIds = predictions.map(p => p.game.id)
+  const oddsMap = await getLatestOddsForGames(gameIds)
+
+  // Build predictions with pre-fetched odds
+  const apiPredictions = predictions.map(pred => 
+    buildPredictionResponse(pred, oddsMap.get(pred.game.id))
+  )
 
   const response: ApiPredictionsResponse = {
     asOfIso: nowIso(),
@@ -91,7 +98,8 @@ predictionRoutes.get('/:gameId', async (c) => {
     throw AppError.notFound(`No prediction found for game ${gameId}`)
   }
 
-  const apiPrediction = await mapPredictionToApi(prediction)
+  const odds = await getLatestOddsForGame(gameId)
+  const apiPrediction = buildPredictionResponse(prediction, odds)
 
   return c.json({
     asOfIso: nowIso(),
