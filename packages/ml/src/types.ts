@@ -57,7 +57,7 @@ export interface ExplanationResult {
   factors: PredictionFactor[]
   confidence: number
   modelInsights: string[]
-  generatedBy: 'openai' | 'anthropic' | 'local'
+  generatedBy: 'local'
 }
 
 export interface WinProbabilityPoint {

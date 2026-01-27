@@ -1,10 +1,9 @@
-// AI-powered explanation synthesis
+// Explanation synthesis using free local templates
 import type {
   FeatureVector,
   PredictionResult,
   PredictionFactor,
   ExplanationResult,
-  AIProvider,
 } from '../types'
 
 export interface ExplanationGenerator {
@@ -179,9 +178,8 @@ export class LocalExplanationGenerator implements ExplanationGenerator {
 
 /**
  * Factory function for creating explanation generators.
- * Only the free 'local' provider is supported.
+ * Returns the free local explanation generator.
  */
-export function createExplanationGenerator(provider: AIProvider = 'local'): ExplanationGenerator {
-  // Only local provider is supported - it's free and requires no API keys
+export function createExplanationGenerator(): ExplanationGenerator {
   return new LocalExplanationGenerator()
 }
