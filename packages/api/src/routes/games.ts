@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { getGames, getGameById, getUpcomingGames, getLiveGames, type GameWithTeams } from '@edgeloop/core'
-import { nowIso, AppError, type GameInfo, type TeamInfo, type ApiGamesResponse, type TeamCode, type GameId } from '@edgeloop/shared'
+import { nowIso, AppError, type ApiGamesResponse, mapGameToApi } from '@edgeloop/shared'
 
 export const gameRoutes = new Hono()
 
@@ -13,32 +13,6 @@ const gamesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })
-
-function mapGameToApi(game: GameWithTeams): GameInfo {
-  const homeTeam: TeamInfo = {
-    code: game.homeTeam.code as TeamCode,
-    name: game.homeTeam.name,
-    city: game.homeTeam.city,
-  }
-
-  const awayTeam: TeamInfo = {
-    code: game.awayTeam.code as TeamCode,
-    name: game.awayTeam.name,
-    city: game.awayTeam.city,
-  }
-
-  return {
-    id: game.id as GameId,
-    homeTeam,
-    awayTeam,
-    kickoffAt: (game.kickoffAt ?? game.scheduledAt).toISOString() as any,
-    status: game.status,
-    homeScore: game.homeScore ?? undefined,
-    awayScore: game.awayScore ?? undefined,
-    quarter: game.quarter ?? undefined,
-    timeRemaining: game.timeRemaining ?? undefined,
-  }
-}
 
 gameRoutes.get('/', zValidator('query', gamesQuerySchema), async (c) => {
   const query = c.req.valid('query')

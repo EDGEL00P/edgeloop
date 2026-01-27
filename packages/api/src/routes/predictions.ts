@@ -5,57 +5,31 @@ import {
   getUpcomingPredictions,
   getLatestPredictionForGame,
   getActiveModelVersion,
+  getLatestOddsForGame,
+  getLatestOddsForGames,
   type PredictionWithGame,
 } from '@edgeloop/core'
-import { getLatestOddsForGame } from '@edgeloop/core'
+import type { OddsSnapshot } from '@edgeloop/db'
 import {
   nowIso,
   AppError,
   impliedProbFromAmericanOdds,
   calculateEdge,
+  mapGameToApi,
+  asIsoDateTimeString,
   type ApiPrediction,
   type ApiPredictionsResponse,
-  type GameInfo,
-  type TeamInfo,
   type MarketOdds,
   type PredictionEdges,
-  type TeamCode,
-  type GameId,
   type PredictionId,
 } from '@edgeloop/shared'
 
 export const predictionRoutes = new Hono()
 
-async function mapPredictionToApi(pred: PredictionWithGame): Promise<ApiPrediction> {
-  const game = pred.game
+function buildPredictionResponse(pred: PredictionWithGame, odds: OddsSnapshot[] | undefined): ApiPrediction {
+  const gameInfo = mapGameToApi(pred.game)
 
-  const homeTeam: TeamInfo = {
-    code: game.homeTeam.code as TeamCode,
-    name: game.homeTeam.name,
-    city: game.homeTeam.city,
-  }
-
-  const awayTeam: TeamInfo = {
-    code: game.awayTeam.code as TeamCode,
-    name: game.awayTeam.name,
-    city: game.awayTeam.city,
-  }
-
-  const gameInfo: GameInfo = {
-    id: game.id as GameId,
-    homeTeam,
-    awayTeam,
-    kickoffAt: (game.kickoffAt ?? game.scheduledAt).toISOString() as any,
-    status: game.status,
-    homeScore: game.homeScore ?? undefined,
-    awayScore: game.awayScore ?? undefined,
-    quarter: game.quarter ?? undefined,
-    timeRemaining: game.timeRemaining ?? undefined,
-  }
-
-  // Get latest odds for this game
-  const odds = await getLatestOddsForGame(game.id)
-  const primaryOdds = odds[0] // Use first provider as primary
+  const primaryOdds = odds?.[0] // Use first provider as primary
 
   let marketOdds: MarketOdds | undefined
   let edges: PredictionEdges | undefined
@@ -90,7 +64,7 @@ async function mapPredictionToApi(pred: PredictionWithGame): Promise<ApiPredicti
     predictedTotal: pred.predictedTotal ? parseFloat(pred.predictedTotal) : undefined,
     marketOdds,
     edges,
-    createdAt: pred.createdAt.toISOString() as any,
+    createdAt: asIsoDateTimeString(pred.createdAt.toISOString()),
   }
 }
 
@@ -98,7 +72,14 @@ predictionRoutes.get('/', async (c) => {
   const predictions = await getUpcomingPredictions()
   const modelVersion = (await getActiveModelVersion()) ?? 'v1.0.0'
 
-  const apiPredictions = await Promise.all(predictions.map(mapPredictionToApi))
+  // Batch fetch odds for all games (performance optimization)
+  const gameIds = predictions.map(p => p.game.id)
+  const oddsMap = await getLatestOddsForGames(gameIds)
+
+  // Build predictions with pre-fetched odds
+  const apiPredictions = predictions.map(pred => 
+    buildPredictionResponse(pred, oddsMap.get(pred.game.id))
+  )
 
   const response: ApiPredictionsResponse = {
     asOfIso: nowIso(),
@@ -118,7 +99,8 @@ predictionRoutes.get('/:gameId', async (c) => {
     throw AppError.notFound(`No prediction found for game ${gameId}`)
   }
 
-  const apiPrediction = await mapPredictionToApi(prediction)
+  const odds = await getLatestOddsForGame(gameId)
+  const apiPrediction = buildPredictionResponse(prediction, odds)
 
   return c.json({
     asOfIso: nowIso(),

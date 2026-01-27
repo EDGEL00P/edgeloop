@@ -21,6 +21,52 @@ export async function getLatestOddsForGame(gameId: string): Promise<OddsSnapshot
   return Array.from(latestByProvider.values())
 }
 
+/**
+ * Efficiently fetch latest odds for multiple games in a single query
+ * Returns a Map of gameId -> odds snapshots
+ */
+export async function getLatestOddsForGames(gameIds: string[]): Promise<Map<string, OddsSnapshot[]>> {
+  if (gameIds.length === 0) {
+    return new Map()
+  }
+
+  const db = getDb()
+
+  // Fetch all odds for the given games
+  const allOdds = await db.query.oddsSnapshots.findMany({
+    where: (oddsSnapshots, { inArray }) => inArray(oddsSnapshots.gameId, gameIds),
+    orderBy: [desc(oddsSnapshots.fetchedAt)],
+  })
+
+  // Group by gameId and deduplicate per provider in a single pass - O(m) complexity
+  const oddsMapByProvider = new Map<string, Map<string, OddsSnapshot>>()
+
+  for (const odds of allOdds) {
+    if (!oddsMapByProvider.has(odds.gameId)) {
+      oddsMapByProvider.set(odds.gameId, new Map())
+    }
+    const providerMap = oddsMapByProvider.get(odds.gameId)!
+    if (!providerMap.has(odds.provider)) {
+      providerMap.set(odds.provider, odds)
+    }
+  }
+
+  // Convert to final structure
+  const oddsMap = new Map<string, OddsSnapshot[]>()
+  for (const [gameId, providerMap] of oddsMapByProvider) {
+    oddsMap.set(gameId, Array.from(providerMap.values()))
+  }
+
+  // Ensure all requested gameIds are in the map (even if no odds found)
+  for (const gameId of gameIds) {
+    if (!oddsMap.has(gameId)) {
+      oddsMap.set(gameId, [])
+    }
+  }
+
+  return oddsMap
+}
+
 export async function getOddsHistory(
   gameId: string,
   provider?: string,
