@@ -100,6 +100,7 @@ export default function RootLayout({
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
   if (!publishableKey) {
+    console.error('Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY - authentication will not work')
     return (
       <html lang="en" suppressHydrationWarning>
         <body>{children}</body>
