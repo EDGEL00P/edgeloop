@@ -36,12 +36,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<BacktestR
     const query: BacktestQuery = await request.json()
 
     // Validate inputs
-    if (query.startWeek < 1 || query.endWeek > 18 || query.startWeek > query.endWeek) {
+    if (!query.season || query.season < 2020 || query.season > new Date().getFullYear()) {
+      return NextResponse.json({ error: 'Invalid season' }, { status: 400 })
+    }
+    if (!query.startWeek || query.startWeek < 1 || query.startWeek > 18) {
+      return NextResponse.json({ error: 'Invalid startWeek (must be between 1 and 18)' }, { status: 400 })
+    }
+    if (!query.endWeek || query.endWeek < 1 || query.endWeek > 18 || query.startWeek > query.endWeek) {
       return NextResponse.json({ error: 'Invalid week range' }, { status: 400 })
     }
+    if (!query.bankroll || query.bankroll <= 0) {
+      return NextResponse.json({ error: 'Invalid bankroll (must be positive)' }, { status: 400 })
+    }
+    if (query.minEV < 0 || query.minEV > 100) {
+      return NextResponse.json({ error: 'Invalid minEV (must be between 0 and 100)' }, { status: 400 })
+    }
+    if (query.minConfidence < 0 || query.minConfidence > 1) {
+      return NextResponse.json({ error: 'Invalid minConfidence (must be between 0 and 1)' }, { status: 400 })
+    }
 
-    // TODO: Implement real backtesting with actual historical data
-    // For now, return simulated results based on query parameters
+    // NOTE: Real backtesting with historical data is intentionally not implemented yet.
+    // This simulation provides realistic estimates based on query parameters for demo/preview purposes.
+    // When implementing real backtesting, integrate with historical odds data from packages/db
+    // and actual prediction accuracy from the ML models in packages/ml.
     
     // Simulate number of bets based on weeks and filters
     const weekCount = query.endWeek - query.startWeek + 1
@@ -63,8 +80,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<BacktestR
     const totalProfit = (winningBets * avgWin) - (losingBets * avgLoss)
     const roi = totalProfit / query.bankroll
     
-    // Calculate metrics
-    const profitFactor = avgLoss > 0 ? (winningBets * avgWin) / (losingBets * avgLoss) : avgWin > 0 ? Infinity : 0
+    // Calculate metrics - cap profitFactor to avoid Infinity
+    const maxProfitFactor = 100
+    let profitFactor = 0
+    if (avgLoss > 0 && losingBets > 0) {
+      profitFactor = Math.min(maxProfitFactor, (winningBets * avgWin) / (losingBets * avgLoss))
+    } else if (avgWin > 0 && winningBets > 0) {
+      profitFactor = maxProfitFactor
+    }
     const sharpeRatio = roi > 0 ? roi * Math.sqrt(totalBets) / 0.15 : 0
     const maxDrawdown = Math.min(0.25, 0.05 + (losingBets / totalBets) * 0.2)
 

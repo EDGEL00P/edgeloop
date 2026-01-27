@@ -53,8 +53,14 @@ export function logError(msg: string, requestId: string, err: unknown): void {
         error: String(err),
       }) + '\n',
     )
-  } catch {
-    // ignore
+  } catch (writeError) {
+    // If stderr.write fails, try fallback console.error
+    // This can happen in some edge runtime environments
+    try {
+      console.error('Failed to write to stderr:', writeError, '| Original error:', msg, err)
+    } catch {
+      // Silently fail if even console.error doesn't work
+    }
   }
 }
 

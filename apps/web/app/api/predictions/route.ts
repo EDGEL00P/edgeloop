@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { getDb } from '@edgeloop/db'
 import { games } from '@edgeloop/db/schema'
 import { desc } from 'drizzle-orm'
@@ -12,13 +13,15 @@ export const runtime = 'edge'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const limit_ = parseInt(searchParams.get('limit') || '50')
+    const limitParam = parseInt(searchParams.get('limit') || '50')
+    // Cap limit to prevent resource exhaustion
+    const limit = Math.min(Math.max(1, limitParam), 100)
 
     const db = getDb()
     
     // This is a simplified query - in production, we'd use proper filtering
     const data = await db.query.games.findMany({
-      limit: limit_,
+      limit,
       orderBy: desc(games.createdAt),
     })
 
@@ -41,7 +44,27 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const { userId } = await auth()
+    if (!userId) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
+
+    // Validate required fields
+    if (!body.gameId || typeof body.gameId !== 'string') {
+      return Response.json({ error: 'Invalid gameId' }, { status: 400 })
+    }
+    if (typeof body.winProbHome !== 'number' || body.winProbHome < 0 || body.winProbHome > 1) {
+      return Response.json({ error: 'Invalid winProbHome (must be between 0 and 1)' }, { status: 400 })
+    }
+    if (typeof body.winProbAway !== 'number' || body.winProbAway < 0 || body.winProbAway > 1) {
+      return Response.json({ error: 'Invalid winProbAway (must be between 0 and 1)' }, { status: 400 })
+    }
+    if (body.confidence !== undefined && (typeof body.confidence !== 'number' || body.confidence < 0 || body.confidence > 1)) {
+      return Response.json({ error: 'Invalid confidence (must be between 0 and 1)' }, { status: 400 })
+    }
 
     const prediction = {
       gameId: body.gameId,
@@ -65,4 +88,3 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Failed to create prediction' }, { status: 500 })
   }
 }
-

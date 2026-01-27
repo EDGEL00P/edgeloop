@@ -1,6 +1,7 @@
-"use client";
-
+import * as React from "react";
 import { SignIn } from "@clerk/nextjs";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminSignInPage() {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
