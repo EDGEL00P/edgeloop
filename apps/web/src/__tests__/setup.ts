@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { vi, beforeAll, afterAll } from 'vitest'
 import React from 'react'
 
 // Mock next/navigation
