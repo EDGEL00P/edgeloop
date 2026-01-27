@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { getLatestOddsForGame, getOddsHistory } from '@edgeloop/core'
-import { nowIso, AppError, type MarketOdds, type ApiOddsResponse, type GameId } from '@edgeloop/shared'
+import type { OddsSnapshot } from '@edgeloop/db'
+import { nowIso, AppError, isValidUuid, type MarketOdds, type ApiOddsResponse, type GameId } from '@edgeloop/shared'
 
 export const oddsRoutes = new Hono()
 
@@ -11,7 +12,10 @@ const oddsHistorySchema = z.object({
   since: z.coerce.date().optional(),
 })
 
-function mapOddsToApi(odds: any): MarketOdds {
+/**
+ * Maps a database OddsSnapshot entity to the API response format.
+ */
+function mapOddsToApi(odds: OddsSnapshot): MarketOdds {
   return {
     provider: odds.provider,
     moneylineHome: odds.moneylineHome ?? 0,
@@ -27,6 +31,11 @@ function mapOddsToApi(odds: any): MarketOdds {
 oddsRoutes.get('/:gameId', zValidator('query', oddsHistorySchema), async (c) => {
   const gameId = c.req.param('gameId')
   const query = c.req.valid('query')
+
+  // Validate UUID format
+  if (!isValidUuid(gameId)) {
+    throw AppError.badRequest('Invalid game ID: must be a valid UUID')
+  }
 
   const odds = query.since || query.provider
     ? await getOddsHistory(gameId, query.provider, query.since)
@@ -48,6 +57,11 @@ oddsRoutes.get('/:gameId', zValidator('query', oddsHistorySchema), async (c) => 
 oddsRoutes.get('/:gameId/history', zValidator('query', oddsHistorySchema), async (c) => {
   const gameId = c.req.param('gameId')
   const query = c.req.valid('query')
+
+  // Validate UUID format
+  if (!isValidUuid(gameId)) {
+    throw AppError.badRequest('Invalid game ID: must be a valid UUID')
+  }
 
   const odds = await getOddsHistory(gameId, query.provider, query.since)
 

@@ -10,11 +10,46 @@ import {
 } from './middleware'
 import { healthRoutes, gameRoutes, predictionRoutes, oddsRoutes, modelRoutes, alertRoutes, userRoutes } from './routes'
 
+/**
+ * Parse allowed origins from environment variable.
+ * Supports comma-separated list of origins.
+ * Falls back to localhost for development if not configured.
+ */
+function getAllowedOrigins(): string[] {
+  const corsOrigin = process.env['CORS_ORIGIN']
+  if (corsOrigin) {
+    return corsOrigin.split(',').map((origin) => origin.trim())
+  }
+  // Default to localhost for development
+  return ['http://localhost:3000', 'http://localhost:3001']
+}
+
 export function createApp() {
   const app = new Hono()
 
-  // Global middleware
-  app.use('*', cors())
+  const allowedOrigins = getAllowedOrigins()
+
+  // Global middleware with secure CORS configuration
+  app.use(
+    '*',
+    cors({
+      origin: (origin) => {
+        // Allow requests with no origin (e.g., mobile apps, curl)
+        if (!origin) return null
+        // Check if the origin is in the allowed list
+        if (allowedOrigins.includes(origin)) return origin
+        // In production, reject unknown origins
+        if (process.env['NODE_ENV'] === 'production') return null
+        // In development, allow all origins
+        return origin
+      },
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+      exposeHeaders: ['X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+      maxAge: 600,
+      credentials: true,
+    })
+  )
   app.use('*', requestIdMiddleware)
   app.use('*', loggerMiddleware)
   app.use('*', securityMiddleware)

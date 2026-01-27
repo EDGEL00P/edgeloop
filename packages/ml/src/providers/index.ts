@@ -1,6 +1,9 @@
 // AI Provider integrations for explanation synthesis
 import type { AIProviderConfig, ExplanationResult, FeatureVector, PredictionResult } from '../types'
 
+/** Default timeout for API requests in milliseconds */
+const DEFAULT_TIMEOUT_MS = 30_000
+
 export interface AIClient {
   generateExplanation(
     features: FeatureVector,
@@ -11,14 +14,62 @@ export interface AIClient {
   isConfigured(): boolean
 }
 
+/**
+ * Creates an AbortSignal with a timeout.
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns AbortSignal that will abort after the timeout
+ */
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+/**
+ * Performs a fetch with timeout and improved error handling.
+ * @param url - The URL to fetch
+ * @param options - Fetch options
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns The response
+ * @throws Error with descriptive message on failure
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<Response> {
+  const signal = createTimeoutSignal(timeoutMs)
+
+  try {
+    const response = await fetch(url, { ...options, signal })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error')
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`)
+    }
+
+    return response
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`API request timed out after ${timeoutMs}ms`)
+      }
+      throw error
+    }
+    throw new Error('Unknown error during API request')
+  }
+}
+
 // OpenAI Client
 export class OpenAIClient implements AIClient {
   private apiKey: string
   private model: string
+  private timeoutMs: number
 
   constructor(config: AIProviderConfig) {
-    this.apiKey = config.apiKey ?? process.env.OPENAI_API_KEY ?? ''
+    this.apiKey = config.apiKey ?? process.env['OPENAI_API_KEY'] ?? ''
     this.model = config.model ?? 'gpt-4-turbo-preview'
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS
   }
 
   isConfigured(): boolean {
@@ -37,26 +88,30 @@ export class OpenAIClient implements AIClient {
 
     const prompt = this.buildPrompt(features, prediction, homeTeam, awayTeam)
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
+    const response = await fetchWithTimeout(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a sports analytics expert. Provide structured analysis of game predictions.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
       },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a sports analytics expert. Provide structured analysis of game predictions.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    })
+      this.timeoutMs
+    )
 
     const data = await response.json()
     return this.parseResponse(data, prediction)
@@ -104,10 +159,12 @@ Provide a concise analysis with:
 export class AnthropicClient implements AIClient {
   private apiKey: string
   private model: string
+  private timeoutMs: number
 
   constructor(config: AIProviderConfig) {
-    this.apiKey = config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? ''
+    this.apiKey = config.apiKey ?? process.env['ANTHROPIC_API_KEY'] ?? ''
     this.model = config.model ?? 'claude-3-opus-20240229'
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS
   }
 
   isConfigured(): boolean {
@@ -126,19 +183,23 @@ export class AnthropicClient implements AIClient {
 
     const prompt = this.buildPrompt(features, prediction, homeTeam, awayTeam)
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01',
+    const response = await fetchWithTimeout(
+      'https://api.anthropic.com/v1/messages',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
       },
-      body: JSON.stringify({
-        model: this.model,
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
+      this.timeoutMs
+    )
 
     const data = await response.json()
     return this.parseResponse(data, prediction)
@@ -184,7 +245,141 @@ export function createAIClient(config: AIProviderConfig): AIClient {
       return new OpenAIClient(config)
     case 'anthropic':
       return new AnthropicClient(config)
+    case 'local':
+      return new LocalClient()
     default:
       throw new Error(`Unsupported AI provider: ${config.provider}`)
+  }
+}
+
+/**
+ * Local template-based explanation client.
+ * Generates explanations without any external API calls - completely free.
+ * Use this as the default option for cost-effective deployments.
+ */
+export class LocalClient implements AIClient {
+  isConfigured(): boolean {
+    return true // Always configured - no API key needed
+  }
+
+  async generateExplanation(
+    features: FeatureVector,
+    prediction: PredictionResult,
+    homeTeam: string,
+    awayTeam: string
+  ): Promise<ExplanationResult> {
+    const factors = this.extractKeyFactors(features, prediction, homeTeam, awayTeam)
+    const summary = this.buildSummary(features, prediction, homeTeam, awayTeam, factors)
+
+    return {
+      summary,
+      factors,
+      confidence: prediction.confidence,
+      modelInsights: this.getModelInsights(prediction),
+      generatedBy: 'local',
+    }
+  }
+
+  private extractKeyFactors(
+    features: FeatureVector,
+    prediction: PredictionResult,
+    homeTeam: string,
+    awayTeam: string
+  ): import('../types').PredictionFactor[] {
+    const factors: import('../types').PredictionFactor[] = []
+
+    // ELO advantage
+    const eloDiff = features.homeTeamElo - features.awayTeamElo
+    if (Math.abs(eloDiff) > 30) {
+      factors.push({
+        name: 'ELO Rating Advantage',
+        category: 'historical',
+        impact: eloDiff > 0 ? 'positive' : 'negative',
+        weight: Math.min(Math.abs(eloDiff) / 100, 0.4),
+        value: `${eloDiff > 0 ? '+' : ''}${eloDiff.toFixed(0)} points`,
+        description: `${eloDiff > 0 ? homeTeam : awayTeam} has a significant ELO rating advantage`,
+      })
+    }
+
+    // Recent form
+    const formDiff = features.homeTeamRecentWinRate - features.awayTeamRecentWinRate
+    if (Math.abs(formDiff) > 0.15) {
+      factors.push({
+        name: 'Recent Form',
+        category: 'offense',
+        impact: formDiff > 0 ? 'positive' : 'negative',
+        weight: Math.min(Math.abs(formDiff), 0.3),
+        value: `${(features.homeTeamRecentWinRate * 100).toFixed(0)}% vs ${(features.awayTeamRecentWinRate * 100).toFixed(0)}%`,
+        description: `${formDiff > 0 ? homeTeam : awayTeam} has been in better recent form`,
+      })
+    }
+
+    // Rest advantage
+    const restDiff = features.restDaysHome - features.restDaysAway
+    if (Math.abs(restDiff) >= 3) {
+      factors.push({
+        name: 'Rest Advantage',
+        category: 'situational',
+        impact: restDiff > 0 ? 'positive' : 'negative',
+        weight: 0.15,
+        value: `${features.restDaysHome} vs ${features.restDaysAway} days`,
+        description: `${restDiff > 0 ? homeTeam : awayTeam} has a significant rest advantage`,
+      })
+    }
+
+    // Home advantage
+    if (features.homeAdvantage > 0) {
+      factors.push({
+        name: 'Home Field Advantage',
+        category: 'situational',
+        impact: 'positive',
+        weight: features.homeAdvantage,
+        value: `+${(features.homeAdvantage * 100).toFixed(0)}%`,
+        description: `${homeTeam} benefits from playing at home`,
+      })
+    }
+
+    return factors
+  }
+
+  private buildSummary(
+    features: FeatureVector,
+    prediction: PredictionResult,
+    homeTeam: string,
+    awayTeam: string,
+    factors: import('../types').PredictionFactor[]
+  ): string {
+    const favored = prediction.winProbHome > 0.5 ? homeTeam : awayTeam
+    const underdog = prediction.winProbHome > 0.5 ? awayTeam : homeTeam
+    const favoredProb = Math.max(prediction.winProbHome, prediction.winProbAway) * 100
+
+    let summary = `Our model favors ${favored} with a ${favoredProb.toFixed(0)}% win probability against ${underdog}.`
+
+    if (factors.length > 0) {
+      const topFactor = factors.reduce((a, b) => (a.weight > b.weight ? a : b))
+      summary += ` ${topFactor.description}.`
+    }
+
+    if (prediction.confidence < 0.6) {
+      summary += ' This is a lower confidence prediction with significant uncertainty.'
+    } else if (prediction.confidence > 0.8) {
+      summary += ' The model has high confidence in this projection.'
+    }
+
+    return summary
+  }
+
+  private getModelInsights(prediction: PredictionResult): string[] {
+    const insights: string[] = [`Model version: ${prediction.modelVersion}`]
+
+    if (prediction.predictedSpread !== 0) {
+      insights.push(`Projected spread: ${prediction.predictedSpread > 0 ? '+' : ''}${prediction.predictedSpread.toFixed(1)}`)
+    }
+
+    if (prediction.predictedTotal > 0) {
+      insights.push(`Projected total: ${prediction.predictedTotal.toFixed(1)}`)
+    }
+
+    return insights
   }
 }
