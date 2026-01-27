@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
+import React from 'react'
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -16,10 +17,9 @@ vi.mock('next/navigation', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} {...props} />
-  ),
+  default: function MockImage(props: { src: string; alt: string }) {
+    return React.createElement('img', { src: props.src, alt: props.alt })
+  },
 }))
 
 // Suppress console errors in tests
