@@ -34,12 +34,13 @@ export function createApp() {
     '*',
     cors({
       origin: (origin) => {
-        // Allow requests with no origin (e.g., mobile apps, curl)
-        if (!origin) return null
+        // Allow requests with no origin (e.g., mobile apps, curl, server-to-server)
+        if (!origin) return origin
         // Check if the origin is in the allowed list
         if (allowedOrigins.includes(origin)) return origin
-        // In production, reject unknown origins
-        if (process.env['NODE_ENV'] === 'production') return null
+        // In production, reject unknown origins by returning undefined (falsy)
+        // This causes Hono's CORS middleware to not set Access-Control-Allow-Origin
+        if (process.env['NODE_ENV'] === 'production') return undefined
         // In development, allow all origins
         return origin
       },

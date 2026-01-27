@@ -1,8 +1,16 @@
 // AI Provider integrations for explanation synthesis
-import type { AIProviderConfig, ExplanationResult, FeatureVector, PredictionResult } from '../types'
+import type { AIProviderConfig, ExplanationResult, FeatureVector, PredictionFactor, PredictionResult } from '../types'
 
 /** Default timeout for API requests in milliseconds */
 const DEFAULT_TIMEOUT_MS = 30_000
+
+/** Threshold constants for local explanation generation */
+const ELO_SIGNIFICANCE_THRESHOLD = 30
+const FORM_SIGNIFICANCE_THRESHOLD = 0.15
+const REST_SIGNIFICANCE_THRESHOLD = 3
+const ELO_MAX_WEIGHT = 0.4
+const FORM_MAX_WEIGHT = 0.3
+const REST_WEIGHT = 0.15
 
 export interface AIClient {
   generateExplanation(
@@ -285,43 +293,43 @@ export class LocalClient implements AIClient {
     prediction: PredictionResult,
     homeTeam: string,
     awayTeam: string
-  ): import('../types').PredictionFactor[] {
-    const factors: import('../types').PredictionFactor[] = []
+  ): PredictionFactor[] {
+    const factors: PredictionFactor[] = []
 
-    // ELO advantage
+    // ELO advantage - significant when difference exceeds threshold
     const eloDiff = features.homeTeamElo - features.awayTeamElo
-    if (Math.abs(eloDiff) > 30) {
+    if (Math.abs(eloDiff) > ELO_SIGNIFICANCE_THRESHOLD) {
       factors.push({
         name: 'ELO Rating Advantage',
         category: 'historical',
         impact: eloDiff > 0 ? 'positive' : 'negative',
-        weight: Math.min(Math.abs(eloDiff) / 100, 0.4),
+        weight: Math.min(Math.abs(eloDiff) / 100, ELO_MAX_WEIGHT),
         value: `${eloDiff > 0 ? '+' : ''}${eloDiff.toFixed(0)} points`,
         description: `${eloDiff > 0 ? homeTeam : awayTeam} has a significant ELO rating advantage`,
       })
     }
 
-    // Recent form
+    // Recent form - significant when win rate difference exceeds threshold
     const formDiff = features.homeTeamRecentWinRate - features.awayTeamRecentWinRate
-    if (Math.abs(formDiff) > 0.15) {
+    if (Math.abs(formDiff) > FORM_SIGNIFICANCE_THRESHOLD) {
       factors.push({
         name: 'Recent Form',
         category: 'offense',
         impact: formDiff > 0 ? 'positive' : 'negative',
-        weight: Math.min(Math.abs(formDiff), 0.3),
+        weight: Math.min(Math.abs(formDiff), FORM_MAX_WEIGHT),
         value: `${(features.homeTeamRecentWinRate * 100).toFixed(0)}% vs ${(features.awayTeamRecentWinRate * 100).toFixed(0)}%`,
         description: `${formDiff > 0 ? homeTeam : awayTeam} has been in better recent form`,
       })
     }
 
-    // Rest advantage
+    // Rest advantage - significant when rest day difference exceeds threshold
     const restDiff = features.restDaysHome - features.restDaysAway
-    if (Math.abs(restDiff) >= 3) {
+    if (Math.abs(restDiff) >= REST_SIGNIFICANCE_THRESHOLD) {
       factors.push({
         name: 'Rest Advantage',
         category: 'situational',
         impact: restDiff > 0 ? 'positive' : 'negative',
-        weight: 0.15,
+        weight: REST_WEIGHT,
         value: `${features.restDaysHome} vs ${features.restDaysAway} days`,
         description: `${restDiff > 0 ? homeTeam : awayTeam} has a significant rest advantage`,
       })
@@ -347,7 +355,7 @@ export class LocalClient implements AIClient {
     prediction: PredictionResult,
     homeTeam: string,
     awayTeam: string,
-    factors: import('../types').PredictionFactor[]
+    factors: PredictionFactor[]
   ): string {
     const favored = prediction.winProbHome > 0.5 ? homeTeam : awayTeam
     const underdog = prediction.winProbHome > 0.5 ? awayTeam : homeTeam
