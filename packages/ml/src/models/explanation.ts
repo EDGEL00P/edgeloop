@@ -177,18 +177,11 @@ export class LocalExplanationGenerator implements ExplanationGenerator {
   }
 }
 
-// Factory function supporting multiple providers
+/**
+ * Factory function for creating explanation generators.
+ * Only the free 'local' provider is supported.
+ */
 export function createExplanationGenerator(provider: AIProvider = 'local'): ExplanationGenerator {
-  switch (provider) {
-    case 'openai':
-    case 'anthropic':
-    case 'gemini':
-      // For AI providers, we would integrate with their APIs
-      // For now, fall back to local
-      console.warn(`AI provider ${provider} not yet implemented, using local generator`)
-      return new LocalExplanationGenerator()
-    case 'local':
-    default:
-      return new LocalExplanationGenerator()
-  }
+  // Only local provider is supported - it's free and requires no API keys
+  return new LocalExplanationGenerator()
 }

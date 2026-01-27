@@ -88,25 +88,15 @@ export interface DriftReport {
 }
 
 /**
- * Available AI providers for explanation generation.
- * - 'local': Free template-based explanations (recommended for cost savings)
- * - 'openai': OpenAI GPT models (requires OPENAI_API_KEY)
- * - 'anthropic': Anthropic Claude models (requires ANTHROPIC_API_KEY)
- * - 'gemini': Google Gemini models (not yet implemented)
+ * AI provider for explanation generation.
+ * Only 'local' is supported - it's free and requires no API keys.
  */
-export type AIProvider = 'local' | 'openai' | 'anthropic' | 'gemini'
+export type AIProvider = 'local'
 
 export interface AIProviderConfig {
   /**
    * The AI provider to use for explanation generation.
-   * Use 'local' for free template-based explanations (recommended).
-   * Use 'openai' or 'anthropic' for AI-generated explanations (requires API keys).
+   * Only 'local' is supported - free template-based explanations.
    */
   provider: AIProvider
-  apiKey?: string
-  model?: string
-  maxTokens?: number
-  temperature?: number
-  /** Request timeout in milliseconds (default: 30000) */
-  timeoutMs?: number
 }
