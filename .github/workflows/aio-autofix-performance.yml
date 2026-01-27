@@ -1,0 +1,334 @@
+name: AIO AutoFix + Perf MAX (PR-based)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "medium|high|max (max runs benches + stricter gates where available)"
+        required: false
+        default: "high"
+  schedule:
+    - cron: "15 2 * * 1" # weekly
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: aio-autofix-perf-max
+  cancel-in-progress: true
+
+env:
+  # Keep CI stable and deterministic
+  CI: "true"
+  NODE_OPTIONS: "--max-old-space-size=4096"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      has_node: ${{ steps.detect.outputs.has_node }}
+      has_python: ${{ steps.detect.outputs.has_python }}
+      has_go: ${{ steps.detect.outputs.has_go }}
+      has_rust: ${{ steps.detect.outputs.has_rust }}
+      mode: ${{ steps.mode.outputs.mode }}
+      base_ref: ${{ steps.base.outputs.base_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODE="${{ github.event.inputs.mode || 'high' }}"
+          case "$MODE" in medium|high|max) ;; *) MODE="high";; esac
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Base ref
+        id: base
+        shell: bash
+        run: |
+          set -euo pipefail
+          # PR runs compare against PR base; schedule/dispatch compare against default branch HEAD^
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "base_ref=${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_ref=${{ github.event.repository.default_branch }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect stack
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          has_node=false
+          has_python=false
+          has_go=false
+          has_rust=false
+
+          [[ -f package.json ]] && has_node=true
+          ([[ -f pyproject.toml ]] || [[ -f requirements.txt ]] || [[ -f setup.py ]] || [[ -f Pipfile ]]) && has_python=true
+          [[ -f go.mod ]] && has_go=true
+          [[ -f Cargo.toml ]] && has_rust=true
+
+          echo "has_node=$has_node" >> "$GITHUB_OUTPUT"
+          echo "has_python=$has_python" >> "$GITHUB_OUTPUT"
+          echo "has_go=$has_go" >> "$GITHUB_OUTPUT"
+          echo "has_rust=$has_rust" >> "$GITHUB_OUTPUT"
+
+  autofix-and-perf:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Compute changed files (best-effort)
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ needs.plan.outputs.base_ref }}" --depth=1 || true
+          BASE="origin/${{ needs.plan.outputs.base_ref }}"
+          if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+            git diff --name-only "$BASE"...HEAD > /tmp/changed.txt || true
+          else
+            git ls-files > /tmp/changed.txt
+          fi
+          echo "count=$(wc -l < /tmp/changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      # ---------------- Node / JS / TS ----------------
+      - name: Setup Node
+        if: needs.plan.outputs.has_node == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+
+      - name: Node install
+        if: needs.plan.outputs.has_node == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Node autofix (Biome preferred, then ESLint/Prettier)
+        if: needs.plan.outputs.has_node == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Prefer repo scripts if present
+          if npm run -s | grep -qE '^  lint:fix'; then npm run -s lint:fix || true; fi
+          if npm run -s | grep -qE '^  format'; then npm run -s format || true; fi
+
+          # Biome (fast, high-ceiling) if config exists
+          if [[ -f biome.json || -f biome.jsonc ]]; then
+            npx --yes @biomejs/biome@latest check . --write || true
+          else
+            # Fallback
+            npx --yes prettier@latest --write . || true
+            npx --yes eslint@latest . --fix || true
+          fi
+
+      - name: Node tests + perf signals (build time + optional bundle budget)
+        if: needs.plan.outputs.has_node == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if npm run -s | grep -qE '^  test'; then npm run -s test || true; fi
+
+          # Build time as a regression signal (does not fail by default)
+          if npm run -s | grep -qE '^  build'; then
+            /usr/bin/time -f "node_build_seconds=%e" npm run -s build 2> /tmp/node_build_time.txt || true
+            cat /tmp/node_build_time.txt || true
+          fi
+
+          # Optional: size-limit budget if config exists (recommended for "perf")
+          if [[ -f .size-limit.json || -f size-limit.config.* ]]; then
+            npx --yes size-limit@latest || true
+          fi
+
+          if [[ "${{ needs.plan.outputs.mode }}" == "max" ]]; then
+            npm dedupe || true
+          fi
+
+      # ---------------- Python ----------------
+      - name: Setup Python
+        if: needs.plan.outputs.has_python == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Python deps + tools
+        if: needs.plan.outputs.has_python == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install ruff
+          # Optional but useful if present in repo
+          pip install pytest pytest-benchmark || true
+
+          # Install project deps best-effort
+          if [[ -f pyproject.toml ]]; then
+            pip install -e . || true
+          elif [[ -f requirements.txt ]]; then
+            pip install -r requirements.txt || true
+          fi
+
+      - name: Python autofix (ruff fix + format)
+        if: needs.plan.outputs.has_python == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff check . --fix || true
+          ruff format . || true
+
+      - name: Python tests + optional benchmarks
+        if: needs.plan.outputs.has_python == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q . || true
+
+          if ls -1 test* tests >/dev/null 2>&1; then
+            pytest -q || true
+            if [[ "${{ needs.plan.outputs.mode }}" == "max" ]]; then
+              # If you have pytest-benchmark tests, this captures timing
+              pytest -q --benchmark-only --benchmark-json /tmp/py_bench.json || true
+            fi
+          fi
+
+      # ---------------- Go ----------------
+      - name: Setup Go
+        if: needs.plan.outputs.has_go == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          cache: true
+
+      - name: Go autofix + vet
+        if: needs.plan.outputs.has_go == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w . || true
+          go mod tidy || true
+          if [[ "${{ needs.plan.outputs.mode }}" != "medium" ]]; then
+            go vet ./... || true
+          fi
+
+      - name: Go tests + benches (max)
+        if: needs.plan.outputs.has_go == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test ./... || true
+          if [[ "${{ needs.plan.outputs.mode }}" == "max" ]]; then
+            go test -run=^$ -bench=. -benchmem ./... | tee /tmp/go_bench.txt || true
+          fi
+
+      # ---------------- Rust ----------------
+      - name: Setup Rust
+        if: needs.plan.outputs.has_rust == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust autofix (fmt + clippy)
+        if: needs.plan.outputs.has_rust == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt || true
+          if [[ "${{ needs.plan.outputs.mode }}" != "medium" ]]; then
+            cargo clippy --all-targets --all-features -- -D warnings || true
+          fi
+
+      - name: Rust tests + benches (max)
+        if: needs.plan.outputs.has_rust == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test || true
+          if [[ "${{ needs.plan.outputs.mode }}" == "max" ]]; then
+            cargo bench || true
+          fi
+
+      # ---------------- Repo-wide “safe” hygiene ----------------
+      - name: Repo-wide hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Trim trailing whitespace + ensure newline EOF for common source/text files.
+          while IFS= read -r -d '' f; do
+            sed -i 's/[[:space:]]\+$//' "$f" || true
+            tail -c1 "$f" | read -r _ || echo >> "$f"
+          done < <(find . -type f \
+            \( -name "*.yml" -o -name "*.yaml" -o -name "*.json" -o -name "*.toml" -o -name "*.md" -o -name "*.txt" \
+               -o -name "*.py" -o -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" \
+               -o -name "*.go" -o -name "*.rs" \) -print0)
+
+      - name: Decide if changes exist
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git status --porcelain | grep -q .; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR with fixes
+        if: steps.changes.outputs.has_changes == 'true' && github.event_name != 'pull_request'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: aio autofix + perf hygiene (max)"
+          title: "AIO MAX: autofix + perf signals"
+          branch: "bot/aio-autofix-perf-max"
+          delete-branch: true
+          body: |
+            Automated PR from AIO AutoFix + Perf MAX.
+
+            Included (stack-aware, best-effort):
+            - Node: Biome (if present) else Prettier/ESLint; tests; build-time signal; optional size-limit
+            - Python: Ruff fix + format; compile; tests; optional pytest-benchmark (mode=max)
+            - Go: gofmt + tidy; vet; tests; optional benches (mode=max)
+            - Rust: rustfmt + clippy; tests; optional benches (mode=max)
+            - Repo-wide whitespace/EOF hygiene
+
+            Notes:
+            - This workflow is PR-based (no direct writes to main).
+            - For real performance gating, add budgets: size-limit config, benchmark thresholds, and fail-on-regression.
+          labels: |
+            automated
+            maintenance
+            performance
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "mode=${{ needs.plan.outputs.mode }}"
+          echo "changed_files=${{ steps.changed.outputs.count }}"
+          echo "has_changes=${{ steps.changes.outputs.has_changes }}"
+
+        
