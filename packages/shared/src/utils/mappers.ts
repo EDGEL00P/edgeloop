@@ -1,4 +1,5 @@
-import type { TeamInfo, GameInfo, TeamCode, GameId } from '../types'
+import type { TeamInfo, GameInfo, TeamCode, GameId, IsoDateTimeString } from '../types'
+import { asIsoDateTimeString } from '../types/brand'
 
 /**
  * Map database team to API TeamInfo
@@ -33,7 +34,7 @@ export function mapGameToApi(game: {
     id: game.id as GameId,
     homeTeam,
     awayTeam,
-    kickoffAt: (game.kickoffAt ?? game.scheduledAt).toISOString() as any,
+    kickoffAt: asIsoDateTimeString((game.kickoffAt ?? game.scheduledAt).toISOString()),
     status: game.status,
     homeScore: game.homeScore ?? undefined,
     awayScore: game.awayScore ?? undefined,

@@ -38,20 +38,30 @@ export async function getLatestOddsForGames(gameIds: string[]): Promise<Map<stri
     orderBy: [desc(oddsSnapshots.fetchedAt)],
   })
 
-  // Group by gameId and deduplicate per provider
-  const oddsMap = new Map<string, OddsSnapshot[]>()
+  // Group by gameId and deduplicate per provider in a single pass - O(m) complexity
+  const oddsMapByProvider = new Map<string, Map<string, OddsSnapshot>>()
 
-  for (const gameId of gameIds) {
-    const gameOdds = allOdds.filter(o => o.gameId === gameId)
-    const latestByProvider = new Map<string, OddsSnapshot>()
-    
-    for (const odds of gameOdds) {
-      if (!latestByProvider.has(odds.provider)) {
-        latestByProvider.set(odds.provider, odds)
-      }
+  for (const odds of allOdds) {
+    if (!oddsMapByProvider.has(odds.gameId)) {
+      oddsMapByProvider.set(odds.gameId, new Map())
     }
+    const providerMap = oddsMapByProvider.get(odds.gameId)!
+    if (!providerMap.has(odds.provider)) {
+      providerMap.set(odds.provider, odds)
+    }
+  }
 
-    oddsMap.set(gameId, Array.from(latestByProvider.values()))
+  // Convert to final structure
+  const oddsMap = new Map<string, OddsSnapshot[]>()
+  for (const [gameId, providerMap] of oddsMapByProvider) {
+    oddsMap.set(gameId, Array.from(providerMap.values()))
+  }
+
+  // Ensure all requested gameIds are in the map (even if no odds found)
+  for (const gameId of gameIds) {
+    if (!oddsMap.has(gameId)) {
+      oddsMap.set(gameId, [])
+    }
   }
 
   return oddsMap

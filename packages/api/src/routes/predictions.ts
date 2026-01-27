@@ -16,6 +16,7 @@ import {
   impliedProbFromAmericanOdds,
   calculateEdge,
   mapGameToApi,
+  asIsoDateTimeString,
   type ApiPrediction,
   type ApiPredictionsResponse,
   type MarketOdds,
@@ -63,7 +64,7 @@ function buildPredictionResponse(pred: PredictionWithGame, odds: OddsSnapshot[] 
     predictedTotal: pred.predictedTotal ? parseFloat(pred.predictedTotal) : undefined,
     marketOdds,
     edges,
-    createdAt: pred.createdAt.toISOString() as any,
+    createdAt: asIsoDateTimeString(pred.createdAt.toISOString()),
   }
 }
 
