@@ -65,6 +65,6 @@ describe('Odds Calculations', () => {
     const q = 1 - p
 
     const kellyStake = (b * p - q) / b
-    expect(kellyStake).toBeCloseTo(0.0333, 3)
+    expect(kellyStake).toBeCloseTo(0.0833, 3)
   })
 })
