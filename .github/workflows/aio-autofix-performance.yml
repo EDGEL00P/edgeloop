@@ -112,17 +112,17 @@ jobs:
           echo "count=$(wc -l < /tmp/changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
 
       # ---------------- Node / JS / TS ----------------
+      - name: Setup pnpm
+        if: needs.plan.outputs.has_node == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
       - name: Setup Node
         if: needs.plan.outputs.has_node == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-
-      - name: Setup pnpm
-        if: needs.plan.outputs.has_node == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Node install
         if: needs.plan.outputs.has_node == 'true'
