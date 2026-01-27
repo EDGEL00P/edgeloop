@@ -6,7 +6,7 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "pnpm exec eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -31,7 +31,9 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "@next/bundle-analyzer": "^15.1.6",
+    "@next/eslint-plugin-next": "^16.1.5",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -40,10 +42,16 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.1.0",
     "jsdom": "^26.0.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8"
   }
