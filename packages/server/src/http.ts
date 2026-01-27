@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'
 import { extname, resolve } from 'path'
 import { URL } from 'url'
 
-import { errorEnvelope } from '@edgeloop/shared'
+import { errorEnvelope, impliedProbFromAmericanOdds, round3 } from '@edgeloop/shared'
 
 import type { Logger } from './logger'
 import { getOrCreateRequestId } from './requestId'
@@ -19,16 +19,6 @@ type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]:
 const CONTROL_ROOM_CSP =
   "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; img-src 'self' data:; " +
   "style-src 'self'; script-src 'self'; connect-src 'self'"
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000
-}
-
-function impliedProbFromAmericanOdds(odds: number): number {
-  if (!Number.isFinite(odds) || odds === 0) return 0.5
-  if (odds > 0) return 100 / (odds + 100)
-  return -odds / (-odds + 100)
-}
 
 function setSecurityHeaders(res: ServerResponse): void {
   res.setHeader('x-content-type-options', 'nosniff')

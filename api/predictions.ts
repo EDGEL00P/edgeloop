@@ -1,15 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { getOrCreateRequestId, writeJson, errorEnvelope, logError } from '@edgeloop/server'
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000
-}
-
-function impliedProbFromAmericanOdds(odds: number): number {
-  if (!Number.isFinite(odds) || odds === 0) return 0.5
-  if (odds > 0) return 100 / (odds + 100)
-  return -odds / (-odds + 100)
-}
+import { impliedProbFromAmericanOdds, round3 } from '@edgeloop/shared'
 
 export default function handler(req: IncomingMessage, res: ServerResponse): void {
   const requestId = getOrCreateRequestId(req)

@@ -13,48 +13,21 @@ import {
   AppError,
   impliedProbFromAmericanOdds,
   calculateEdge,
+  mapGameToApi,
   type ApiPrediction,
   type ApiPredictionsResponse,
-  type GameInfo,
-  type TeamInfo,
   type MarketOdds,
   type PredictionEdges,
-  type TeamCode,
-  type GameId,
   type PredictionId,
 } from '@edgeloop/shared'
 
 export const predictionRoutes = new Hono()
 
 async function mapPredictionToApi(pred: PredictionWithGame): Promise<ApiPrediction> {
-  const game = pred.game
-
-  const homeTeam: TeamInfo = {
-    code: game.homeTeam.code as TeamCode,
-    name: game.homeTeam.name,
-    city: game.homeTeam.city,
-  }
-
-  const awayTeam: TeamInfo = {
-    code: game.awayTeam.code as TeamCode,
-    name: game.awayTeam.name,
-    city: game.awayTeam.city,
-  }
-
-  const gameInfo: GameInfo = {
-    id: game.id as GameId,
-    homeTeam,
-    awayTeam,
-    kickoffAt: (game.kickoffAt ?? game.scheduledAt).toISOString() as any,
-    status: game.status,
-    homeScore: game.homeScore ?? undefined,
-    awayScore: game.awayScore ?? undefined,
-    quarter: game.quarter ?? undefined,
-    timeRemaining: game.timeRemaining ?? undefined,
-  }
+  const gameInfo = mapGameToApi(pred.game)
 
   // Get latest odds for this game
-  const odds = await getLatestOddsForGame(game.id)
+  const odds = await getLatestOddsForGame(pred.game.id)
   const primaryOdds = odds[0] // Use first provider as primary
 
   let marketOdds: MarketOdds | undefined
