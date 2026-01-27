@@ -117,14 +117,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-          cache: "npm"
+
+      - name: Setup pnpm
+        if: needs.plan.outputs.has_node == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Node install
         if: needs.plan.outputs.has_node == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          npm ci
+          pnpm install --frozen-lockfile
 
       - name: Node autofix (Biome preferred, then ESLint/Prettier)
         if: needs.plan.outputs.has_node == 'true'
@@ -133,16 +138,16 @@ jobs:
           set -euo pipefail
 
           # Prefer repo scripts if present
-          if npm run -s | grep -qE '^  lint:fix'; then npm run -s lint:fix || true; fi
-          if npm run -s | grep -qE '^  format'; then npm run -s format || true; fi
+          if pnpm run | grep -qE '^  lint:fix'; then pnpm run lint:fix || true; fi
+          if pnpm run | grep -qE '^  format'; then pnpm run format || true; fi
 
           # Biome (fast, high-ceiling) if config exists
           if [[ -f biome.json || -f biome.jsonc ]]; then
-            npx --yes @biomejs/biome@latest check . --write || true
+            pnpm dlx @biomejs/biome@latest check . --write || true
           else
             # Fallback
-            npx --yes prettier@latest --write . || true
-            npx --yes eslint@latest . --fix || true
+            pnpm dlx prettier@latest --write . || true
+            pnpm dlx eslint@latest . --fix || true
           fi
 
       - name: Node tests + perf signals (build time + optional bundle budget)
@@ -151,21 +156,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          if npm run -s | grep -qE '^  test'; then npm run -s test || true; fi
+          if pnpm run | grep -qE '^  test'; then pnpm run test || true; fi
 
           # Build time as a regression signal (does not fail by default)
-          if npm run -s | grep -qE '^  build'; then
-            /usr/bin/time -f "node_build_seconds=%e" npm run -s build 2> /tmp/node_build_time.txt || true
+          if pnpm run | grep -qE '^  build'; then
+            /usr/bin/time -f "node_build_seconds=%e" pnpm run build 2> /tmp/node_build_time.txt || true
             cat /tmp/node_build_time.txt || true
           fi
 
           # Optional: size-limit budget if config exists (recommended for "perf")
           if [[ -f .size-limit.json || -f size-limit.config.* ]]; then
-            npx --yes size-limit@latest || true
+            pnpm dlx size-limit@latest || true
           fi
 
           if [[ "${{ needs.plan.outputs.mode }}" == "max" ]]; then
-            npm dedupe || true
+            pnpm dedupe || true
           fi
 
       # ---------------- Python ----------------
