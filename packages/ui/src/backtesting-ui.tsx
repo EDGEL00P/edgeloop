@@ -38,7 +38,8 @@ async function runBacktest(query: BacktestQuery): Promise<BacktestResult> {
   })
 
   if (!response.ok) {
-    throw new Error('Backtesting failed')
+    const data = await response.json().catch(() => ({}))
+    throw new Error((data as any).error || `Backtesting failed: ${response.statusText}`)
   }
 
   return response.json()
@@ -58,7 +59,7 @@ export function BacktestingUI() {
   })
 
   const [submitted, setSubmitted] = useState(false)
-  const { data: result, isLoading } = useQuery({
+  const { data: result, isLoading, error } = useQuery({
     queryKey: ['backtest', submitted ? query : null],
     queryFn: () => runBacktest(query),
     enabled: submitted,
@@ -205,6 +206,17 @@ export function BacktestingUI() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Error */}
+      {error && (
+        <Card className="border-red-500/30 bg-red-500/5">
+          <CardContent className="pt-6">
+            <p className="text-sm text-red-600">
+              {(error as Error).message}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Results */}
       {result && (

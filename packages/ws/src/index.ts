@@ -5,6 +5,10 @@ import { verifyToken } from '@clerk/backend'
 
 const clerkSecretKey = process.env['CLERK_SECRET_KEY']
 
+if (!clerkSecretKey) {
+  console.error('Missing CLERK_SECRET_KEY - WebSocket authentication will not work')
+}
+
 export type WebSocketServerOptions = {
   httpServer: HttpServer
   corsOrigin?: string | string[]
@@ -42,22 +46,49 @@ export function createWebSocketServer(options: WebSocketServerOptions): SocketIO
       }
 
       // Validate token with Clerk if secret key and token are available
-      if (data.token && clerkSecretKey) {
-        try {
-          const payload = await verifyToken(data.token, {
-            secretKey: clerkSecretKey,
-            // Note: audience and issuer validation can be added here if needed
-            // audience: 'websocket-service',
-            // issuer: process.env.CLERK_ISSUER
-          })
-          if (payload.sub) {
-            userId = payload.sub
-            permissions = ['read', 'write']
-          }
-        } catch (err) {
-          console.warn(`WebSocket auth validation failed: ${err instanceof Error ? err.message : String(err)}`)
-          // Fall through to anonymous access
+      if (!clerkSecretKey) {
+        const response: ServerMessage = {
+          type: 'auth_error',
+          code: 'missing_secret',
+          message: 'Server missing CLERK_SECRET_KEY',
         }
+        socket.emit('message', response)
+        socket.disconnect()
+        return
+      }
+
+      if (!data.token) {
+        const response: ServerMessage = {
+          type: 'auth_error',
+          code: 'missing_token',
+          message: 'Authentication token is required',
+        }
+        socket.emit('message', response)
+        socket.disconnect()
+        return
+      }
+
+      try {
+        const payload = await verifyToken(data.token, {
+          secretKey: clerkSecretKey,
+          // Note: audience and issuer validation can be added here if needed
+          // audience: 'websocket-service',
+          // issuer: process.env.CLERK_ISSUER
+        })
+        if (payload.sub) {
+          userId = payload.sub
+          permissions = ['read', 'write']
+        }
+      } catch (err) {
+        console.warn(`WebSocket auth validation failed: ${err instanceof Error ? err.message : String(err)}`)
+        const response: ServerMessage = {
+          type: 'auth_error',
+          code: 'invalid_token',
+          message: 'Invalid authentication token',
+        }
+        socket.emit('message', response)
+        socket.disconnect()
+        return
       }
 
       socket.data.userId = userId
