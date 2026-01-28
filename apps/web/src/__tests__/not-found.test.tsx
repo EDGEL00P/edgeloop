@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import NotFound from '@/_app-admin/not-found'
+import NotFound from '@/app/not-found'
 
 // Mock next/link
 vi.mock('next/link', () => ({
