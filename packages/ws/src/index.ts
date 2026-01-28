@@ -10,11 +10,50 @@ export type WebSocketServerOptions = {
   corsOrigin?: string | string[]
 }
 
+/**
+ * Parse allowed origins from environment variable or options.
+ * Supports comma-separated list of origins.
+ * Falls back to localhost for development if not configured.
+ */
+function getAllowedOrigins(optionOrigin?: string | string[]): string[] {
+  if (optionOrigin) {
+    return Array.isArray(optionOrigin) ? optionOrigin : [optionOrigin]
+  }
+  const corsOrigin = process.env['CORS_ORIGIN']
+  if (corsOrigin && corsOrigin !== '*') {
+    return corsOrigin.split(',').map((origin) => origin.trim())
+  }
+  // Default to localhost for development
+  return ['http://localhost:3000', 'http://localhost:3001']
+}
+
 export function createWebSocketServer(options: WebSocketServerOptions): SocketIOServer {
+  const allowedOrigins = getAllowedOrigins(options.corsOrigin)
+  const isProduction = process.env['NODE_ENV'] === 'production'
+
   const io = new SocketIOServer(options.httpServer, {
     cors: {
-      origin: options.corsOrigin ?? '*',
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., mobile apps)
+        if (!origin) {
+          callback(null, true)
+          return
+        }
+        // Check if the origin is in the allowed list
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true)
+          return
+        }
+        // In production, reject unknown origins
+        if (isProduction) {
+          callback(new Error('Not allowed by CORS'), false)
+          return
+        }
+        // In development, allow all origins
+        callback(null, true)
+      },
       methods: ['GET', 'POST'],
+      credentials: true,
     },
     transports: ['websocket', 'polling'],
   })

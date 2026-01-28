@@ -57,7 +57,7 @@ export interface ExplanationResult {
   factors: PredictionFactor[]
   confidence: number
   modelInsights: string[]
-  generatedBy: 'openai' | 'anthropic' | 'local'
+  generatedBy: 'local'
 }
 
 export interface WinProbabilityPoint {
@@ -87,12 +87,16 @@ export interface DriftReport {
   threshold: number
 }
 
-export type AIProvider = 'openai' | 'anthropic' | 'gemini' | 'local'
+/**
+ * AI provider for explanation generation.
+ * Only 'local' is supported - it's free and requires no API keys.
+ */
+export type AIProvider = 'local'
 
 export interface AIProviderConfig {
+  /**
+   * The AI provider to use for explanation generation.
+   * Only 'local' is supported - free template-based explanations.
+   */
   provider: AIProvider
-  apiKey?: string
-  model?: string
-  maxTokens?: number
-  temperature?: number
 }

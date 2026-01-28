@@ -1,7 +1,21 @@
 import { z } from 'zod'
 
-const BASE = process.env.BALLDONTLIE_API_BASE ?? 'https://api.balldontlie.io'
-const KEY = process.env.BALLDONTLIE_API_KEY!
+const BASE = process.env['BALLDONTLIE_API_BASE'] ?? 'https://api.balldontlie.io'
+
+/**
+ * Get the BallDontLie API key from environment.
+ * Throws a descriptive error if not configured.
+ */
+function getApiKey(): string {
+  const key = process.env['BALLDONTLIE_API_KEY']
+  if (!key) {
+    throw new Error(
+      'BALLDONTLIE_API_KEY environment variable is required. ' +
+        'Please set it in your .env file or environment configuration.'
+    )
+  }
+  return key
+}
 
 // DTOs based on actual API response structure
 export const BdlTeam = z.object({
@@ -57,7 +71,7 @@ export async function bdl<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...init,
     headers: {
       ...(init.headers || {}),
-      Authorization: KEY,
+      Authorization: getApiKey(),
       'Content-Type': 'application/json',
     },
   })
@@ -80,7 +94,7 @@ export async function* paginate<T>(
     url.searchParams.set('per_page', String(Math.min(perPage, 100))) // Max 100 per API
     const res = await fetch(url, {
       headers: {
-        Authorization: KEY,
+        Authorization: getApiKey(),
         'Content-Type': 'application/json',
       },
     })
@@ -119,7 +133,7 @@ export async function getGames(params: {
   url.searchParams.set('per_page', '100')
   const res = await fetch(url, {
     headers: {
-      Authorization: KEY,
+      Authorization: getApiKey(),
       'Content-Type': 'application/json',
     },
   })
@@ -140,7 +154,7 @@ export async function getInjuries(params: {
   url.searchParams.set('per_page', '100')
   const res = await fetch(url, {
     headers: {
-      Authorization: KEY,
+      Authorization: getApiKey(),
       'Content-Type': 'application/json',
     },
   })
@@ -161,7 +175,7 @@ export async function getRoster(params: {
   url.searchParams.set('per_page', '100')
   const res = await fetch(url, {
     headers: {
-      Authorization: KEY,
+      Authorization: getApiKey(),
       'Content-Type': 'application/json',
     },
   })
@@ -186,7 +200,7 @@ export async function getOdds(params: {
   url.searchParams.set('per_page', '100')
   const res = await fetch(url, {
     headers: {
-      Authorization: KEY,
+      Authorization: getApiKey(),
       'Content-Type': 'application/json',
     },
   })

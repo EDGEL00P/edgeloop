@@ -1,12 +1,39 @@
+/**
+ * Game Service
+ *
+ * Provides core business logic for retrieving and managing NFL game data.
+ * This service handles game queries, filtering, and status updates.
+ *
+ * @module core/services/game
+ */
+
 import { eq, and, gte, lte, desc, or } from 'drizzle-orm'
 import { getDb, games, teams, type Game, type Team } from '@edgeloop/db'
 import type { GameFilters, Pagination } from '@edgeloop/shared'
 
+/**
+ * Game entity with related team information.
+ */
 export type GameWithTeams = Game & {
   homeTeam: Team
   awayTeam: Team
 }
 
+/**
+ * Retrieves paginated games with optional filtering.
+ *
+ * @param filters - Optional filters for season, week, and status
+ * @param pagination - Page number and page size for pagination
+ * @returns Object containing games array and total count
+ *
+ * @example
+ * ```ts
+ * const { games, total } = await getGames(
+ *   { season: 2024, week: 1 },
+ *   { page: 1, pageSize: 20 }
+ * )
+ * ```
+ */
 export async function getGames(
   filters: GameFilters = {},
   pagination: Pagination = { page: 1, pageSize: 20 }
@@ -50,6 +77,12 @@ export async function getGames(
   }
 }
 
+/**
+ * Retrieves a single game by its unique identifier.
+ *
+ * @param gameId - The UUID of the game to retrieve
+ * @returns The game with team information, or null if not found
+ */
 export async function getGameById(gameId: string): Promise<GameWithTeams | null> {
   const db = getDb()
 
@@ -64,6 +97,12 @@ export async function getGameById(gameId: string): Promise<GameWithTeams | null>
   return result as unknown as GameWithTeams | null
 }
 
+/**
+ * Retrieves upcoming scheduled or pregame games.
+ *
+ * @param limit - Maximum number of games to return (default: 10)
+ * @returns Array of upcoming games sorted by scheduled time
+ */
 export async function getUpcomingGames(limit = 10): Promise<GameWithTeams[]> {
   const db = getDb()
   const now = new Date()
@@ -84,6 +123,11 @@ export async function getUpcomingGames(limit = 10): Promise<GameWithTeams[]> {
   return result as unknown as GameWithTeams[]
 }
 
+/**
+ * Retrieves all currently live games (in_progress or halftime).
+ *
+ * @returns Array of games currently in progress
+ */
 export async function getLiveGames(): Promise<GameWithTeams[]> {
   const db = getDb()
 
@@ -99,6 +143,16 @@ export async function getLiveGames(): Promise<GameWithTeams[]> {
   return result as unknown as GameWithTeams[]
 }
 
+/**
+ * Updates the score and optional game state for a game.
+ *
+ * @param gameId - The UUID of the game to update
+ * @param homeScore - The current home team score
+ * @param awayScore - The current away team score
+ * @param quarter - Optional current quarter (1-4, or 5+ for overtime)
+ * @param timeRemaining - Optional time remaining in the quarter (e.g., "12:34")
+ * @returns The updated game, or null if the game was not found
+ */
 export async function updateGameScore(
   gameId: string,
   homeScore: number,
@@ -123,6 +177,13 @@ export async function updateGameScore(
   return updated ?? null
 }
 
+/**
+ * Updates the status of a game.
+ *
+ * @param gameId - The UUID of the game to update
+ * @param status - The new status for the game
+ * @returns The updated game, or null if the game was not found
+ */
 export async function updateGameStatus(gameId: string, status: Game['status']): Promise<Game | null> {
   const db = getDb()
 
