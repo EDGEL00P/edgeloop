@@ -1,10 +1,9 @@
-// AI-powered explanation synthesis
+// Explanation synthesis using free local templates
 import type {
   FeatureVector,
   PredictionResult,
   PredictionFactor,
   ExplanationResult,
-  AIProvider,
 } from '../types'
 
 export interface ExplanationGenerator {
@@ -177,18 +176,10 @@ export class LocalExplanationGenerator implements ExplanationGenerator {
   }
 }
 
-// Factory function supporting multiple providers
-export function createExplanationGenerator(provider: AIProvider = 'local'): ExplanationGenerator {
-  switch (provider) {
-    case 'openai':
-    case 'anthropic':
-    case 'gemini':
-      // For AI providers, we would integrate with their APIs
-      // For now, fall back to local
-      console.warn(`AI provider ${provider} not yet implemented, using local generator`)
-      return new LocalExplanationGenerator()
-    case 'local':
-    default:
-      return new LocalExplanationGenerator()
-  }
+/**
+ * Factory function for creating explanation generators.
+ * Returns the free local explanation generator.
+ */
+export function createExplanationGenerator(): ExplanationGenerator {
+  return new LocalExplanationGenerator()
 }

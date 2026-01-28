@@ -17,6 +17,7 @@ import {
   calculateEdge,
   mapGameToApi,
   asIsoDateTimeString,
+  isValidUuid,
   type ApiPrediction,
   type ApiPredictionsResponse,
   type MarketOdds,
@@ -92,6 +93,11 @@ predictionRoutes.get('/', async (c) => {
 
 predictionRoutes.get('/:gameId', async (c) => {
   const gameId = c.req.param('gameId')
+
+  // Validate UUID format
+  if (!isValidUuid(gameId)) {
+    throw AppError.badRequest('Invalid game ID: must be a valid UUID')
+  }
 
   const prediction = await getLatestPredictionForGame(gameId)
 

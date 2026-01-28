@@ -29,6 +29,31 @@ export const teamCodeSchema = z.string().length(2).or(z.string().length(3))
 
 export const apiKeyPrefixSchema = z.string().regex(/^el_[a-zA-Z0-9]{8}$/)
 
+/**
+ * Validates that a string is a valid UUID.
+ * Useful for route parameter validation.
+ * @param value - The string to validate
+ * @param fieldName - The name of the field for error messages
+ * @returns The validated UUID string
+ * @throws Error with descriptive message if validation fails
+ */
+export function validateUuid(value: string, fieldName = 'id'): string {
+  const result = uuidSchema.safeParse(value)
+  if (!result.success) {
+    throw new Error(`Invalid ${fieldName}: must be a valid UUID`)
+  }
+  return result.data
+}
+
+/**
+ * Checks if a string is a valid UUID without throwing.
+ * @param value - The string to validate
+ * @returns true if the string is a valid UUID, false otherwise
+ */
+export function isValidUuid(value: string): boolean {
+  return uuidSchema.safeParse(value).success
+}
+
 export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): T {
   return schema.parse(data)
 }

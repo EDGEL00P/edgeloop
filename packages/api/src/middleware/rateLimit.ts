@@ -4,6 +4,7 @@ import { Redis } from '@upstash/redis'
 import { AppError } from '@edgeloop/shared'
 
 let ratelimit: Ratelimit | null = null
+let rateLimitConfigurationLogged = false
 
 function getRateLimiter(): Ratelimit | null {
   if (ratelimit) return ratelimit
@@ -12,6 +13,14 @@ function getRateLimiter(): Ratelimit | null {
   const redisToken = process.env['REDIS_TOKEN']
 
   if (!redisUrl || !redisToken) {
+    // Log configuration warning once to avoid spam
+    if (!rateLimitConfigurationLogged) {
+      console.warn(
+        '[RateLimit] REDIS_URL or REDIS_TOKEN not configured. ' +
+          'Rate limiting is disabled. This is acceptable for development but should be configured in production.'
+      )
+      rateLimitConfigurationLogged = true
+    }
     return null
   }
 

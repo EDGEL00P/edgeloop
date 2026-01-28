@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { getGames, getGameById, getUpcomingGames, getLiveGames, type GameWithTeams } from '@edgeloop/core'
-import { nowIso, AppError, type ApiGamesResponse, mapGameToApi } from '@edgeloop/shared'
+import { nowIso, AppError, type ApiGamesResponse, mapGameToApi, isValidUuid } from '@edgeloop/shared'
 
 export const gameRoutes = new Hono()
 
@@ -60,6 +60,11 @@ gameRoutes.get('/live', async (c) => {
 
 gameRoutes.get('/:id', async (c) => {
   const gameId = c.req.param('id')
+
+  // Validate UUID format
+  if (!isValidUuid(gameId)) {
+    throw AppError.badRequest('Invalid game ID: must be a valid UUID')
+  }
 
   const game = await getGameById(gameId)
 
