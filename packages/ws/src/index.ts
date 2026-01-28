@@ -5,7 +5,7 @@ import { verifyToken } from '@clerk/backend'
 
 const clerkSecretKey = process.env['CLERK_SECRET_KEY']
 
-if (!clerkSecretKey) {
+if (!clerkSecretKey && process.env.NODE_ENV !== 'test') {
   console.error('Missing CLERK_SECRET_KEY - WebSocket authentication will not work')
 }
 

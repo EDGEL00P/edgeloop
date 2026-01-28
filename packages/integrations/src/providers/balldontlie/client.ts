@@ -3,10 +3,6 @@ import { z } from 'zod'
 const BASE = process.env.BALLDONTLIE_API_BASE ?? 'https://api.balldontlie.io'
 const KEY = process.env.BALLDONTLIE_API_KEY
 
-if (!KEY) {
-  throw new Error('BALLDONTLIE_API_KEY environment variable is required')
-}
-
 // DTOs based on actual API response structure
 export const BdlTeam = z.object({
   id: z.number(),
@@ -57,6 +53,9 @@ interface PaginatedResponse<T> {
 }
 
 export async function bdl<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (!KEY) {
+    throw new Error('BALLDONTLIE_API_KEY environment variable is required')
+  }
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -75,6 +74,9 @@ export async function* paginate<T>(
   path: string,
   perPage = 100
 ): AsyncGenerator<T, void, unknown> {
+  if (!KEY) {
+    throw new Error('BALLDONTLIE_API_KEY environment variable is required')
+  }
   let cursor: number | null = null
   let hasMore = true
   

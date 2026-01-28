@@ -15,7 +15,7 @@ declare module 'hono' {
 
 const clerkSecretKey = process.env['CLERK_SECRET_KEY']
 
-if (!clerkSecretKey) {
+if (!clerkSecretKey && process.env.NODE_ENV !== 'test') {
   console.error('Missing CLERK_SECRET_KEY - authentication will not work')
 }
 
@@ -46,18 +46,22 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
           if (!user) {
             const email =
-              (payload as any).email ||
-              (payload as any).email_address ||
-              (payload as any).email_addresses?.[0]?.email_address ||
-              (payload as any).email_addresses?.[0]
+              (payload as any).email ??
+              (payload as any).email_address ??
+              ((payload as any).email_addresses?.[0]?.email_address as string | undefined) ??
+              ((payload as any).email_addresses?.[0] as string | undefined)
 
             if (email) {
-              user = await upsertUserFromClerk({
-                clerkId: payload.sub,
-                email,
-                name: (payload as any).name ?? (payload as any).full_name ?? undefined,
-                image: (payload as any).image_url ?? undefined,
-              })
+              try {
+                user = await upsertUserFromClerk({
+                  clerkId: payload.sub,
+                  email,
+                  name: (payload as any).name ?? (payload as any).full_name ?? undefined,
+                  image: (payload as any).image_url ?? undefined,
+                })
+              } catch (err) {
+                console.error('Failed to sync Clerk user to database', err)
+              }
             } else {
               console.error('Unable to sync Clerk user - email missing from token payload')
             }
