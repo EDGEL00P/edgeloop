@@ -25,5 +25,10 @@
     "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.19.12"
+    }
+  },
   "packageManager": "pnpm@9.0.0"
 }
