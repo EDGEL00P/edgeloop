@@ -67,6 +67,9 @@ interface PaginatedResponse<T> {
 }
 
 export async function bdl<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (!KEY) {
+    throw new Error('BALLDONTLIE_API_KEY environment variable is required')
+  }
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -85,6 +88,9 @@ export async function* paginate<T>(
   path: string,
   perPage = 100
 ): AsyncGenerator<T, void, unknown> {
+  if (!KEY) {
+    throw new Error('BALLDONTLIE_API_KEY environment variable is required')
+  }
   let cursor: number | null = null
   let hasMore = true
   
